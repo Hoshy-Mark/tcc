@@ -1,0 +1,21 @@
+extends Node
+
+enum GameState { MENU, PLAYING, PAUSED, GAME_OVER }
+
+var current_state: GameState = GameState.MENU
+
+func start_game() -> void:
+	current_state = GameState.PLAYING
+	print("Estado: PLAYING")
+
+func end_game() -> void:
+	current_state = GameState.GAME_OVER
+	get_tree().change_scene_to_file("res://core/UI/GameOver.tscn")
+
+func pause_game() -> void:
+	current_state = GameState.PAUSED
+	get_tree().paused = true
+
+func resume_game() -> void:
+	current_state = GameState.PLAYING
+	get_tree().paused = false

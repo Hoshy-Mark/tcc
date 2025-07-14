@@ -1,0 +1,22 @@
+[gd_scene load_steps=2 format=3 uid="uid://1u22i06vr64c"]
+
+[ext_resource type="Script" uid="uid://dqw6r75egn6ar" path="res://core/UI/MainMenu.gd" id="1_xgruv"]
+
+[node name="MainMenu" type="CenterContainer"]
+script = ExtResource("1_xgruv")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+alignment = 1
+
+[node name="ButtonJogar" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Jogar"
+
+[node name="ButtonOpcoes" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Opções"
+
+[node name="ButtonSair" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Sair"

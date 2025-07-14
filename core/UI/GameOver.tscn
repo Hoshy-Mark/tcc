@@ -1,0 +1,21 @@
+[gd_scene load_steps=2 format=3 uid="uid://6mj32ppn4e1u"]
+
+[ext_resource type="Script" uid="uid://u4k4544nigx8" path="res://core/UI/GameOver.gd" id="1_6bo0y"]
+
+[node name="GameOver" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_6bo0y")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Label" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Game Over"
+
+[node name="Button" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Voltar ao Menu Inicial"
