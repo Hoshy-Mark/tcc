@@ -1,0 +1,22 @@
+[gd_scene load_steps=2 format=3 uid="uid://dt6w6mxpsanjq"]
+
+[ext_resource type="Script" uid="uid://qanhaqqbchjd" path="res://decades/1980s/battle/DefeatScreen.gd" id="1_mq20f"]
+
+[node name="DefeatScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_mq20f")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+alignment = 1
+
+[node name="ButtonAgain" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Jogar de Novo"
+
+[node name="ButtonMainMenu" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Voltar ao Menu"

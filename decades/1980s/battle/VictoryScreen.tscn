@@ -1,0 +1,26 @@
+[gd_scene load_steps=2 format=3 uid="uid://dxswqgubs6yed"]
+
+[ext_resource type="Script" uid="uid://dd0dofj63fqsc" path="res://decades/1980s/battle/VictoryScreen.gd" id="1_vmtq4"]
+
+[node name="VictoryScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_vmtq4")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+alignment = 1
+
+[node name="ButtonNext" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Continuar"
+
+[node name="ButtonAgain" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Jogar de Novo"
+
+[node name="ButtonMainMenu" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Voltar ao Menu"
