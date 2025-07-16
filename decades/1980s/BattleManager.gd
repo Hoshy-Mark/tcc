@@ -3,13 +3,15 @@ extends Node
 enum BattleState { ESPERANDO_COMANDO, EXECUTANDO_ACAO, FIM_COMBATE }
 var state = BattleState.ESPERANDO_COMANDO
 var jogador_atual : PlayerPartyMember = null
-@onready var enemy_sprite_node = $"../EnemySprite"
+@onready var enemy_sprites_node = $EnemySprites
+var enemy_sprite_scene = preload("res://decades/1980s/EnemySprite.tscn")
 
 var party_members = []
 var enemies = []
 var turn_order = []
 var turn_index = 0
 var hud
+const TEMPO_ESPERA_APOS_ACAO = 0.5
 
 func _ready():
 	# carregar HUD da década
@@ -26,41 +28,103 @@ func _ready():
 	_start_turn()
 
 func _load_party():
-	var hero1 = PlayerPartyMember.new()
-	hero1.nome = "Hero"
+	# Mago Negro
 
-	var hero2 = PlayerPartyMember.new()
-	hero2.nome = "Mage"
-	hero2.hp = 70
-	hero2.mp = 50
-	hero2.strength = 6
-	hero2.defense = 3
-	hero2.speed = 6
+	var black_mage = PlayerPartyMember.new()
+	black_mage.nome = "Mago Negro"
+	black_mage.max_hp = 80
+	black_mage.hp = black_mage.max_hp
+	black_mage.max_mp = 30
+	black_mage.mp = black_mage.max_mp
+	black_mage.spells = {
+		"fogo": {"level": 1, "cost": 5, "power": 20, "power_max": 100, "type": "damage"},
+		"trovao": {"level": 2, "cost": 10, "power": 30, "power_max": 200, "type": "damage"}
+	}
+	black_mage.level = 1
+	black_mage.xp = 1
+	black_mage.xp_to_next_level = 50
+	black_mage.spell_slots = {1: 3, 2: 2}
 
-	party_members.append(hero1)
-	party_members.append(hero2)
+	# Guerreiro
+	var warrior = PlayerPartyMember.new()
+	warrior.nome = "Guerreiro"
+	warrior.max_hp = 80
+	warrior.hp = warrior.max_hp
+	warrior.max_mp = 30
+	warrior.mp = warrior.max_mp
+	warrior.spells = {}  # sem magias
+	warrior.spell_slots = {}
+	warrior.level = 1
+	warrior.xp = 1
+	warrior.xp_to_next_level = 50
 
+	# Maga Branca
+	var white_mage = PlayerPartyMember.new()
+	white_mage.nome = "Maga Branca"
+	white_mage.max_hp = 80
+	white_mage.hp = white_mage.max_hp
+	white_mage.max_mp = 30
+	white_mage.mp = white_mage.max_mp
+	white_mage.spells = {
+		"cura": {"level": 1, "cost": 5, "power": -10, "power_max": -10, "type": "heal"}
+	}
+	white_mage.spell_slots = {1: 2}
+	white_mage.level = 1
+	white_mage.xp = 1
+	white_mage.xp_to_next_level = 50
+
+	# Arqueiro
+	var archer = PlayerPartyMember.new()
+	archer.nome = "Arqueiro"
+	archer.max_hp = 80
+	archer.hp = archer.max_hp
+	archer.max_mp = 30
+	archer.mp = archer.max_mp
+	archer.spells = {}
+	archer.spell_slots = {}
+	archer.level = 1
+	archer.xp = 1
+	archer.xp_to_next_level = 50
+
+	party_members = [black_mage, warrior, white_mage, archer]
+	
+	for member in party_members:
+		member.connect("leveled_up", Callable(self, "_on_member_leveled_up"))
+
+func _on_member_leveled_up(new_level, member):
+	hud.add_log_entry("%s subiu para o nível %d!" % [member.nome, new_level])
+	
 func _load_enemies():
+	enemies.clear()
+	for child in enemy_sprites_node.get_children():
+		child.queue_free()
+
+
+	# Criar inimigos
 	var slime = Enemy.new()
-	slime.nome = "Slime"
+	slime.nome = "Goblin"
+	slime.xp_value = 80
 
 	var goblin = Enemy.new()
 	goblin.nome = "Goblin"
 	goblin.max_hp = 80
 	goblin.current_hp = goblin.max_hp
+	goblin.xp_value = 50
 	goblin.strength = 10
 	goblin.defense = 4
 	goblin.speed = 7
 
-	enemies.append(slime)
+	enemies.append(goblin)
 	enemies.append(goblin)
 
-	# Atualiza EnemySprite (exibe apenas um visualmente, mas atualiza o primeiro)
-	if enemy_sprite_node:
-		enemy_sprite_node.texture = preload("res://assets/Goblin.png")
-		enemy_sprite_node.set("enemy", goblin)
+	# Criar sprites para cada inimigo
+	for i in enemies.size():
+		var enemy = enemies[i]
+		var enemy_sprite = enemy_sprite_scene.instantiate()
+		enemy_sprite.enemy = enemy  # passa o objeto Enemy
+		enemy_sprite.position = Vector2(1100 + i * 320, 400) # posicionamento horizontal simples
+		enemy_sprites_node.add_child(enemy_sprite)
 
-	# Atualiza HUD com informações dos inimigos
 	hud.update_enemy_status(enemies)
 
 func _sort_turn_order():
@@ -102,29 +166,29 @@ func _start_turn():
 func _esperar_comando_do_jogador(player):
 	state = BattleState.ESPERANDO_COMANDO
 	hud.set_enabled(true)
-	print("Aguardando ação do jogador: %s" % player.name)
+	hud.add_log_entry("%s está se preparando para agir..." % player.nome)
 
 func _executar_acao_inimiga(enemy):
 	state = BattleState.EXECUTANDO_ACAO
 	var target = _escolher_alvo_aleatorio(party_members)
 	if target:
 		var damage = enemy.attack(target)
-		print("%s atacou %s e causou %d de dano" % [enemy.name, target.name, damage])
+		hud.add_log_entry("%s atacou %s e causou %d de dano" % [enemy.nome, target.nome, damage])
 	turn_index += 1
-	await get_tree().create_timer(1.0).timeout
+	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 	_start_turn()
 
 func _finalizar_turno():
 	
 	# Verificar se todos inimigos mortos (jogador venceu)
 	if enemies.all(func(e): return not e.is_alive()):
-		print("Vitória! Todos os inimigos derrotados.")
+		hud.add_log_entry("Vitória! Todos os inimigos derrotados.")
 		_encerrar_combate("vitoria")
 		return
 	
 	# Verificar se todos jogadores mortos (jogador perdeu)
 	if party_members.all(func(p): return not p.is_alive()):
-		print("Derrota! Todos os membros do grupo foram derrotados.")
+		hud.add_log_entry("Derrota! Todos os membros do grupo foram derrotados.")
 		_encerrar_combate("derrota")
 		return
 	
@@ -139,12 +203,14 @@ func _escolher_alvo_aleatorio(lista):
 	
 func _on_player_action_selected(action_name: String):
 	hud.set_enabled(false)
-	print("Jogador escolheu: ", action_name)
+	hud.add_log_entry("Jogador escolheu: " + action_name)
+	print("DEBUG: Ação selecionada ->", action_name)
 
 	match action_name:
 		"attack":
 			_executar_acao_ataque(jogador_atual)
 		"magic":
+			print("DEBUG: Chamando _executar_acao_magia")
 			_executar_acao_magia(jogador_atual)
 		"defend":
 			_executar_defesa(jogador_atual)
@@ -157,45 +223,43 @@ func _executar_acao_ataque(actor):
 
 	if actor is PlayerPartyMember:
 		alvo = _escolher_alvo_aleatorio(enemies)
-		if alvo:
-			var dano = actor.attack(alvo)
-			hud.update_enemy_status(enemies)
-			print("%s atacou %s e causou %d de dano" % [actor.name, alvo.name, dano])
 	else:
 		alvo = _escolher_alvo_aleatorio(party_members)
-		if alvo:
-			var dano = actor.attack(alvo)
-			hud.update_enemy_status(enemies)
-			print("%s atacou %s e causou %d de dano" % [actor.name, alvo.name, dano])
 
-	await get_tree().create_timer(1.0).timeout
+	if alvo:
+		var dano = actor.attack(alvo)
+		hud.add_log_entry("%s atacou %s causando %d de dano" % [actor.nome, alvo.nome, dano])
+
+		if alvo is Enemy and not alvo.is_alive():
+			hud.add_log_entry("%s foi derrotado!" % alvo.nome)
+
+		hud.update_party_info(party_members)
+		hud.update_enemy_status(enemies)
+
+	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 	_finalizar_turno()
 
 func _executar_acao_magia(actor):
 	state = BattleState.EXECUTANDO_ACAO
 
 	if actor is PlayerPartyMember:
-		var spell_name = "fire"  # Exemplo fixo, pode vir do menu
-		var alvo = _escolher_alvo_aleatorio(enemies)
-		if alvo:
-			var dano_magia = actor.cast_spell(alvo, spell_name)
-			if dano_magia > 0:
-				print("%s lançou %s em %s causando %d de dano" % [actor.name, spell_name, alvo.name, dano_magia])
-			else:
-				print("%s falhou ao lançar magia." % actor.name)
+		state = BattleState.ESPERANDO_COMANDO		
+		if hud.magic_selected.is_connected(_on_magia_escolhida):
+			hud.magic_selected.disconnect(_on_magia_escolhida)
+		
+		hud.magic_selected.connect(_on_magia_escolhida)
+		hud.show_magic_menu(actor)
 	else:
-		# inimigos não usam magia (ou implementar caso queira)
-		print("%s não tem magia para usar." % actor.name)
-
-	await get_tree().create_timer(1.0).timeout
-	_finalizar_turno()
+		hud.add_log_entry("%s não tem magia para usar." % actor.nome)
+		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+		_finalizar_turno()
 
 func _executar_defesa(actor):
 	if actor is PlayerPartyMember:
 		state = BattleState.EXECUTANDO_ACAO
 		actor.defend()
-		print("%s está defendendo." % actor.name)
-		await get_tree().create_timer(1.0).timeout
+		hud.add_log_entry("%s está defendendo." % actor.nome)
+		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 		_finalizar_turno()
 	else:
 		# inimigos não defendem (ou implementar se quiser)
@@ -217,22 +281,89 @@ func _tentar_fugir(actor):
 
 		var sucesso = randi() % 100 < chance_fuga
 		if sucesso:
-			print("%s conseguiu fugir!" % actor.name)
+			hud.add_log_entry("%s conseguiu fugir!" % actor.nome)
 			_encerrar_combate("fuga")
 
 		else:
-			print("%s tentou fugir e falhou." % actor.name)
+			hud.add_log_entry("%s tentou fugir e falhou." % actor.nome)
 			_finalizar_turno()
 	else:
 		_finalizar_turno()
 
 func _encerrar_combate(resultado: String):
 	state = BattleState.FIM_COMBATE
-	
+
+	if resultado == "vitoria":
+		var xp_total = 0
+		for enemy in enemies:
+			xp_total += enemy.xp_value if "xp_value" in enemy else 50  # ou qualquer valor fixo
+		
+		_dar_xp_para_party(xp_total)
+		hud.update_party_info(party_members)
+		
+	await get_tree().create_timer(5.0).timeout  # Aguarda 2 segundos para mostrar os logs de XP
+
 	match resultado:
 		"vitoria":
 			get_tree().change_scene_to_file("res://decades/1980s/battle/VictoryScreen.tscn")
-		"derrota":
+		"derrota", "fuga":
 			get_tree().change_scene_to_file("res://decades/1980s/battle/DefeatScreen.tscn")
-		"fuga":
-			get_tree().change_scene_to_file("res://decades/1980s/battle/DefeatScreen.tscn")
+			
+func _on_magia_escolhida(spell_name: String):
+	print("DEBUG: _on_magia_escolhida chamada com:", spell_name)
+	if hud.magic_selected.is_connected(_on_magia_escolhida):
+		hud.magic_selected.disconnect(_on_magia_escolhida)
+
+	hud.set_enabled(false)
+
+	var spell_data = jogador_atual.spells.get(spell_name, null)
+	if not spell_data:
+		hud.add_log_entry("Erro: magia não encontrada.")
+		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+		_finalizar_turno()
+		return
+
+	var is_heal = spell_data.type == "heal"
+	var alvo
+
+	if is_heal:
+		alvo = _escolher_aliado_para_curar()
+	else:
+		alvo = _escolher_alvo_aleatorio(enemies)
+
+	if not alvo:
+		hud.add_log_entry("Nenhum alvo válido para %s." % spell_name)
+		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+		_finalizar_turno()
+		return
+
+	var efeito = jogador_atual.cast_spell(alvo, spell_name)
+
+	if is_heal:
+		hud.update_party_info(party_members)
+		if efeito < 0:
+			hud.add_log_entry("%s lançou %s em %s e curou %d HP!" % [jogador_atual.nome, spell_name, alvo.nome, -efeito])
+		else:
+			hud.add_log_entry("%s tentou lançar %s, mas não teve efeito." % [jogador_atual.nome, spell_name])
+	else:
+		hud.update_enemy_status(enemies)
+		if efeito > 0:
+			hud.add_log_entry("%s lançou %s em %s causando %d de dano!" % [jogador_atual.nome, spell_name, alvo.nome, efeito])
+		else:
+			hud.add_log_entry("%s tentou lançar %s, mas não teve efeito." % [jogador_atual.nome, spell_name])
+
+	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+	_finalizar_turno()
+
+func _escolher_aliado_para_curar():
+	var vivos = party_members.filter(func(p): return p.is_alive() and p.hp < p.max_hp)
+	if vivos.size() == 0:
+		return null
+	vivos.sort_custom(func(a, b): return float(a.hp) / a.max_hp - float(b.hp) / b.max_hp)
+	return vivos[0]
+	
+func _dar_xp_para_party(xp_por_membro: int):
+	for member in party_members:
+		if member.is_alive():
+			member.gain_xp(xp_por_membro)
+			hud.add_log_entry("%s ganhou %d XP." % [member.nome, xp_por_membro])

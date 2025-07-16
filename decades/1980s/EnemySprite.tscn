@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bb8tmla5j78p3"]
+
+[ext_resource type="Script" uid="uid://iiftdhevsp0o" path="res://decades/1980s/EnemySprite.gd" id="1_a5w58"]
+
+[node name="EnemySprite" type="Sprite2D"]
+script = ExtResource("1_a5w58")

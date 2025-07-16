@@ -9,6 +9,8 @@ var current_mp: int = max_mp
 var strength: int = 6
 var defense: int = 2
 var speed: int = 4
+var xp_value = 50
+
 
 func attack(target):
 	var base_damage = strength - target.defense

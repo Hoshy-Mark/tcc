@@ -1,11 +1,13 @@
 extends CanvasLayer
 
 signal action_selected(action_name: String)
-@onready var party_info = $PartyInfo
+signal magic_selected(spell_name: String)
+
+@onready var magic_menu = $MagicMenu
+@onready var party_info = $Panel/PartyInfo
+@onready var log_text_edit = $LogPanel/LogTextEdit
 
 func _ready():
-	print("PartyInfo container: ", party_info)
-	print("EnemyInfo container: ", $EnemyInfo)
 	$VBoxContainer/Button.text = "Atacar"
 	$VBoxContainer/Button2.text = "Magia"
 	$VBoxContainer/Button3.text = "Defender"
@@ -21,56 +23,175 @@ func set_enabled(enabled: bool):
 	$VBoxContainer/Button2.disabled = not enabled
 	$VBoxContainer/Button3.disabled = not enabled
 	$VBoxContainer/Button4.disabled = not enabled
+
+func add_log_entry(text: String) -> void:
+	log_text_edit.text += text + "\n"
+	log_text_edit.scroll_vertical = log_text_edit.get_line_count()  # Scroll automático
 	
-func update_enemy_status(enemies):
+func update_enemy_status(enemies: Array) -> void:
 	clear_container($EnemyInfo)
 
 	for enemy in enemies:
-		var container = HBoxContainer.new()
+		# Painel com estilo
+		var panel = Panel.new()
+		var style = StyleBoxFlat.new()
+		style.bg_color = Color(0.15, 0, 0)  # Fundo avermelhado escuro
+		style.border_width_left = 2
+		style.border_width_top = 2
+		style.border_width_right = 2
+		style.border_width_bottom = 2
+		style.border_color = Color(1, 0.3, 0.3)  # Borda vermelha
+		style.corner_radius_top_left = 4
+		style.corner_radius_top_right = 4
+		style.corner_radius_bottom_left = 4
+		style.corner_radius_bottom_right = 4
+		panel.add_theme_stylebox_override("panel", style)
+		panel.custom_minimum_size = Vector2(180, 100)
+
+		# Margem interna
+		var margin_container = MarginContainer.new()
+		margin_container.add_theme_constant_override("margin_left", 8)
+		margin_container.add_theme_constant_override("margin_top", 8)
+		margin_container.add_theme_constant_override("margin_right", 8)
+		margin_container.add_theme_constant_override("margin_bottom", 8)
+
+		# Conteúdo
+		var box = VBoxContainer.new()
 
 		var name_label = Label.new()
-		name_label.text = "Inimigo: " + enemy.nome
-		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		name_label.text = enemy.nome
+		name_label.add_theme_color_override("font_color", Color(1, 0.5, 0.5))  # Destaque vermelho claro
+		box.add_child(name_label)
 
 		var hp_label = Label.new()
 		hp_label.text = "HP: %d/%d" % [enemy.current_hp, enemy.max_hp]
-
-		container.add_child(name_label)
-		container.add_child(hp_label)
-
-		$EnemyInfo.add_child(container)
-
-func update_party_info(party_members: Array):
-	print("Atualizando party_info, filhos antes da limpeza:", party_info.get_child_count())
-	clear_container(party_info)
-	print("Filhos depois da limpeza e antes de adicionar novos:", party_info.get_child_count())
-
-	# Adiciona as informações dos membros da party
-	for member in party_members:
-		var container = HBoxContainer.new()
-
-		var name_label = Label.new()
-		name_label.text = member.nome
-		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-
-		var hp_label = Label.new()
-		hp_label.text = "HP: %d" % member.hp
+		box.add_child(hp_label)
 
 		var mp_label = Label.new()
+		mp_label.text = "MP: %d/%d" % [enemy.current_mp, enemy.max_mp]
+		box.add_child(mp_label)
+
+		margin_container.add_child(box)
+		panel.add_child(margin_container)
+		$EnemyInfo.add_child(panel)
+
+func show_magic_menu(player: PlayerPartyMember) -> void:
+	print("DEBUG: Exibindo menu de magia para", player.nome)
+	clear()
+	magic_menu.popup_centered()
+
+	for spell_name in player.spells.keys():
+		var spell = player.spells[spell_name]
+		var slot_level = spell.level
+		var slots_disponiveis = player.spell_slots.get(slot_level, 0)
+
+		var button = Button.new()
+		var texto = "%s | MP: %d | Poder: %d-%d | Slots: %d" % [
+			spell_name.capitalize(),
+			spell.cost,
+			spell.power,
+			spell.power_max,
+			slots_disponiveis
+		]
+		button.text = texto
+		button.disabled = (player.mp < spell.cost or slots_disponiveis <= 0)
+		button.pressed.connect(_on_spell_button_pressed.bind(spell_name))
+
+		magic_menu.get_node("VBoxContainer").add_child(button)
+
+	# Botão Voltar
+	var voltar_btn = Button.new()
+	voltar_btn.text = "Voltar"
+	voltar_btn.pressed.connect(_on_voltar_btn_pressed)
+	magic_menu.get_node("VBoxContainer").add_child(voltar_btn)
+
+func _on_voltar_btn_pressed():
+	print("DEBUG: Jogador clicou em Voltar no menu de magia")
+	magic_menu.hide()
+	set_enabled(true)
+	
+func _on_spell_button_pressed(spell_name):
+	print("DEBUG: Jogador clicou na magia:", spell_name)
+	magic_menu.hide()
+	emit_signal("magic_selected", spell_name)
+	
+func update_party_info(party_members: Array) -> void:
+	clear_container(party_info)
+
+	for member in party_members:
+		var panel = Panel.new()
+		var style = StyleBoxFlat.new()
+		style.bg_color = Color(0.1, 0.1, 0.1)
+		style.border_width_left = 2
+		style.border_width_top = 2
+		style.border_width_right = 2
+		style.border_width_bottom = 2
+		style.border_color = Color(1, 1, 1)
+		style.corner_radius_top_left = 4
+		style.corner_radius_top_right = 4
+		style.corner_radius_bottom_left = 4
+		style.corner_radius_bottom_right = 4
+		panel.add_theme_stylebox_override("panel", style)
+		panel.custom_minimum_size = Vector2(160, 100)
+
+		var margin_container = MarginContainer.new()
+		margin_container.add_theme_constant_override("margin_left", 8)
+		margin_container.add_theme_constant_override("margin_top", 8)
+		margin_container.add_theme_constant_override("margin_right", 8)
+		margin_container.add_theme_constant_override("margin_bottom", 8)
+
+		var vbox = VBoxContainer.new()
+
+		# Nome
+		var name_label = Label.new()
+		name_label.text = member.nome
+		name_label.add_theme_color_override("font_color", Color.WHITE)
+		vbox.add_child(name_label)
+
+		# Linha 1: HP e Nível
+		var row1 = HBoxContainer.new()
+		var hp_label = Label.new()
+		hp_label.text = "HP: %d" % member.hp
+		row1.add_child(hp_label)
+
+		var spacer1 = Control.new()
+		spacer1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row1.add_child(spacer1)
+
+		var level_label = Label.new()
+		level_label.text = "  Lv: %d" % member.level
+		row1.add_child(level_label)
+
+		vbox.add_child(row1)
+
+		# Linha 2: MP e XP
+		var row2 = HBoxContainer.new()
+		var mp_label = Label.new()
 		mp_label.text = "MP: %d" % member.mp
+		row2.add_child(mp_label)
 
-		container.add_child(name_label)
-		container.add_child(hp_label)
-		container.add_child(mp_label)
+		var spacer2 = Control.new()
+		spacer2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row2.add_child(spacer2)
 
-		party_info.add_child(container)
-		
-		print("Filhos depois de adicionar os novos:", party_info.get_child_count())
+		var xp_label = Label.new()
+		xp_label.text = "  XP: %d" % member.xp
+		row2.add_child(xp_label)
+
+		vbox.add_child(row2)
+
+		margin_container.add_child(vbox)
+		panel.add_child(margin_container)
+		party_info.add_child(panel)
 		
 func clear_container(container):
-	print("Antes de limpar, filhos no container:", container.get_child_count())
 	var children = container.get_children()
 	for child in children:
 		container.remove_child(child)
 		child.queue_free()
-	print("Depois de limpar, filhos no container:", container.get_child_count())
+
+func clear():
+	var vbox = magic_menu.get_node("VBoxContainer")
+	for child in vbox.get_children():
+		vbox.remove_child(child)
+		child.queue_free()

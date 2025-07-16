@@ -1,8 +1,6 @@
-[gd_scene load_steps=6 format=3 uid="uid://dpj1386a8ych2"]
+[gd_scene load_steps=4 format=3 uid="uid://dpj1386a8ych2"]
 
 [ext_resource type="Script" uid="uid://bd3bia7we4uh1" path="res://decades/1980s/Game1980.gd" id="1_bypbk"]
-[ext_resource type="Texture2D" uid="uid://dyr4gxine7er3" path="res://assets/Goblin.png" id="2_gthsw"]
-[ext_resource type="Script" uid="uid://c6hld7ubdst63" path="res://decades/1980s/EnemySprite.gd" id="3_scm7u"]
 [ext_resource type="PackedScene" uid="uid://vy3j4t2lk6vv" path="res://decades/1980s/BattleManager.tscn" id="4_o87xn"]
 [ext_resource type="Texture2D" uid="uid://c260ntt5qgt5n" path="res://assets/Background.jpg" id="5_o87xn"]
 
@@ -10,14 +8,9 @@
 script = ExtResource("1_bypbk")
 
 [node name="TextureRect" type="TextureRect" parent="."]
-offset_right = 735.0
-offset_bottom = 466.0
+offset_right = 1724.0
+offset_bottom = 970.0
 texture = ExtResource("5_o87xn")
-
-[node name="EnemySprite" type="Sprite2D" parent="."]
-position = Vector2(450, 175)
-texture = ExtResource("2_gthsw")
-script = ExtResource("3_scm7u")
 
 [node name="TitleLabel" type="Label" parent="."]
 offset_right = 40.0

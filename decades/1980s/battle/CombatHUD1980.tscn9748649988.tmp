@@ -5,33 +5,21 @@
 [node name="CombatHud1980" type="CanvasLayer"]
 script = ExtResource("1_8ayvh")
 
-[node name="MagicMenu" type="Window" parent="."]
-size = Vector2i(400, 300)
-visible = false
-
-[node name="VBoxContainer" type="VBoxContainer" parent="MagicMenu"]
-offset_right = 40.0
-offset_bottom = 40.0
-
 [node name="EnemyInfo" type="GridContainer" parent="."]
-offset_left = 950.0
+offset_left = 450.0
 offset_top = 10.0
-offset_right = 1130.0
-offset_bottom = 210.0
-scale = Vector2(2, 2)
+offset_right = 490.0
+offset_bottom = 50.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
-columns = 2
 
 [node name="Panel" type="Panel" parent="."]
-offset_left = 200.0
-offset_top = 750.0
-offset_right = 200.0
-offset_bottom = 750.0
-scale = Vector2(2, 2)
+offset_left = 140.0
+offset_top = 330.0
+offset_right = 140.0
+offset_bottom = 330.0
 
 [node name="PartyInfo" type="GridContainer" parent="Panel"]
-layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
 scale = Vector2(0.8, 0.8)
@@ -41,10 +29,9 @@ columns = 4
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 offset_left = 25.0
-offset_top = 680.0
+offset_top = 320.0
 offset_right = 106.0
-offset_bottom = 816.0
-scale = Vector2(2, 2)
+offset_bottom = 456.0
 size_flags_horizontal = 3
 alignment = 1
 
@@ -63,18 +50,3 @@ text = "Defender"
 [node name="Button4" type="Button" parent="VBoxContainer"]
 layout_mode = 2
 text = "Fugir"
-
-[node name="LogPanel" type="Panel" parent="."]
-offset_left = 1250.0
-offset_top = 600.0
-offset_right = 1290.0
-offset_bottom = 640.0
-scale = Vector2(1.8, 1.8)
-
-[node name="LogTextEdit" type="TextEdit" parent="LogPanel"]
-custom_minimum_size = Vector2(250, 200)
-layout_mode = 0
-offset_right = 250.0
-offset_bottom = 200.0
-autowrap_mode = 1
-caret_blink_interval = 0.21

@@ -4,3 +4,5 @@
 
 [node name="BattleManager" type="Node"]
 script = ExtResource("1_ywaib")
+
+[node name="EnemySprites" type="Node2D" parent="."]
