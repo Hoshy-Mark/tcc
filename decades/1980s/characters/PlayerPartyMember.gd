@@ -6,7 +6,7 @@ signal leveled_up(new_level, who)
 var nome: String = "Hero"
 var hp: int = 100
 var mp: int = 30
-var strength: int = 10
+var strength: int = 60
 var defense: int = 5
 var speed: int = 8
 var max_hp: int = 100

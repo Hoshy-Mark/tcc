@@ -2,22 +2,84 @@ extends CanvasLayer
 
 signal action_selected(action_name: String)
 signal magic_selected(spell_name: String)
+signal target_selected(alvo)
+signal item_selected(item_name: String)
+
 
 @onready var magic_menu = $MagicMenu
 @onready var party_info = $Panel/PartyInfo
 @onready var log_text_edit = $LogPanel/LogTextEdit
+@onready var target_window = $WindowTargetSelection
+@onready var target_container = $WindowTargetSelection/VBoxContainerTargets
+@onready var item_window = $ItemWindow
+@onready var item_vbox = $ItemWindow/VBoxContainer
 
 func _ready():
 	$VBoxContainer/Button.text = "Atacar"
 	$VBoxContainer/Button2.text = "Magia"
 	$VBoxContainer/Button3.text = "Defender"
 	$VBoxContainer/Button4.text = "Fugir"
-
+	$VBoxContainer/Button5.text = "Item"
+	target_window.hide()
+	item_window.hide()
+	
+	$VBoxContainer/Button5.pressed.connect(func(): emit_signal("action_selected", "item"))
 	$VBoxContainer/Button.pressed.connect(func(): emit_signal("action_selected", "attack"))
 	$VBoxContainer/Button2.pressed.connect(func(): emit_signal("action_selected", "magic"))
 	$VBoxContainer/Button3.pressed.connect(func(): emit_signal("action_selected", "defend"))
 	$VBoxContainer/Button4.pressed.connect(func(): emit_signal("action_selected", "flee"))
+	
+func show_target_selection(alvos: Array, is_heal: bool) -> void:
+	clear_container(target_container)
+	target_window.popup_centered(Vector2i(200, 200))
 
+	for alvo in alvos:
+		var botao = Button.new()
+		botao.text = alvo.nome
+		botao.custom_minimum_size = Vector2(200, 60)  # Tamanho do botão
+
+		# Aumentar tamanho da fonte padrão (sem precisar carregar .tres)
+		botao.add_theme_font_size_override("font_size", 24)
+
+		# Conectar o botão
+		botao.pressed.connect(Callable(self, "_on_target_button_pressed").bind(alvo))
+		target_container.add_child(botao)
+
+	# Botão Voltar
+	var voltar_btn = Button.new()
+	voltar_btn.text = "Voltar"
+	voltar_btn.custom_minimum_size = Vector2(200, 60)
+	voltar_btn.add_theme_font_size_override("font_size", 24)
+	voltar_btn.pressed.connect(_on_voltar_target_btn_pressed)
+	target_container.add_child(voltar_btn)
+
+func show_item_menu(inventario: Dictionary) -> void:
+	clear_container(item_vbox)
+	item_window.popup_centered(Vector2i(150, 200))
+	
+	for item_name in inventario.keys():
+		var quantidade = inventario[item_name]
+		if quantidade <= 0:
+			continue
+
+		var botao = Button.new()
+		botao.text = "%s (x%d)" % [item_name, quantidade]
+		botao.pressed.connect(_on_item_button_pressed.bind(item_name))
+		item_vbox.add_child(botao)
+
+	# Botão Voltar
+	var voltar_btn = Button.new()
+	voltar_btn.text = "Voltar"
+	voltar_btn.pressed.connect(func(): 
+		item_window.hide()
+		set_enabled(true)
+	)
+	item_vbox.add_child(voltar_btn)
+
+func _on_target_button_pressed(alvo):
+	emit_signal("target_selected", alvo)
+	target_window.hide()
+	
 func set_enabled(enabled: bool):
 	$VBoxContainer/Button.disabled = not enabled
 	$VBoxContainer/Button2.disabled = not enabled
@@ -27,7 +89,15 @@ func set_enabled(enabled: bool):
 func add_log_entry(text: String) -> void:
 	log_text_edit.text += text + "\n"
 	log_text_edit.scroll_vertical = log_text_edit.get_line_count()  # Scroll automático
+
+func _on_voltar_target_btn_pressed():
+	target_window.hide()
+	set_enabled(true)
 	
+func _on_item_button_pressed(item_name: String):
+	item_window.hide()
+	emit_signal("item_selected", item_name)
+
 func update_enemy_status(enemies: Array) -> void:
 	clear_container($EnemyInfo)
 
@@ -78,7 +148,7 @@ func update_enemy_status(enemies: Array) -> void:
 func show_magic_menu(player: PlayerPartyMember) -> void:
 	print("DEBUG: Exibindo menu de magia para", player.nome)
 	clear()
-	magic_menu.popup_centered()
+	magic_menu.popup_centered(Vector2i(440, 200))  # Tamanho da janela
 
 	for spell_name in player.spells.keys():
 		var spell = player.spells[spell_name]
@@ -95,13 +165,19 @@ func show_magic_menu(player: PlayerPartyMember) -> void:
 		]
 		button.text = texto
 		button.disabled = (player.mp < spell.cost or slots_disponiveis <= 0)
-		button.pressed.connect(_on_spell_button_pressed.bind(spell_name))
 
+		# Igual aos botões do menu de alvo:
+		button.custom_minimum_size = Vector2(200, 60)
+		button.add_theme_font_size_override("font_size", 20)
+
+		button.pressed.connect(_on_spell_button_pressed.bind(spell_name))
 		magic_menu.get_node("VBoxContainer").add_child(button)
 
 	# Botão Voltar
 	var voltar_btn = Button.new()
 	voltar_btn.text = "Voltar"
+	voltar_btn.custom_minimum_size = Vector2(200, 60)
+	voltar_btn.add_theme_font_size_override("font_size", 24)
 	voltar_btn.pressed.connect(_on_voltar_btn_pressed)
 	magic_menu.get_node("VBoxContainer").add_child(voltar_btn)
 

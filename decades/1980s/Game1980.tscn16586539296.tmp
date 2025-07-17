@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://dpj1386a8ych2"]
+[gd_scene load_steps=4 format=3 uid="uid://dpj1386a8ych2"]
 
 [ext_resource type="Script" uid="uid://bd3bia7we4uh1" path="res://decades/1980s/Game1980.gd" id="1_bypbk"]
+[ext_resource type="PackedScene" uid="uid://vy3j4t2lk6vv" path="res://decades/1980s/BattleManager.tscn" id="4_o87xn"]
 [ext_resource type="Texture2D" uid="uid://c260ntt5qgt5n" path="res://assets/Background.jpg" id="5_o87xn"]
 
 [node name="Game1980" type="Node2D"]
@@ -15,3 +16,5 @@ texture = ExtResource("5_o87xn")
 offset_right = 40.0
 offset_bottom = 23.0
 text = "1980"
+
+[node name="BattleManager" parent="." instance=ExtResource("4_o87xn")]

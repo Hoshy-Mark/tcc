@@ -4,6 +4,9 @@ enum GameState { MENU, PLAYING, PAUSED, GAME_OVER }
 
 var current_state: GameState = GameState.MENU
 
+var saved_party_data : Array = []
+
+
 func start_game() -> void:
 	current_state = GameState.PLAYING
 	print("Estado: PLAYING")
@@ -19,3 +22,7 @@ func pause_game() -> void:
 func resume_game() -> void:
 	current_state = GameState.PLAYING
 	get_tree().paused = false
+	
+func resetar_dados() -> void:
+	saved_party_data.clear()
+	print("DEBUG: Dados salvos resetados!")

@@ -10,6 +10,7 @@ var strength: int = 6
 var defense: int = 2
 var speed: int = 4
 var xp_value = 50
+var id: String = ""
 
 
 func attack(target):

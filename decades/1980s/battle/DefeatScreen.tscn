@@ -30,3 +30,7 @@ text = "Jogar de Novo"
 [node name="ButtonMainMenu" type="Button" parent="VBoxContainer"]
 layout_mode = 2
 text = "Voltar ao Menu"
+
+[node name="ButtonLoad" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Carregar"
