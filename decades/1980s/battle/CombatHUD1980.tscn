@@ -14,14 +14,14 @@ offset_right = 40.0
 offset_bottom = 40.0
 
 [node name="EnemyInfo" type="GridContainer" parent="."]
-offset_left = 950.0
+offset_left = 180.0
 offset_top = 10.0
-offset_right = 1130.0
+offset_right = 360.0
 offset_bottom = 210.0
 scale = Vector2(2, 2)
 size_flags_horizontal = 3
 size_flags_vertical = 3
-columns = 2
+columns = 4
 
 [node name="Panel" type="Panel" parent="."]
 offset_left = 200.0

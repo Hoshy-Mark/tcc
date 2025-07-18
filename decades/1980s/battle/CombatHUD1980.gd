@@ -29,7 +29,7 @@ func _ready():
 	$VBoxContainer/Button3.pressed.connect(func(): emit_signal("action_selected", "defend"))
 	$VBoxContainer/Button4.pressed.connect(func(): emit_signal("action_selected", "flee"))
 	
-func show_target_selection(alvos: Array, is_heal: bool) -> void:
+func show_target_selection(alvos: Array, spell_type: String) -> void:
 	clear_container(target_container)
 	target_window.popup_centered(Vector2i(200, 200))
 
@@ -152,21 +152,35 @@ func show_magic_menu(player: PlayerPartyMember) -> void:
 
 	for spell_name in player.spells.keys():
 		var spell = player.spells[spell_name]
-		var slot_level = spell.level
+		var slot_level = spell.get("level", 1)
 		var slots_disponiveis = player.spell_slots.get(slot_level, 0)
 
 		var button = Button.new()
-		var texto = "%s | MP: %d | Poder: %d-%d | Slots: %d" % [
-			spell_name.capitalize(),
-			spell.cost,
-			spell.power,
-			spell.power_max,
-			slots_disponiveis
-		]
-		button.text = texto
-		button.disabled = (player.mp < spell.cost or slots_disponiveis <= 0)
 
-		# Igual aos botões do menu de alvo:
+		var texto = "%s | MP: %d | " % [spell_name.capitalize(), spell["cost"]]
+
+		match spell.get("type", "damage"):
+			"damage":
+				var power_min = spell.get("power", 0)
+				var power_max = spell.get("power_max", power_min)
+				texto += "Poder: %d-%d | " % [power_min, power_max]
+			"heal":
+				var power = spell.get("power", 0)
+				texto += "Cura: %d | " % [-power]  # mostra positivo
+			"buff":
+				var attr = spell.get("attribute", "atributo")
+				var amount = spell.get("amount", 0)
+				texto += "Buff %s %+d | " % [attr.capitalize(), amount]
+			"debuff":
+				var attr = spell.get("attribute", "atributo")
+				var amount = spell.get("amount", 0)
+				texto += "Debuff %s %d | " % [attr.capitalize(), amount]
+
+		texto += "Slots: %d" % slots_disponiveis
+
+		button.text = texto
+		button.disabled = (player.mp < spell["cost"] or slots_disponiveis <= 0)
+
 		button.custom_minimum_size = Vector2(200, 60)
 		button.add_theme_font_size_override("font_size", 20)
 
@@ -180,6 +194,7 @@ func show_magic_menu(player: PlayerPartyMember) -> void:
 	voltar_btn.add_theme_font_size_override("font_size", 24)
 	voltar_btn.pressed.connect(_on_voltar_btn_pressed)
 	magic_menu.get_node("VBoxContainer").add_child(voltar_btn)
+
 
 func _on_voltar_btn_pressed():
 	print("DEBUG: Jogador clicou em Voltar no menu de magia")
