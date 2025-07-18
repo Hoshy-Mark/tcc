@@ -57,26 +57,28 @@ func _load_party():
 			"mp": 30,
 			"level": 1,
 			"speed": 6,
+			"strength": 6,
 			"xp": 1,
 			"xp_to_next_level": 50,
-			"spell_slots": {1: 3, 2: 2, 3: 3, 4:4},
+			"spell_slots": {1: 3, 2: 2, 3: 3, 4:2},
 			"spells": {
-				"fogo": {"level": 1, "cost": 5, "power": 20, "power_max": 100, "type": "damage"},
-				"trovao": {"level": 2, "cost": 10, "power": 30, "power_max": 200, "type": "damage"},
-				"explosao": {"level": 3, "cost": 15, "power": 25, "power_max": 50, "type": "damage", "area": true},
-				"tempestade": {"level": 4, "cost": 10, "power": 15, "power_max": 30, "type": "damage", "area": true, "secondary_effect": {"type": "debuff", "attribute": "shock", "amount": -3, "duration": 2, "chance": 0.3}},
+				"fogo": {"level": 1, "cost": 5, "power": 10, "power_max": 15, "type": "damage"},
+				"trovao": {"level": 2, "cost": 10, "power": 15, "power_max": 30, "type": "damage"},
+				"explosao": {"level": 3, "cost": 15, "power": 10, "power_max": 15, "type": "damage", "area": true},
+				"tempestade": {"level": 4, "cost": 20, "power": 15, "power_max": 30, "type": "damage", "area": true, "secondary_effect": {"type": "debuff", "attribute": "shock", "amount": -3, "duration": 2, "chance": 0.3}},
 			}
 		}
 
 		var warrior_data = {
 			"nome": "Guerreiro",
-			"max_hp": 80,
-			"hp": 80,
-			"max_mp": 30,
-			"mp": 30,
+			"max_hp": 150,
+			"hp": 150,
+			"max_mp": 0,
+			"mp": 0,
 			"level": 1,
 			"xp": 1,
 			"speed": 3,
+			"strength": 15,
 			"xp_to_next_level": 50,
 			"spell_slots": {},
 			"spells": {}
@@ -84,12 +86,13 @@ func _load_party():
 
 		var white_mage_data = {
 			"nome": "Maga Branca",
-			"max_hp": 80,
-			"hp": 80,
+			"max_hp": 100,
+			"hp": 100,
 			"max_mp": 30,
 			"mp": 30,
 			"level": 1,
 			"speed": 6,
+			"strength": 8,
 			"xp": 1,
 			"xp_to_next_level": 50,
 			"spell_slots": {1: 3},
@@ -100,21 +103,22 @@ func _load_party():
 			}
 		}
 
-		var archer_data = {
-			"nome": "Arqueiro",
-			"max_hp": 80,
-			"hp": 80,
-			"max_mp": 30,
-			"mp": 30,
+		var thief_data = {
+			"nome": "Ladrão",
+			"max_hp": 60,
+			"hp": 60,
+			"max_mp": 0,
+			"mp": 0,
 			"level": 1,
 			"speed": 10,
+			"strength": 10,
 			"xp": 1,
 			"xp_to_next_level": 50,
 			"spell_slots": {},
 			"spells": {}
 		}
 
-		var characters_data = [black_mage_data, warrior_data, white_mage_data, archer_data]
+		var characters_data = [black_mage_data, warrior_data, white_mage_data, thief_data]
 
 		for char_data in characters_data:
 			var member = PlayerPartyMember.new()
@@ -171,7 +175,11 @@ func _get_average_party_level() -> int:
 	
 func _create_enemy_by_type(name: String) -> Enemy:
 	var enemy = Enemy.new()
+	var rng = RandomNumberGenerator.new()
+	rng.randomize()
+	enemy.id = "%s_%06d" % [name.to_lower().replace(" ", "_"), rng.randi_range(0, 999999)]
 	enemy.nome = name
+	
 	match name:
 		"Morcego":
 			enemy.max_hp = 30
@@ -543,13 +551,14 @@ func _on_magia_alvo_escolhido(alvo):
 		return
 
 	var efeito = caster.cast_spell(alvo, spell_name)
-
-	if tipo == "heal":
-		hud.update_party_info(party_members)
-		if efeito < 0:
-			hud.add_log_entry("%s lançou %s em %s e curou %d HP!" % [caster.nome, spell_name, alvo.nome, -efeito])
-		else:
-			hud.add_log_entry("%s tentou lançar %s, mas não teve efeito." % [caster.nome, spell_name])
+	
+	if typeof(efeito) == TYPE_INT or typeof(efeito) == TYPE_FLOAT:
+		if tipo == "heal":
+			hud.update_party_info(party_members)
+			if efeito < 0:
+				hud.add_log_entry("%s lançou %s em %s e curou %d HP!" % [caster.nome, spell_name, alvo.nome, -efeito])
+			else:
+				hud.add_log_entry("%s tentou lançar %s, mas não teve efeito." % [caster.nome, spell_name])
 
 	elif tipo == "buff" or tipo == "debuff":
 		var attr = spell_data.get("attribute", "atributo")
@@ -559,17 +568,20 @@ func _on_magia_alvo_escolhido(alvo):
 		hud.add_log_entry("%s lançou %s em %s e %s %s %d por %d turnos." % [caster.nome, spell_name, alvo.nome, acao, attr, abs(amt), dur])
 
 	else:
+		
 		hud.update_enemy_status(enemies)
-		if efeito > 0:
-			hud.add_log_entry("%s lançou %s em %s causando %d de dano!" % [caster.nome, spell_name, alvo.nome, efeito])
-			if alvo is Enemy and not alvo.is_alive():
-				hud.add_log_entry("%s foi derrotado!" % alvo.nome)
-				print("DEBUG: Inimigo %s morreu!" % alvo.nome)
 
-				for child in enemy_sprites_node.get_children():
-					if "enemy" in child and child.enemy.id == alvo.id:
-						child.desaparecer()
-						break
+		if typeof(efeito) == TYPE_INT or typeof(efeito) == TYPE_FLOAT:
+			if efeito > 0:
+				hud.add_log_entry("%s lançou %s em %s causando %d de dano!" % [caster.nome, spell_name, alvo.nome, efeito])
+				if alvo is Enemy and not alvo.is_alive():
+					hud.add_log_entry("%s foi derrotado!" % alvo.nome)
+					print("DEBUG: Inimigo %s morreu!" % alvo.nome)
+
+					for child in enemy_sprites_node.get_children():
+						if "enemy" in child and child.enemy.id == alvo.id:
+							child.desaparecer()
+							break
 		else:
 			hud.add_log_entry("%s tentou lançar %s, mas não teve efeito." % [caster.nome, spell_name])
 
