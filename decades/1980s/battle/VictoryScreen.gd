@@ -21,4 +21,3 @@ func _on_button_main_menu_pressed():
 func _on_button_save_pressed():
 	if battle_manager:
 		battle_manager._save_party_status()
-		print("Status salvo após vitória!")

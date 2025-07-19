@@ -38,7 +38,6 @@ func _init():
 
 	pass
 
-
 func setup(data: Dictionary) -> void:
 	nome = data.get("nome", nome)
 	max_mp = data.get("max_mp", max_mp)
@@ -66,9 +65,7 @@ func setup(data: Dictionary) -> void:
 
 func attack(target):
 	var accuracy_atacante = accuracy + int(randf() * 10) *  1.5
-	print(accuracy_atacante)
 	var evasion_alvo = target.evasion + int(randf() * 10)
-	print(evasion_alvo)
 	var accuracy_check = accuracy_atacante > evasion_alvo
 	if not accuracy_check:
 		return {"miss": true}
@@ -119,7 +116,6 @@ func cast_spell(targets, spell_name := "fogo"):
 	var spell_data = spells[spell_name]
 	var spell_level = spell_data.get("level", 1)
 	if not spell_slots.has(spell_level) or spell_slots[spell_level] <= 0:
-		print("Sem slots de magia nível %d disponíveis!" % spell_level)
 		return []
 
 	var base_cost = spell_data.get("cost", 0)
@@ -127,7 +123,6 @@ func cast_spell(targets, spell_name := "fogo"):
 	var final_cost = max(reduced_cost, 1)
 
 	if mp < final_cost:
-		print("Sem MP suficiente!")
 		return []
 
 	mp -= final_cost
@@ -184,6 +179,7 @@ func cast_spell(targets, spell_name := "fogo"):
 		result.append({ "alvo": alvo, "efeito": efeito })
 
 	return result
+
 func try_escape():
 	return randf() < 0.5
 
@@ -193,7 +189,7 @@ func defend():
 func take_damage(amount):
 	var damage_taken = amount
 	if is_defending:
-		damage_taken = int(amount / 2)
+		damage_taken = int(amount * 0.8)  # Reduz 20%
 		is_defending = false
 	hp -= damage_taken
 	hp = max(hp, 0)
@@ -216,11 +212,46 @@ func gain_xp(amount: int):
 
 func level_up():
 	level += 1
-	xp_to_next_level = int(xp_to_next_level + 100)
-	vitality += 1
-	max_mp += 5
-	strength += 2
-	defense += 1
-	speed += 1
+	xp_to_next_level += 100
+
+	match nome:
+		"Mago Negro":
+			vitality += 1
+			intelligence += 2
+			magic_power += 2
+			magic_defense += 1
+			max_mp += 10
+		"Guerreiro":
+			vitality += 2
+			strength += 3
+			defense += 2
+			speed += 1
+		"Maga Branca":
+			intelligence += 1
+			magic_power += 1
+			magic_defense += 2
+			vitality += 1
+			max_mp += 10
+		"Ladrao":
+			speed += 2
+			evasion += 2
+			accuracy += 1
+			luck += 2
+			vitality += 1
+		_:
+			# genérico
+			vitality += 1
+			strength += 1
+			defense += 1
+			speed += 1
+			max_mp += 5
+
+	max_hp = vitality * 10
 	hp = max_hp
 	mp = max_mp
+
+func update_status_effects() -> void:
+	active_status_effects.clear()
+	for effect in active_status_effects:
+		if effect.duration > 0:
+			active_status_effects.append(effect)

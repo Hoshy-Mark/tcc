@@ -31,10 +31,9 @@ func _update_visual():
 		var config = VISUAL_CONFIG[enemy.nome]
 		texture = config["texture"]
 		scale = config["scale"]
-	else:
-		print("⚠️ Sem configuração visual para: ", enemy.nome)
+		if enemy.nome != "Orc":
+			flip_h = true
 
-	flip_h = true
 
 func set_enemy(e):
 	enemy = e

@@ -116,11 +116,11 @@ func _load_party():
 			"level": 1,
 			"xp": 1,
 			"xp_to_next_level": 100,
-			"spell_slots": {1: 3},
+			"spell_slots": {1: 5},
 			"spells": {
 				"cura": {"level": 1, "cost": 5, "power": -10, "power_max": -10, "type": "heal"},
-				"protecao": {"level": 1, "cost": 5, "type": "buff", "attribute": "defense", "amount": 3, "duration": 3},
-				"lentidao": {"level": 1, "cost": 5, "type": "debuff", "attribute": "speed", "amount": -2, "duration": 3}
+				"protecao": {"level": 2, "cost": 5, "type": "buff", "attribute": "defense", "amount": 3, "duration": 3},
+				"lentidao": {"level": 2, "cost": 5, "type": "debuff", "attribute": "speed", "amount": -2, "duration": 3}
 			}
 		}
 
@@ -171,7 +171,6 @@ func _on_player_action_selected(action_name: String):
 			hud.target_selected.connect(_on_alvo_ataque_selecionado)
 			hud.show_target_selection(alvos_validos, "attack")
 		"magic":
-			print("DEBUG: Chamando _executar_acao_magia")
 			_executar_acao_magia(jogador_atual)
 		"defend":
 			_executar_defesa(jogador_atual)
@@ -221,98 +220,34 @@ func _on_item_alvo_escolhido(alvo, item_name: String):
 
 	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 	_finalizar_turno()
-	
-func _executar_acao_ataque(actor, alvo):
-	state = BattleState.EXECUTANDO_ACAO
 
-	if alvo:
-		var resultado = actor.attack(alvo)
-
-		# Verificar se o ataque errou
-		if resultado.has("miss") and resultado["miss"]:
-			hud.add_log_entry("%s tentou atacar %s, mas errou!" % [actor.nome, alvo.nome])
-			print("DEBUG: Ataque errou.")
-		
-		else:	
-			var dano = resultado["damage"]
-			var is_crit = resultado["crit"]
-
-			print(actor.nome)
-			print(alvo.nome)
-
-			if is_crit:
-				hud.add_log_entry("%s acertou um **CRÍTICO** em %s causando %d de dano!" % [actor.nome, alvo.nome, dano])
-			else:
-				hud.add_log_entry("%s atacou %s causando %d de dano." % [actor.nome, alvo.nome, dano])
-
-			print("DEBUG: Ataque executado, dano: %d (Crítico: %s), alvo HP atual: %d" %
-				[dano, str(is_crit), alvo.current_hp if "current_hp" in alvo else alvo.hp])
-
-			if alvo is Enemy and not alvo.is_alive():
-				hud.add_log_entry("%s foi derrotado!" % alvo.nome)
-				print("DEBUG: Inimigo %s morreu!" % alvo.nome)
-
-				# Buscar e remover o sprite correspondente
-				for child in enemy_sprites_node.get_children():
-					if "enemy" in child and child.enemy.id == alvo.id:
-						child.desaparecer()
-						break
-
-		hud.update_party_info(party_members)
-		hud.update_enemy_status(enemies)
-	
-	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-	_finalizar_turno()
-	
 func _executar_acao_magia(actor):
 	state = BattleState.EXECUTANDO_ACAO
 
 	if actor is PlayerPartyMember:
-		state = BattleState.ESPERANDO_COMANDO		
-		if hud.magic_selected.is_connected(_on_magia_escolhida):
-			hud.magic_selected.disconnect(_on_magia_escolhida)
-		
-		hud.magic_selected.connect(_on_magia_escolhida)
-		hud.show_magic_menu(actor)
+		state = BattleState.ESPERANDO_COMANDO
+
+		# Garante que a conexão com o sinal ocorra apenas uma vez
+		if not hud.magic_selected.is_connected(_on_magia_escolhida):
+			hud.magic_selected.connect(_on_magia_escolhida)
+
+		# Filtra magias desbloqueadas de acordo com o nível atual
+		var magias_desbloqueadas := {}
+		for nome_magia in actor.spells.keys():
+			var dados_magia = actor.spells[nome_magia]
+			if dados_magia.get("level", 1) <= actor.level:
+				magias_desbloqueadas[nome_magia] = dados_magia
+
+		if magias_desbloqueadas.is_empty():
+			hud.add_log_entry("%s ainda não possui magias desbloqueadas." % actor.nome)
+			await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+			_esperar_comando_do_jogador(actor)
+			return
+
+		hud.show_magic_menu(actor, magias_desbloqueadas)
 	else:
 		hud.add_log_entry("%s não tem magia para usar." % actor.nome)
 		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-		_finalizar_turno()
-		
-func _executar_defesa(actor):
-	if actor is PlayerPartyMember:
-		state = BattleState.EXECUTANDO_ACAO
-		actor.defend()
-		hud.add_log_entry("%s está defendendo." % actor.nome)
-		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-		_finalizar_turno()
-	else:
-		# inimigos não defendem (ou implementar se quiser)
-		_finalizar_turno()
-
-func _tentar_fugir(actor):
-	if actor is PlayerPartyMember:
-		state = BattleState.EXECUTANDO_ACAO
-
-		var velocidade_party = 0
-		for p in party_members:
-			velocidade_party += p.speed
-		var velocidade_inimigos = 0
-		for e in enemies:
-			velocidade_inimigos += e.speed
-
-		var chance_fuga = 50 + (velocidade_party - velocidade_inimigos) * 5
-		chance_fuga = clamp(chance_fuga, 10, 90)
-
-		var sucesso = randi() % 100 < chance_fuga
-		if sucesso:
-			hud.add_log_entry("%s conseguiu fugir!" % actor.nome)
-			_encerrar_combate("fuga")
-
-		else:
-			hud.add_log_entry("%s tentou fugir e falhou." % actor.nome)
-			_finalizar_turno()
-	else:
 		_finalizar_turno()
 
 func _on_magia_escolhida(spell_name: String):
@@ -369,7 +304,6 @@ func _on_magia_alvo_escolhido(alvo):
 		hud.target_selected.disconnect(_on_magia_alvo_escolhido)
 
 	var spell_name = hud.get_meta("spell_name")
-	var is_heal = hud.get_meta("is_heal")
 	var caster = hud.get_meta("caster")
 	var spell_data = caster.spells[spell_name]
 	var tipo = spell_data.get("type", "damage")
@@ -486,7 +420,76 @@ func _escolher_aliado_para_curar():
 		return null
 	vivos.sort_custom(func(a, b): return float(a.hp) / a.max_hp - float(b.hp) / b.max_hp)
 	return vivos[0]
+	
+func _executar_acao_ataque(actor, alvo):
+	state = BattleState.EXECUTANDO_ACAO
 
+	if alvo:
+		var resultado = actor.attack(alvo)
+
+		# Verificar se o ataque errou
+		if resultado.has("miss") and resultado["miss"]:
+			hud.add_log_entry("%s tentou atacar %s, mas errou!" % [actor.nome, alvo.nome])
+
+		else:	
+			var dano = resultado["damage"]
+			var is_crit = resultado["crit"]
+
+			if is_crit:
+				hud.add_log_entry("%s acertou um **CRÍTICO** em %s causando %d de dano!" % [actor.nome, alvo.nome, dano])
+			else:
+				hud.add_log_entry("%s atacou %s causando %d de dano." % [actor.nome, alvo.nome, dano])
+
+			if alvo is Enemy and not alvo.is_alive():
+				hud.add_log_entry("%s foi derrotado!" % alvo.nome)
+
+				# Buscar e remover o sprite correspondente
+				for child in enemy_sprites_node.get_children():
+					if "enemy" in child and child.enemy.id == alvo.id:
+						child.desaparecer()
+						break
+
+		hud.update_party_info(party_members)
+		hud.update_enemy_status(enemies)
+	
+	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+	_finalizar_turno()
+	
+func _executar_defesa(actor):
+	if actor is PlayerPartyMember:
+		state = BattleState.EXECUTANDO_ACAO
+		actor.defend()
+		hud.add_log_entry("%s está defendendo." % actor.nome)
+		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+		_finalizar_turno()
+	else:
+		# inimigos não defendem (ou implementar se quiser)
+		_finalizar_turno()
+
+func _tentar_fugir(actor):
+	if actor is PlayerPartyMember:
+		state = BattleState.EXECUTANDO_ACAO
+
+		var velocidade_party = 0
+		for p in party_members:
+			velocidade_party += p.speed
+		var velocidade_inimigos = 0
+		for e in enemies:
+			velocidade_inimigos += e.speed
+
+		var chance_fuga = 50 + (velocidade_party - velocidade_inimigos) * 5
+		chance_fuga = clamp(chance_fuga, 10, 90)
+
+		var sucesso = randi() % 100 < chance_fuga
+		if sucesso:
+			hud.add_log_entry("%s conseguiu fugir!" % actor.nome)
+			_encerrar_combate("fuga")
+
+		else:
+			hud.add_log_entry("%s tentou fugir e falhou." % actor.nome)
+			_finalizar_turno()
+	else:
+		_finalizar_turno()
 
 # AÇÕES DO INIMIGO
 
@@ -522,22 +525,29 @@ func _load_enemies():
 
 		var enemy_sprite = enemy_sprite_scene.instantiate()
 		enemy_sprite.set_enemy(enemy)
-		enemy_sprite.position = ENEMY_POSITIONS[i]
+
+		if num_to_generate == 1:
+			enemy_sprite.position = Vector2(950, 400)
+		else:
+			enemy_sprite.position = ENEMY_POSITIONS[i]
+
 		enemy_sprites_node.add_child(enemy_sprite)
 
 	hud.update_enemy_status(enemies)
 	
-func _create_enemy_by_type(name: String) -> Enemy:
+func _create_enemy_by_type(nome: String) -> Enemy:
 	var enemy = Enemy.new()
 	var rng = RandomNumberGenerator.new()
 	rng.randomize()
 	enemy.id = "%s_%06d" % [name.to_lower().replace(" ", "_"), rng.randi_range(0, 999999)]
-	enemy.nome = name
+	enemy.nome = nome
 	
-	match name:
+	match nome:
 		"Morcego":
 			enemy.max_hp = 30
 			enemy.strength = 10
+			enemy.defense = 3
+			enemy.magic_defense = 1
 			enemy.accuracy = 10
 			enemy.evasion = 15
 			enemy.luck = 3
@@ -547,6 +557,8 @@ func _create_enemy_by_type(name: String) -> Enemy:
 			enemy.max_hp = 50
 			enemy.accuracy = 10
 			enemy.strength = 15
+			enemy.defense = 3
+			enemy.magic_defense = 2
 			enemy.evasion = 5
 			enemy.luck = 5
 			enemy.speed = 7
@@ -554,6 +566,8 @@ func _create_enemy_by_type(name: String) -> Enemy:
 		"Little Orc":
 			enemy.max_hp = 100
 			enemy.strength = 30
+			enemy.defense = 5
+			enemy.magic_defense = 4
 			enemy.accuracy = 15
 			enemy.evasion = 8
 			enemy.luck = 10
@@ -563,6 +577,8 @@ func _create_enemy_by_type(name: String) -> Enemy:
 			enemy.max_hp = 300
 			enemy.strength = 50
 			enemy.accuracy = 20
+			enemy.defense = 8
+			enemy.magic_defense = 8
 			enemy.luck = 15
 			enemy.evasion = 10
 			enemy.speed = 3
@@ -573,6 +589,7 @@ func _create_enemy_by_type(name: String) -> Enemy:
 	return enemy
 
 func _executar_acao_inimiga(enemy):
+	enemy.process_status_effects()
 	state = BattleState.EXECUTANDO_ACAO
 	var target = _escolher_alvo_aleatorio(party_members)
 	if target:
@@ -580,7 +597,6 @@ func _executar_acao_inimiga(enemy):
 
 		if resultado.has("miss") and resultado["miss"]:
 			hud.add_log_entry("%s tentou atacar %s, mas errou!" % [enemy.nome, target.nome])
-			print("DEBUG: Inimigo %s errou o ataque contra %s" % [enemy.nome, target.nome])
 		else:
 			var dano = resultado["damage"]
 			var is_crit = resultado["crit"]
@@ -589,9 +605,6 @@ func _executar_acao_inimiga(enemy):
 				hud.add_log_entry("%s acertou um **CRÍTICO** em %s causando %d de dano!" % [enemy.nome, target.nome, dano])
 			else:
 				hud.add_log_entry("%s atacou %s e causou %d de dano." % [enemy.nome, target.nome, dano])
-
-			print("DEBUG: Inimigo %s atacou %s - Dano: %d (Crítico: %s)" %
-				[enemy.nome, target.nome, dano, str(is_crit)])
 
 	turn_index += 1
 	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
@@ -614,29 +627,30 @@ func _sort_turn_order():
 
 	var all_characters = []
 
+	# Atualiza efeitos ativos e adiciona todos os vivos
 	for member in party_members:
 		if member.is_alive():
+			member.update_status_effects()  # <-- ESSENCIAL
 			all_characters.append(member)
 
 	for enemy in enemies:
 		if enemy.is_alive():
+			enemy.update_status_effects()  # <-- ESSENCIAL
 			all_characters.append(enemy)
 
-	# Ordena manualmente do maior para o menor speed
+	# Ordena manualmente do maior para o menor speed modificado
 	for character in all_characters:
+		var modified_speed = character.get_modified_stat(character.speed, "speed")
 		var inserted = false
 		for i in range(turn_order.size()):
-			if character.speed > turn_order[i].speed:
+			var other_speed = turn_order[i].get_modified_stat(turn_order[i].speed, "speed")
+			if modified_speed > other_speed:
 				turn_order.insert(i, character)
 				inserted = true
 				break
 		if not inserted:
 			turn_order.append(character)
 
-	# Debug
-	print("Ordem de turnos:")
-	for c in turn_order:
-		print("%s - Velocidade: %d" % [c.nome, c.speed])
 
 func _speed_sort(a, b):
 	return b.speed - a.speed
@@ -665,8 +679,10 @@ func _start_turn():
 
 func _esperar_comando_do_jogador(player):
 	state = BattleState.ESPERANDO_COMANDO
+	player.process_status_effects()
 	hud.set_enabled(true)
 	hud.add_log_entry("%s está se preparando para agir..." % player.nome)
+	
 
 func _finalizar_turno():
 	
@@ -738,7 +754,6 @@ func _save_party_status():
 		saved_data.append(member_data)
 	
 	GameManager.saved_party_data = saved_data
-	print("DEBUG: Status da party salvo com sucesso!")
 	
 func _dar_xp_para_party(xp_por_membro: int):
 	for member in party_members:

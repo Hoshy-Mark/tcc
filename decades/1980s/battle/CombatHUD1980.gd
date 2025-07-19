@@ -12,6 +12,7 @@ signal item_selected(item_name: String)
 @onready var target_window = $WindowTargetSelection
 @onready var target_container = $WindowTargetSelection/ScrollContainer/VBoxContainer
 @onready var item_window = $ItemWindow
+@onready var enemy_info = $EnemyInfo
 @onready var item_vbox = $ItemWindow/ScrollContainer/VBoxContainer
 
 func _ready():
@@ -45,7 +46,7 @@ func _ready():
 	$VBoxContainer/Button3.pressed.connect(func(): emit_signal("action_selected", "defend"))
 	$VBoxContainer/Button4.pressed.connect(func(): emit_signal("action_selected", "flee"))
 	
-func show_target_selection(alvos: Array, spell_type: String) -> void:
+func show_target_selection(alvos: Array, _spell_type: String) -> void:
 	clear(target_window)
 
 	var max_button_width := 0
@@ -129,6 +130,7 @@ func set_enabled(enabled: bool):
 	$VBoxContainer/Button2.disabled = not enabled
 	$VBoxContainer/Button3.disabled = not enabled
 	$VBoxContainer/Button4.disabled = not enabled
+	$VBoxContainer/Button5.disabled = not enabled
 
 func add_log_entry(text: String) -> void:
 
@@ -147,16 +149,17 @@ func _on_item_button_pressed(item_name: String):
 func update_enemy_status(enemies: Array) -> void:
 	clear_container($EnemyInfo)
 
-	for enemy in enemies:
-		# Painel com estilo
+	if enemies.size() == 1:
+		var enemy = enemies[0]
+
 		var panel = Panel.new()
 		var style = StyleBoxFlat.new()
-		style.bg_color = Color(0.15, 0, 0)  # Fundo avermelhado escuro
+		style.bg_color = Color(0.15, 0, 0)
 		style.border_width_left = 2
 		style.border_width_top = 2
 		style.border_width_right = 2
 		style.border_width_bottom = 2
-		style.border_color = Color(1, 0.3, 0.3)  # Borda vermelha
+		style.border_color = Color(1, 0.3, 0.3)
 		style.corner_radius_top_left = 4
 		style.corner_radius_top_right = 4
 		style.corner_radius_bottom_left = 4
@@ -164,19 +167,18 @@ func update_enemy_status(enemies: Array) -> void:
 		panel.add_theme_stylebox_override("panel", style)
 		panel.custom_minimum_size = Vector2(180, 100)
 
-		# Margem interna
 		var margin_container = MarginContainer.new()
 		margin_container.add_theme_constant_override("margin_left", 8)
 		margin_container.add_theme_constant_override("margin_top", 8)
 		margin_container.add_theme_constant_override("margin_right", 8)
 		margin_container.add_theme_constant_override("margin_bottom", 8)
 
-		# Conteúdo
 		var box = VBoxContainer.new()
+		box.alignment = BoxContainer.ALIGNMENT_CENTER
 
 		var name_label = Label.new()
 		name_label.text = enemy.nome
-		name_label.add_theme_color_override("font_color", Color(1, 0.5, 0.5))  # Destaque vermelho claro
+		name_label.add_theme_color_override("font_color", Color(1, 0.5, 0.5))
 		box.add_child(name_label)
 
 		var hp_label = Label.new()
@@ -189,9 +191,56 @@ func update_enemy_status(enemies: Array) -> void:
 
 		margin_container.add_child(box)
 		panel.add_child(margin_container)
-		$EnemyInfo.add_child(panel)
+		enemy_info.set_position(Vector2(790, 10))
 
-func show_magic_menu(player: PlayerPartyMember) -> void:
+		$EnemyInfo.add_child(panel)
+	else:
+		for enemy in enemies:
+			var panel = Panel.new()
+			var style = StyleBoxFlat.new()
+			style.bg_color = Color(0.15, 0, 0)
+			style.border_width_left = 2
+			style.border_width_top = 2
+			style.border_width_right = 2
+			style.border_width_bottom = 2
+			style.border_color = Color(1, 0.3, 0.3)
+			style.corner_radius_top_left = 4
+			style.corner_radius_top_right = 4
+			style.corner_radius_bottom_left = 4
+			style.corner_radius_bottom_right = 4
+			panel.add_theme_stylebox_override("panel", style)
+			panel.custom_minimum_size = Vector2(180, 100)
+
+			var margin_container = MarginContainer.new()
+			margin_container.add_theme_constant_override("margin_left", 8)
+			margin_container.add_theme_constant_override("margin_top", 8)
+			margin_container.add_theme_constant_override("margin_right", 8)
+			margin_container.add_theme_constant_override("margin_bottom", 8)
+
+			var box = VBoxContainer.new()
+
+			var name_label = Label.new()
+			name_label.text = enemy.nome
+			name_label.add_theme_color_override("font_color", Color(1, 0.5, 0.5))
+			box.add_child(name_label)
+
+			var hp_label = Label.new()
+			hp_label.text = "HP: %d/%d" % [enemy.current_hp, enemy.max_hp]
+			box.add_child(hp_label)
+
+			var mp_label = Label.new()
+			mp_label.text = "MP: %d/%d" % [enemy.current_mp, enemy.max_mp]
+			box.add_child(mp_label)
+
+			margin_container.add_child(box)
+			panel.add_child(margin_container)
+			$EnemyInfo.add_child(panel)
+
+func show_magic_menu(player: PlayerPartyMember, magias := {}) -> void:
+	# Usa todas as magias se nenhuma lista personalizada for passada
+	if magias.is_empty():
+		magias = player.spells
+
 	clear(magic_menu)
 
 	var scroll = magic_menu.get_node("ScrollContainer")
@@ -199,8 +248,8 @@ func show_magic_menu(player: PlayerPartyMember) -> void:
 
 	var max_button_width := 0
 
-	for spell_name in player.spells.keys():
-		var spell = player.spells[spell_name]
+	for spell_name in magias.keys():
+		var spell = magias[spell_name]
 		var slot_level = spell.get("level", 1)
 		var slots_disponiveis = player.spell_slots.get(slot_level, 0)
 
@@ -235,7 +284,7 @@ func show_magic_menu(player: PlayerPartyMember) -> void:
 		# Medir largura do texto
 		var font := button.get_theme_font("font")
 		var font_size := button.get_theme_font_size("font_size")
-		var width := font.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + 40  # margem extra
+		var width := font.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + 40
 		max_button_width = max(max_button_width, width)
 
 	# Botão Voltar
@@ -246,15 +295,12 @@ func show_magic_menu(player: PlayerPartyMember) -> void:
 	voltar_btn.pressed.connect(_on_voltar_btn_pressed)
 	vbox.add_child(voltar_btn)
 
-	# Recalcula largura ideal
-	max_button_width = max(max_button_width, 200)  # valor mínimo
-
-	# Tamanho final do popup (altura fixa, largura dinâmica)
+	max_button_width = max(max_button_width, 200)
 	var popup_height := 300
 	magic_menu.set_size(Vector2(max_button_width, popup_height))
 	scroll.custom_minimum_size = Vector2(max_button_width, popup_height)
-	magic_menu.popup()  # mostra sem centralizar
-
+	magic_menu.popup_centered(Vector2(max_button_width, popup_height))  # Centraliza
+	
 func _on_voltar_btn_pressed():
 	magic_menu.hide()
 	set_enabled(true)

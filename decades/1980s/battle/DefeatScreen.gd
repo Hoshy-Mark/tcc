@@ -15,7 +15,6 @@ func _on_button_main_menu_pressed():
 
 func _on_button_load_pressed():
 	if GameManager.saved_party_data.size() > 0:
-		print("Progresso carregado com sucesso!")
 		get_tree().change_scene_to_file("res://decades/1980s/Game1980.tscn")
 	else:
 		print("Nenhum progresso salvo encontrado.")
