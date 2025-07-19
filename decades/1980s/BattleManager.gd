@@ -70,6 +70,7 @@ func _load_party():
 			"xp": 1,
 			"xp_to_next_level": 100,
 			"spell_slots": {1: 3, 2: 2, 3: 3, 4:2},
+			"max_spell_slots": {1: 3, 2: 2, 3: 3, 4:2},
 			"spells": {
 				"fogo": {"level": 1, "cost": 5, "power": 10, "power_max": 15, "type": "damage", "hit_chance": 100},
 				"trovao": {"level": 2, "cost": 10, "power": 15, "power_max": 30, "type": "damage", "hit_chance": 75},
@@ -116,7 +117,8 @@ func _load_party():
 			"level": 1,
 			"xp": 1,
 			"xp_to_next_level": 100,
-			"spell_slots": {1: 5},
+			"spell_slots": {1: 5, 2: 3, 3: 3, 4:2},
+			"max_spell_slots": {1: 5, 2: 3, 3: 3, 4:2},
 			"spells": {
 				"cura": {"level": 1, "cost": 5, "power": -10, "power_max": -10, "type": "heal"},
 				"protecao": {"level": 2, "cost": 5, "type": "buff", "attribute": "defense", "amount": 3, "duration": 3},
@@ -743,13 +745,16 @@ func _save_party_status():
 			"speed": member.speed,
 			"hp": member.hp,
 			"max_hp": member.max_hp,
-			"mp": member.mp,
+			"mp": member.max_mp,
 			"max_mp": member.max_mp,
 			"level": member.level,
 			"xp": member.xp,
 			"xp_to_next_level": member.xp_to_next_level,
 			"spells": member.spells,
-			"spell_slots": member.spell_slots
+			"spell_slots": {
+				"current": member.spell_slots,
+				"max": member.max_spell_slots
+			}
 		}
 		saved_data.append(member_data)
 	

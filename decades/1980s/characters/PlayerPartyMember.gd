@@ -22,11 +22,8 @@ var magic_power: int = 0
 var magic_defense: int = 0
 var luck: int = 0
 
-var spell_slots := {
-	1: 3,
-	2: 2,
-	3: 1
-}
+var spell_slots := {}
+var max_spell_slots := {}
 
 var active_status_effects: Array[StatusEffect] = []
 
@@ -48,7 +45,13 @@ func setup(data: Dictionary) -> void:
 	level = data.get("level", level)
 	xp = data.get("xp", xp)
 	xp_to_next_level = data.get("xp_to_next_level", xp_to_next_level)
-	spell_slots = data.get("spell_slots", spell_slots)
+	var slots_data = data.get("spell_slots", {})
+	if typeof(slots_data) == TYPE_DICTIONARY and slots_data.has("current") and slots_data.has("max"):
+		spell_slots = slots_data["current"]
+		max_spell_slots = slots_data["max"]
+	else:
+		spell_slots = slots_data
+		max_spell_slots = slots_data.duplicate()
 	spells = data.get("spells", {})
 	strength = data.get("strength", strength)
 	defense = data.get("defense", defense)
@@ -221,6 +224,16 @@ func level_up():
 			magic_power += 2
 			magic_defense += 1
 			max_mp += 10
+			# Aumenta 1 slot do nível atual e de todos os anteriores
+			for i in range(1, level + 1):
+				if not max_spell_slots.has(i):
+					max_spell_slots[i] = 1
+				else:
+					max_spell_slots[i] += 1
+
+			# Restaura os slots para o novo máximo
+			for key in max_spell_slots.keys():
+				spell_slots[key] = max_spell_slots[key]
 		"Guerreiro":
 			vitality += 2
 			strength += 3
@@ -232,6 +245,16 @@ func level_up():
 			magic_defense += 2
 			vitality += 1
 			max_mp += 10
+
+			for i in range(1, level + 1):
+				if not max_spell_slots.has(i):
+					max_spell_slots[i] = 1
+				else:
+					max_spell_slots[i] += 1
+
+			# Restaura os slots para o novo máximo
+			for key in max_spell_slots.keys():
+				spell_slots[key] = max_spell_slots[key]
 		"Ladrao":
 			speed += 2
 			evasion += 2

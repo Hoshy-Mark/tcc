@@ -299,7 +299,7 @@ func show_magic_menu(player: PlayerPartyMember, magias := {}) -> void:
 	var popup_height := 300
 	magic_menu.set_size(Vector2(max_button_width, popup_height))
 	scroll.custom_minimum_size = Vector2(max_button_width, popup_height)
-	magic_menu.popup_centered(Vector2(max_button_width, popup_height))  # Centraliza
+	magic_menu.popup()
 	
 func _on_voltar_btn_pressed():
 	magic_menu.hide()
