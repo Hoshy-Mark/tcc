@@ -13,12 +13,34 @@ var xp_value = 50
 var id: String = ""
 var status_effects: Array = []
 var active_status_effects: Array = []
+var accuracy: int = 0
+var evasion: int = 0
+var intelligence: int = 0
+var magic_power: int = 0
+var magic_defense: int = 0
+var luck: int = 0
 
 func attack(target):
-	var base_damage = strength - target.defense
-	var damage = max(base_damage + randi() % 6 - 2, 1)
+	var accuracy_atacante = accuracy + int(randf() * 10) *  1.5
+	print(accuracy_atacante)
+	var evasion_alvo = target.evasion + int(randf() * 10)
+	print(evasion_alvo)
+	var accuracy_check = accuracy_atacante > evasion_alvo
+	if not accuracy_check:
+		return {"miss": true}
+
+	var base_damage = max(1, strength - target.get_modified_stat(target.defense, "defense"))
+	var damage_variation = randi() % 6 - 2
+	var damage = max(base_damage + damage_variation, 1)
+
+	# Crítico
+	var is_crit = randf() < (luck * 0.01)
+	if is_crit:
+		damage = int(damage * 1.5)
+
 	target.take_damage(damage)
-	return damage
+	return {"damage": damage, "crit": is_crit}
+
 
 func take_damage(amount):
 	current_hp -= int(amount)

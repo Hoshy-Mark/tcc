@@ -14,6 +14,13 @@ var max_mp: int = 30
 var level: int = 1
 var xp: int = 0
 var xp_to_next_level: int = 50
+var vitality: int = 0
+var accuracy: int = 0
+var evasion: int = 0
+var intelligence: int = 0
+var magic_power: int = 0
+var magic_defense: int = 0
+var luck: int = 0
 
 var spell_slots := {
 	1: 3,
@@ -23,19 +30,17 @@ var spell_slots := {
 
 var active_status_effects: Array[StatusEffect] = []
 
-var spells := {}  # Agora será dicionário de dados, não Spell objects
+var spells := {}
 
 var is_defending: bool = false
 
 func _init():
-	# Só inicialização básica aqui, para evitar sobrescrever spells que virão pelo setup
+
 	pass
 
-# Configura personagem com dados genéricos vindos de um dicionário
+
 func setup(data: Dictionary) -> void:
 	nome = data.get("nome", nome)
-	max_hp = data.get("max_hp", max_hp)
-	hp = data.get("hp", max_hp)
 	max_mp = data.get("max_mp", max_mp)
 	mp = data.get("mp", max_mp)
 	strength = data.get("strength", strength)
@@ -46,12 +51,39 @@ func setup(data: Dictionary) -> void:
 	xp_to_next_level = data.get("xp_to_next_level", xp_to_next_level)
 	spell_slots = data.get("spell_slots", spell_slots)
 	spells = data.get("spells", {})
+	strength = data.get("strength", strength)
+	defense = data.get("defense", defense)
+	speed = data.get("speed", speed)
+	vitality = data.get("vitality", 10)
+	accuracy = data.get("accuracy", 10)
+	evasion = data.get("evasion", 5)
+	intelligence = data.get("intelligence", 5)
+	magic_power = data.get("magic_power", 5)
+	magic_defense = data.get("magic_defense", 5)
+	luck = data.get("luck", 5)
+	max_hp = vitality * 10
+	hp = data.get("hp", max_hp)
 
 func attack(target):
-	var base_damage = strength - target.get_modified_stat(target.defense, "defense")
-	var damage = max(base_damage + randi() % 6 - 3, 1)
+	var accuracy_atacante = accuracy + int(randf() * 10) *  1.5
+	print(accuracy_atacante)
+	var evasion_alvo = target.evasion + int(randf() * 10)
+	print(evasion_alvo)
+	var accuracy_check = accuracy_atacante > evasion_alvo
+	if not accuracy_check:
+		return {"miss": true}
+
+	var base_damage = max(1, strength - target.get_modified_stat(target.defense, "defense"))
+	var damage_variation = randi() % 6 - 2
+	var damage = max(base_damage + damage_variation, 1)
+
+	# Crítico
+	var is_crit = randf() < (luck * 0.01)
+	if is_crit:
+		damage = int(damage * 1.5)
+
 	target.take_damage(damage)
-	return damage
+	return {"damage": damage, "crit": is_crit}
 
 func apply_status_effect(effect: StatusEffect):
 	for i in range(active_status_effects.size()):
@@ -90,19 +122,19 @@ func cast_spell(targets, spell_name := "fogo"):
 		print("Sem slots de magia nível %d disponíveis!" % spell_level)
 		return []
 
-	var cost = spell_data.get("cost", 0)
-	if mp < cost:
+	var base_cost = spell_data.get("cost", 0)
+	var reduced_cost = int(base_cost * (1.0 - intelligence * 0.01))
+	var final_cost = max(reduced_cost, 1)
+
+	if mp < final_cost:
 		print("Sem MP suficiente!")
 		return []
 
-	# Gasta só 1 slot e 1 custo de MP aqui, uma vez só
+	mp -= final_cost
 	spell_slots[spell_level] -= 1
-	mp -= cost
 
-	var is_area = spell_data.get("area", false)
 	var result = []
 
-	# Transforma 'targets' em lista se não for
 	var alvo_lista = []
 	if typeof(targets) == TYPE_ARRAY:
 		alvo_lista = targets
@@ -113,15 +145,33 @@ func cast_spell(targets, spell_name := "fogo"):
 		var efeito = 0
 		match spell_data.get("type", "damage"):
 			"damage":
-				efeito = spell_data.get("power", 0)
-				var power_max = spell_data.get("power_max", efeito)
-				if power_max > efeito:
-					efeito += randi() % (power_max - efeito + 1)
-				alvo.take_damage(efeito)
+				var power = spell_data.get("power", 0)
+				var power_max = spell_data.get("power_max", power)
+				var base_random = power + randi() % (power_max - power + 1)
+
+
+				var base_hit_chance = spell_data.get("hit_chance", 100) 
+				var total_hit = base_hit_chance + intelligence
+				if randf() * 100 > total_hit:
+
+					result.append({ "alvo": alvo, "efeito": 0, "miss": true })
+					continue
+
+				var normalized = float(base_random - power) / max(1, (power_max - power))
+				var boosted_damage = power + int((1.0 - normalized) * magic_power)
+
+				var remaining_boost = max(0, magic_power - alvo.magic_defense)
+				var final_damage = boosted_damage + remaining_boost - magic_power
+				final_damage = max(final_damage, 0)
+
+				alvo.take_damage(final_damage)
+				efeito = final_damage
+
 			"heal":
 				efeito = abs(spell_data.get("power", 0))
 				alvo.heal(efeito)
 				efeito = -efeito
+
 			"buff", "debuff":
 				var effect = StatusEffect.new()
 				effect.attribute = spell_data.get("attribute", "")
@@ -134,7 +184,6 @@ func cast_spell(targets, spell_name := "fogo"):
 		result.append({ "alvo": alvo, "efeito": efeito })
 
 	return result
-
 func try_escape():
 	return randf() < 0.5
 
@@ -167,8 +216,8 @@ func gain_xp(amount: int):
 
 func level_up():
 	level += 1
-	xp_to_next_level = int(xp_to_next_level * 1.5)
-	max_hp += 10
+	xp_to_next_level = int(xp_to_next_level + 100)
+	vitality += 1
 	max_mp += 5
 	strength += 2
 	defense += 1

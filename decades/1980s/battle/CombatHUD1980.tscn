@@ -9,9 +9,12 @@ script = ExtResource("1_8ayvh")
 size = Vector2i(400, 300)
 visible = false
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MagicMenu"]
+[node name="ScrollContainer" type="ScrollContainer" parent="MagicMenu"]
 offset_right = 40.0
 offset_bottom = 40.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MagicMenu/ScrollContainer"]
+layout_mode = 2
 
 [node name="EnemyInfo" type="GridContainer" parent="."]
 offset_left = 180.0
@@ -84,12 +87,18 @@ caret_blink_interval = 0.21
 
 [node name="WindowTargetSelection" type="Window" parent="."]
 
-[node name="VBoxContainerTargets" type="VBoxContainer" parent="WindowTargetSelection"]
+[node name="ScrollContainer" type="ScrollContainer" parent="WindowTargetSelection"]
 offset_right = 40.0
 offset_bottom = 40.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="WindowTargetSelection/ScrollContainer"]
+layout_mode = 2
 
 [node name="ItemWindow" type="Window" parent="."]
 
-[node name="VBoxContainer" type="VBoxContainer" parent="ItemWindow"]
+[node name="ScrollContainer" type="ScrollContainer" parent="ItemWindow"]
 offset_right = 40.0
 offset_bottom = 40.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ItemWindow/ScrollContainer"]
+layout_mode = 2
