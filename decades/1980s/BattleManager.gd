@@ -1,17 +1,19 @@
 extends Node
 
 
-enum BattleState { ESPERANDO_COMANDO, EXECUTANDO_ACAO, FIM_COMBATE }
+enum BattleState { ESPERANDO_COMANDO, EXECUTANDO_ACAO, FIM_COMBATE, TURNO }
 var state = BattleState.ESPERANDO_COMANDO
 var jogador_atual : PlayerPartyMember = null
 @onready var enemy_sprites_node = $EnemySprites
 var enemy_sprite_scene = preload("res://decades/1980s/EnemySprite.tscn")
 
+var background_node : TextureRect
+
 const ENEMY_POSITIONS = [
-	Vector2(350, 400),
-	Vector2(700, 400),
-	Vector2(1100, 400),
-	Vector2(1450, 400)
+	Vector2(440, 400),
+	Vector2(620, 400),
+	Vector2(480, 550),
+	Vector2(680, 540)
 ]
 
 var party_members = []
@@ -22,7 +24,8 @@ var hud
 const TEMPO_ESPERA_APOS_ACAO = 0.5
 var inventario = {
 	"Poção de Vida": 3,
-	"Poção de MP": 2
+	"Poção de MP": 2,
+	"Pena da Fênix": 2
 }
 
 func _ready():
@@ -39,6 +42,9 @@ func _ready():
 
 	_sort_turn_order()
 	_start_turn()
+	
+func set_background_node(node: TextureRect):
+	background_node = node
 
 #AÇÕES DO PLAYER
 
@@ -55,7 +61,7 @@ func _load_party():
 		var black_mage_data = {
 			"nome": "Mago Negro",
 			"vitality": 8,
-			"strength": 7,
+			"strength": 5,
 			"defense": 7,
 			"accuracy": 10,
 			"evasion": 8,
@@ -82,7 +88,7 @@ func _load_party():
 		var warrior_data = {
 			"nome": "Guerreiro",
 			"vitality": 12,
-			"strength": 15,
+			"strength": 20,
 			"defense": 10,
 			"accuracy": 15,
 			"evasion": 8,
@@ -103,7 +109,7 @@ func _load_party():
 		var white_mage_data = {
 			"nome": "Maga Branca",
 			"vitality": 8,
-			"strength": 6,
+			"strength": 5,
 			"defense": 6,
 			"accuracy": 8,
 			"evasion": 6,
@@ -118,8 +124,9 @@ func _load_party():
 			"xp": 1,
 			"xp_to_next_level": 100,
 			"spell_slots": {1: 5, 2: 3, 3: 3, 4:2},
-			"max_spell_slots": {1: 5, 2: 3, 3: 3, 4:2},
+			"max_spell_slots": {1: 3, 2: 2, 3: 2, 4:2},
 			"spells": {
+				"cura total": {"level": 3 ,"cost": 15, "power": -20, "power_max": -35, "type": "heal", "area": true},
 				"cura": {"level": 1, "cost": 5, "power": -10, "power_max": -10, "type": "heal"},
 				"protecao": {"level": 2, "cost": 5, "type": "buff", "attribute": "defense", "amount": 3, "duration": 3},
 				"lentidao": {"level": 2, "cost": 5, "type": "debuff", "attribute": "speed", "amount": -2, "duration": 3}
@@ -129,9 +136,9 @@ func _load_party():
 		var thief_data = {
 			"nome": "Ladrão",
 			"vitality": 5,
-			"strength": 8,
+			"strength": 10,
 			"defense": 6,
-			"accuracy": 12,
+			"accuracy": 18,
 			"evasion": 12,
 			"intelligence": 0,
 			"magic_power": 0,
@@ -192,29 +199,41 @@ func _on_item_escolhido(item_name: String):
 	if hud.item_selected.is_connected(_on_item_escolhido):
 		hud.item_selected.disconnect(_on_item_escolhido)
 
-	var alvos_validos = party_members.filter(func(p): return p.is_alive())
+	var alvos_validos = []
 
 	match item_name:
 		"Poção de Vida", "Poção de MP":
-			hud.target_selected.connect(_on_item_alvo_escolhido.bind(item_name))
-			hud.show_target_selection(alvos_validos, "item")
+			alvos_validos = party_members.filter(func(p): return p.is_alive())
+		"Pena da Fênix":
+			alvos_validos = party_members.filter(func(p): return not p.is_alive())
+
+	if alvos_validos.size() > 0:
+		hud.target_selected.connect(_on_item_alvo_escolhido.bind(item_name))
+		hud.show_target_selection(alvos_validos, "item")
+	else:
+		hud.add_log_entry("Nenhum alvo válido para %s." % item_name)
+		_esperar_comando_do_jogador(jogador_atual)
 
 func _on_item_alvo_escolhido(alvo, item_name: String):
 	if hud.target_selected.is_connected(_on_item_alvo_escolhido):
 		hud.target_selected.disconnect(_on_item_alvo_escolhido)
 
-	# Aplica efeito
 	match item_name:
 		"Poção de Vida":
 			var heal_amount = 30
 			alvo.hp = min(alvo.max_hp, alvo.hp + heal_amount)
 			hud.add_log_entry("%s usou Poção de Vida em %s (+%d HP)" % [jogador_atual.nome, alvo.nome, heal_amount])
+
 		"Poção de MP":
 			var mp_amount = 20
 			alvo.mp = min(alvo.max_mp, alvo.mp + mp_amount)
 			hud.add_log_entry("%s usou Poção de MP em %s (+%d MP)" % [jogador_atual.nome, alvo.nome, mp_amount])
 
-	# Atualiza inventário
+		"Pena da Fênix":
+			var revive_hp = int(alvo.max_hp * 0.25)
+			alvo.hp = revive_hp
+			hud.add_log_entry("%s usou Pena da Fênix em %s. %s reviveu com %d HP!" % [jogador_atual.nome, alvo.nome, alvo.nome, revive_hp])
+
 	if inventario.has(item_name):
 		inventario[item_name] -= 1
 
@@ -415,14 +434,14 @@ func _executar_magia_area(caster, spell_name, alvos):
 
 	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 	_finalizar_turno()
-	
+
 func _escolher_aliado_para_curar():
 	var vivos = party_members.filter(func(p): return p.is_alive() and p.hp < p.max_hp)
 	if vivos.size() == 0:
 		return null
 	vivos.sort_custom(func(a, b): return float(a.hp) / a.max_hp - float(b.hp) / b.max_hp)
 	return vivos[0]
-	
+
 func _executar_acao_ataque(actor, alvo):
 	state = BattleState.EXECUTANDO_ACAO
 
@@ -456,7 +475,7 @@ func _executar_acao_ataque(actor, alvo):
 	
 	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 	_finalizar_turno()
-	
+
 func _executar_defesa(actor):
 	if actor is PlayerPartyMember:
 		state = BattleState.EXECUTANDO_ACAO
@@ -516,7 +535,17 @@ func _load_enemies():
 	elif party_level >= 5:
 		possible_enemies = ["Orc"]
 
-	var num_to_generate = 4
+	# Trocar o fundo com base no tipo de inimigo
+	var background_texture : Texture2D
+	if party_level >= 5:
+		background_texture = preload("res://assets/Sala do Boss.png")
+	else:
+		background_texture = preload("res://assets/Corredores.png")
+
+	if background_node:
+		background_node.texture = background_texture
+
+	var num_to_generate = randf_range(1, 4)
 	if party_level >= 5:
 		num_to_generate = 1
 
@@ -528,15 +557,13 @@ func _load_enemies():
 		var enemy_sprite = enemy_sprite_scene.instantiate()
 		enemy_sprite.set_enemy(enemy)
 
-		if num_to_generate == 1:
-			enemy_sprite.position = Vector2(950, 400)
-		else:
-			enemy_sprite.position = ENEMY_POSITIONS[i]
+
+		enemy_sprite.position = ENEMY_POSITIONS[i]
 
 		enemy_sprites_node.add_child(enemy_sprite)
 
 	hud.update_enemy_status(enemies)
-	
+
 func _create_enemy_by_type(nome: String) -> Enemy:
 	var enemy = Enemy.new()
 	var rng = RandomNumberGenerator.new()
@@ -546,17 +573,17 @@ func _create_enemy_by_type(nome: String) -> Enemy:
 	
 	match nome:
 		"Morcego":
-			enemy.max_hp = 30
+			enemy.max_hp = 15
 			enemy.strength = 10
 			enemy.defense = 3
 			enemy.magic_defense = 1
 			enemy.accuracy = 10
-			enemy.evasion = 15
+			enemy.evasion = 13
 			enemy.luck = 3
 			enemy.speed = 10
 			enemy.xp_value = 15
 		"Goblin":
-			enemy.max_hp = 50
+			enemy.max_hp = 25
 			enemy.accuracy = 10
 			enemy.strength = 15
 			enemy.defense = 3
@@ -611,7 +638,7 @@ func _executar_acao_inimiga(enemy):
 	turn_index += 1
 	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 	_start_turn()
-	
+
 func _get_average_party_level() -> int:
 	if party_members.size() == 0:
 		return 1  # fallback
@@ -619,8 +646,14 @@ func _get_average_party_level() -> int:
 	for member in party_members:
 		total_level += member.level
 	return int(round(float(total_level) / party_members.size()))
-	
-	
+
+func _boss_derrotado() -> bool:
+	for enemy in enemies:
+		if enemy.nome == "Orc" and not enemy.is_alive():
+			return true
+	return false
+
+
 # CONTROLE DE FLUXO DE JOGO
 
 
@@ -653,38 +686,42 @@ func _sort_turn_order():
 		if not inserted:
 			turn_order.append(character)
 
-
 func _speed_sort(a, b):
 	return b.speed - a.speed
 
 func _start_turn():
-	
 	if turn_index >= turn_order.size():
 		turn_index = 0
-		_sort_turn_order()
-
-	# Atualiza HUD com status da party
-	hud.update_party_info(party_members)
 
 	var current_actor = turn_order[turn_index]
 
-	if current_actor.is_alive():
-		if current_actor is PlayerPartyMember:
-			jogador_atual = current_actor
-			_esperar_comando_do_jogador(current_actor)
-		else:
-			jogador_atual = null
-			_executar_acao_inimiga(current_actor)
-	else:
+	if not current_actor.is_alive():
 		turn_index += 1
 		_start_turn()
+		return
+
+	if current_actor is PlayerPartyMember:
+		jogador_atual = current_actor
+
+		# Atualiza HUD da party
+		hud.update_party_info(party_members)
+		hud.set_enabled(true)
+		hud.highlight_current_player(jogador_atual)
+
+		state = BattleState.ESPERANDO_COMANDO
+		_esperar_comando_do_jogador(current_actor)
+	else:
+		jogador_atual = null
+		hud.set_enabled(false)
+		hud.highlight_current_player(null)
+		state = BattleState.EXECUTANDO_ACAO
+		_executar_acao_inimiga(current_actor)
 
 func _esperar_comando_do_jogador(player):
 	state = BattleState.ESPERANDO_COMANDO
 	player.process_status_effects()
 	hud.set_enabled(true)
 	hud.add_log_entry("%s está se preparando para agir..." % player.nome)
-	
 
 func _finalizar_turno():
 	
@@ -718,16 +755,28 @@ func _encerrar_combate(resultado: String):
 		_dar_xp_para_party(xp_total)
 		hud.update_party_info(party_members)
 		
-		_save_party_status()  # <== SALVAR AQUI
+		_save_party_status()
 	
-	await get_tree().create_timer(2.0).timeout
+	await get_tree().create_timer(1.0).timeout
 
 	match resultado:
 		"vitoria":
-			get_tree().change_scene_to_file("res://decades/1980s/battle/VictoryScreen.tscn")
+			if _boss_derrotado():
+				get_tree().change_scene_to_file("res://decades/1980s/battle/VictoryScreen.tscn")
+			else:
+				_carregar_proxima_batalha()
 		"derrota", "fuga":
 			get_tree().change_scene_to_file("res://decades/1980s/battle/DefeatScreen.tscn")
+			
+func _carregar_proxima_batalha():
+	await get_tree().create_timer(1.0).timeout
 
+	_load_enemies()
+	_sort_turn_order()
+	turn_index = 0
+	state = BattleState.TURNO
+	_start_turn()
+	
 func _save_party_status():
 	var saved_data = []
 	for member in party_members:

@@ -1,17 +1,15 @@
-[gd_scene load_steps=3 format=3 uid="uid://dpj1386a8ych2"]
+[gd_scene load_steps=2 format=3 uid="uid://dpj1386a8ych2"]
 
 [ext_resource type="Script" uid="uid://bd3bia7we4uh1" path="res://decades/1980s/Game1980.gd" id="1_bypbk"]
-[ext_resource type="Texture2D" uid="uid://c260ntt5qgt5n" path="res://assets/Background.jpg" id="5_o87xn"]
 
 [node name="Game1980" type="Node2D"]
 script = ExtResource("1_bypbk")
-
-[node name="TextureRect" type="TextureRect" parent="."]
-offset_right = 1724.0
-offset_bottom = 970.0
-texture = ExtResource("5_o87xn")
 
 [node name="TitleLabel" type="Label" parent="."]
 offset_right = 40.0
 offset_bottom = 23.0
 text = "1980"
+
+[node name="Background" type="TextureRect" parent="."]
+offset_right = 40.0
+offset_bottom = 40.0

@@ -67,7 +67,7 @@ func setup(data: Dictionary) -> void:
 	hp = data.get("hp", max_hp)
 
 func attack(target):
-	var accuracy_atacante = accuracy + int(randf() * 10) *  1.5
+	var accuracy_atacante = accuracy + int(randf() * 10) *  1.2
 	var evasion_alvo = target.evasion + int(randf() * 10)
 	var accuracy_check = accuracy_atacante > evasion_alvo
 	if not accuracy_check:

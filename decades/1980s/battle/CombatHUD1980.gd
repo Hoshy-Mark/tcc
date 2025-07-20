@@ -5,6 +5,7 @@ signal magic_selected(spell_name: String)
 signal target_selected(alvo)
 signal item_selected(item_name: String)
 
+var party_panels := {}
 
 @onready var magic_menu = $MagicMenu
 @onready var party_info = $Panel/PartyInfo
@@ -28,18 +29,18 @@ func _ready():
 	magic_menu.mode = Window.MODE_WINDOWED
 	magic_menu.borderless = true
 	magic_menu.unresizable = true
-	magic_menu.position = Vector2(20, 300)
+	magic_menu.position = Vector2(1200, 150)
 	
 	item_window.mode = Window.MODE_WINDOWED
 	item_window.borderless = true
 	item_window.unresizable = true
-	item_window.position = Vector2(20, 300)
+	item_window.position = Vector2(1330, 150)
 	
 	target_window.mode = Window.MODE_WINDOWED
 	target_window.borderless = true
 	target_window.unresizable = true
-	target_window.position = Vector2(20, 300)
-	
+	target_window.position = Vector2(1070, 150)
+
 	$VBoxContainer/Button5.pressed.connect(func(): emit_signal("action_selected", "item"))
 	$VBoxContainer/Button.pressed.connect(func(): emit_signal("action_selected", "attack"))
 	$VBoxContainer/Button2.pressed.connect(func(): emit_signal("action_selected", "magic"))
@@ -136,7 +137,7 @@ func add_log_entry(text: String) -> void:
 
 	log_text_edit.add_theme_font_size_override("font_size", 10)
 	log_text_edit.text += text + "\n"
-	log_text_edit.scroll_vertical = log_text_edit.get_line_count()  # Scroll automático
+	log_text_edit.scroll_vertical = log_text_edit.get_line_count()
 
 func _on_voltar_target_btn_pressed():
 	target_window.hide()
@@ -149,9 +150,7 @@ func _on_item_button_pressed(item_name: String):
 func update_enemy_status(enemies: Array) -> void:
 	clear_container($EnemyInfo)
 
-	if enemies.size() == 1:
-		var enemy = enemies[0]
-
+	for enemy in enemies:
 		var panel = Panel.new()
 		var style = StyleBoxFlat.new()
 		style.bg_color = Color(0.15, 0, 0)
@@ -174,7 +173,6 @@ func update_enemy_status(enemies: Array) -> void:
 		margin_container.add_theme_constant_override("margin_bottom", 8)
 
 		var box = VBoxContainer.new()
-		box.alignment = BoxContainer.ALIGNMENT_CENTER
 
 		var name_label = Label.new()
 		name_label.text = enemy.nome
@@ -191,50 +189,7 @@ func update_enemy_status(enemies: Array) -> void:
 
 		margin_container.add_child(box)
 		panel.add_child(margin_container)
-		enemy_info.set_position(Vector2(790, 10))
-
 		$EnemyInfo.add_child(panel)
-	else:
-		for enemy in enemies:
-			var panel = Panel.new()
-			var style = StyleBoxFlat.new()
-			style.bg_color = Color(0.15, 0, 0)
-			style.border_width_left = 2
-			style.border_width_top = 2
-			style.border_width_right = 2
-			style.border_width_bottom = 2
-			style.border_color = Color(1, 0.3, 0.3)
-			style.corner_radius_top_left = 4
-			style.corner_radius_top_right = 4
-			style.corner_radius_bottom_left = 4
-			style.corner_radius_bottom_right = 4
-			panel.add_theme_stylebox_override("panel", style)
-			panel.custom_minimum_size = Vector2(180, 100)
-
-			var margin_container = MarginContainer.new()
-			margin_container.add_theme_constant_override("margin_left", 8)
-			margin_container.add_theme_constant_override("margin_top", 8)
-			margin_container.add_theme_constant_override("margin_right", 8)
-			margin_container.add_theme_constant_override("margin_bottom", 8)
-
-			var box = VBoxContainer.new()
-
-			var name_label = Label.new()
-			name_label.text = enemy.nome
-			name_label.add_theme_color_override("font_color", Color(1, 0.5, 0.5))
-			box.add_child(name_label)
-
-			var hp_label = Label.new()
-			hp_label.text = "HP: %d/%d" % [enemy.current_hp, enemy.max_hp]
-			box.add_child(hp_label)
-
-			var mp_label = Label.new()
-			mp_label.text = "MP: %d/%d" % [enemy.current_mp, enemy.max_mp]
-			box.add_child(mp_label)
-
-			margin_container.add_child(box)
-			panel.add_child(margin_container)
-			$EnemyInfo.add_child(panel)
 
 func show_magic_menu(player: PlayerPartyMember, magias := {}) -> void:
 	# Usa todas as magias se nenhuma lista personalizada for passada
@@ -308,23 +263,14 @@ func _on_voltar_btn_pressed():
 func _on_spell_button_pressed(spell_name):
 	magic_menu.hide()
 	emit_signal("magic_selected", spell_name)
-	
+
 func update_party_info(party_members: Array) -> void:
 	clear_container(party_info)
+	party_panels.clear()
 
 	for member in party_members:
 		var panel = Panel.new()
-		var style = StyleBoxFlat.new()
-		style.bg_color = Color(0.1, 0.1, 0.1)
-		style.border_width_left = 2
-		style.border_width_top = 2
-		style.border_width_right = 2
-		style.border_width_bottom = 2
-		style.border_color = Color(1, 1, 1)
-		style.corner_radius_top_left = 4
-		style.corner_radius_top_right = 4
-		style.corner_radius_bottom_left = 4
-		style.corner_radius_bottom_right = 4
+		var style = _create_default_panel_style()
 		panel.add_theme_stylebox_override("panel", style)
 		panel.custom_minimum_size = Vector2(160, 100)
 
@@ -345,7 +291,7 @@ func update_party_info(party_members: Array) -> void:
 		# Linha 1: HP e Nível
 		var row1 = HBoxContainer.new()
 		var hp_label = Label.new()
-		hp_label.text = "HP: %d" % member.hp
+		hp_label.text = "HP: %d/%d" % [member.hp, member.max_hp]
 		row1.add_child(hp_label)
 
 		var spacer1 = Control.new()
@@ -361,7 +307,7 @@ func update_party_info(party_members: Array) -> void:
 		# Linha 2: MP e XP
 		var row2 = HBoxContainer.new()
 		var mp_label = Label.new()
-		mp_label.text = "MP: %d" % member.mp
+		mp_label.text = "MP: %d/%d" % [member.mp, member.max_mp]
 		row2.add_child(mp_label)
 
 		var spacer2 = Control.new()
@@ -374,10 +320,41 @@ func update_party_info(party_members: Array) -> void:
 
 		vbox.add_child(row2)
 
+
 		margin_container.add_child(vbox)
 		panel.add_child(margin_container)
 		party_info.add_child(panel)
-		
+
+		# Salva a referência
+		party_panels[member] = panel
+
+func _create_default_panel_style() -> StyleBoxFlat:
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0.1, 0.1, 0.1)
+	style.border_width_left = 2
+	style.border_width_top = 2
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	style.border_color = Color(1, 1, 1)
+	style.corner_radius_top_left = 4
+	style.corner_radius_top_right = 4
+	style.corner_radius_bottom_left = 4
+	style.corner_radius_bottom_right = 4
+	return style
+
+func highlight_current_player(current_player):
+	for member in party_panels.keys():
+		var panel = party_panels[member]
+		var style = _create_default_panel_style()
+
+		if member == current_player:
+			style.border_color = Color(0.2, 0.6, 1.0)  # Azul
+			style.border_width_left = 2
+			style.border_width_top = 2
+			style.border_width_right = 2
+			style.border_width_bottom = 2
+		panel.add_theme_stylebox_override("panel", style)
+
 func clear_container(container):
 	var children = container.get_children()
 	for child in children:
