@@ -718,11 +718,11 @@ func _start_turn():
 func _esperar_comando_do_jogador(player):
 	state = BattleState.ESPERANDO_COMANDO
 	player.process_status_effects()
-	hud.set_enabled(true)
 	hud.add_log_entry("%s está se preparando para agir..." % player.nome)
+	hud.set_enabled(true)
 
 func _finalizar_turno():
-	
+	print("Turno finalizado pelo ator: ", jogador_atual.nome if jogador_atual else "Inimigo ou Sistema")
 	# Verificar se todos inimigos mortos (jogador venceu)
 	if enemies.all(func(e): return not e.is_alive()):
 		hud.add_log_entry("Vitória! Todos os inimigos derrotados.")
@@ -769,14 +769,9 @@ func _encerrar_combate(resultado: String):
 func _carregar_proxima_batalha():
 	await get_tree().create_timer(1.0).timeout
 
-	# 1. RECARREGA A EQUIPE A PARTIR DOS DADOS SALVOS PELA BATALHA ANTERIOR
-	#    Isso limpa os objetos antigos e cria novos com o estado correto (HP, MP, XP).
 	_load_party() 
-
-	# 2. Carrega novos inimigos para a nova batalha.
-	await _load_enemies() # Adicionei await aqui para garantir que carregue antes de continuar
-
-	# 3. Organiza a ordem de turno com a equipe recarregada e os novos inimigos.
+	
+	await _load_enemies() 
 	_sort_turn_order()
 	turn_index = 0
 	state = BattleState.TURNO
