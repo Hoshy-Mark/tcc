@@ -635,9 +635,7 @@ func _executar_acao_inimiga(enemy):
 			else:
 				hud.add_log_entry("%s atacou %s e causou %d de dano." % [enemy.nome, target.nome, dano])
 
-	turn_index += 1
-	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-	_start_turn()
+	_finalizar_turno()
 
 func _get_average_party_level() -> int:
 	if party_members.size() == 0:
@@ -771,7 +769,14 @@ func _encerrar_combate(resultado: String):
 func _carregar_proxima_batalha():
 	await get_tree().create_timer(1.0).timeout
 
-	_load_enemies()
+	# 1. RECARREGA A EQUIPE A PARTIR DOS DADOS SALVOS PELA BATALHA ANTERIOR
+	#    Isso limpa os objetos antigos e cria novos com o estado correto (HP, MP, XP).
+	_load_party() 
+
+	# 2. Carrega novos inimigos para a nova batalha.
+	await _load_enemies() # Adicionei await aqui para garantir que carregue antes de continuar
+
+	# 3. Organiza a ordem de turno com a equipe recarregada e os novos inimigos.
 	_sort_turn_order()
 	turn_index = 0
 	state = BattleState.TURNO
