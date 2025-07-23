@@ -11,6 +11,9 @@ class_name Spell
 @export var amount: int = 0         
 @export var duration: int = 3     
 @export var target_all: bool = false
+@export var target_group: String = "single"  # Valores: "single", "line", "area"
+@export var element: String = ""
+@export var attack_type: String = ""
 
 func is_buff() -> bool:
 	return type == "buff"

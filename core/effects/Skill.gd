@@ -14,3 +14,5 @@ class_name Skill
 
 @export var status_inflicted: String = ""  # ex: "stun", "bleed", "" (nenhum)
 @export var status_chance: float = 0.2  # chance de aplicar o status
+@export var element: String = ""
+@export var attack_type: String = ""

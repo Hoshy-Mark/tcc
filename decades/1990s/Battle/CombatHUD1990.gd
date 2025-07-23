@@ -6,6 +6,7 @@ signal target_selected(alvo)
 signal item_selected(item_name: String)
 signal skill_selected(skill_name: String)
 signal special_selected(special_name: String)
+signal line_target_selected(linha: String)
 
 @onready var action_panel = $HUDPanel/ActionPanel
 @onready var magic_panel = $HUDPanel/MagicPanel
@@ -196,6 +197,28 @@ func show_action_menu(player = null):
 		current_player_node = player  # ← usado para seta e botão
 		indicate_current_player(player)
 
+func show_line_target_menu(options: Array):
+	_hide_all_panels()
+	clear(vbox_target_list)
+	target_panel.visible = true
+
+	for linha in options:
+		var button = Button.new()
+		button.text = "Linha da " + linha.capitalize()  # Ex: "Linha da Frente"
+		button.custom_minimum_size = Vector2(500, 40)
+		button.pressed.connect(func():
+			emit_signal("line_target_selected", linha)
+			_hide_all_panels()
+		)
+		vbox_target_list.add_child(button)
+
+	# Botão de voltar
+	var back_button = Button.new()
+	back_button.text = "Voltar"
+	back_button.custom_minimum_size = Vector2(500, 40)
+	back_button.pressed.connect(_on_back_button_pressed)
+	vbox_target_list.add_child(back_button)
+	
 
 # PRESSIONAR BOTÃO
 

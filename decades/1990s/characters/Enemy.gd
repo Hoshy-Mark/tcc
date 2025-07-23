@@ -4,6 +4,8 @@ class_name Enemy1990
 
 signal died
 
+@export var enemy_type: String = "Beast"  # Pode ser Undead, Beast, Ghost, Flying, Demon, Dragon
+
 # Atributos base
 var STR: int = 0
 var DEX: int = 0
@@ -34,10 +36,90 @@ var xp_value: int = 0
 var id: String = ""
 var is_defending: bool = false
 var sprite_ref: Sprite2D = null
+var position_line: String = "front"  # ou "back"
+var alcance_estendido: bool = false 
 
 # Status
 var status_effects: Array = []
 var active_status_effects: Array = []
+var attack_type: String = "slash"
+var element_resistances = {
+	"fire": 1.0,
+	"ice": 1.0,
+	"lightning": 1.0,
+	"earth": 1.0,
+	"wind": 1.0,
+	"holy": 1.0,
+	"dark": 1.0,
+	"poison": 1.0
+}
+
+var attack_type_resistances = {
+	"slash": 1.0,
+	"pierce": 1.0,
+	"blunt": 1.0,
+	"ranged": 1.0,
+	"magic": 1.0
+}
+
+func set_type_resistances():
+	match enemy_type:
+		"Undead":
+			element_resistances = {
+				"fire": 1.5,
+				"ice": 1.0,
+				"lightning": 1.0,
+				"earth": 1.0,
+				"wind": 1.0,
+				"holy": 2.0,
+				"dark": 0.5,
+				"poison": 1.0
+			}
+			attack_type_resistances = {
+				"slash": 1.0,
+				"pierce": 1.0,
+				"blunt": 1.2,
+				"ranged": 1.0,
+				"magic": 1.0
+			}
+		"Beast":
+			element_resistances = {
+				"fire": 1.0,
+				"ice": 1.2,
+				"lightning": 1.0,
+				"earth": 1.0,
+				"wind": 0.8,
+				"holy": 1.0,
+				"dark": 1.0,
+				"poison": 1.5
+			}
+			attack_type_resistances = {
+				"slash": 1.1,
+				"pierce": 0.9,
+				"blunt": 1.0,
+				"ranged": 0.1,
+				"magic": 1.0
+			}
+		# Repita para Ghost, Flying, Demon, Dragon...
+		_:
+			# Default, tudo normal
+			element_resistances = {
+				"fire": 1.0,
+				"ice": 1.0,
+				"lightning": 1.0,
+				"earth": 1.0,
+				"wind": 1.0,
+				"holy": 1.0,
+				"dark": 1.0,
+				"poison": 1.0
+			}
+			attack_type_resistances = {
+				"slash": 1.0,
+				"pierce": 1.0,
+				"blunt": 1.0,
+				"ranged": 1.0,
+				"magic": 1.0
+			}
 
 # === FUNÇÕES ===
 

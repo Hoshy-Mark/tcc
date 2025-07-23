@@ -32,13 +32,14 @@ var speed: int = 0
 var current_sp := 0
 var max_sp := 0
 var id: String = ""
-
+var attack_type: String = "slash"
 var atb_value := 0.0
 var atb_max := 100.0
 
 var special_charge := 0.0 # de 0 a 100
 var special_ready := false
-
+var position_line: String = "front"
+var alcance_estendido: bool = false  # se pode atacar a traseira com ataque físico
 
 # Magia
 var spells: Array[Spell] = []
@@ -51,6 +52,25 @@ var sprite_ref: Sprite2D = null
 var is_defending: bool = false
 var status_effects: Array = []
 var active_status_effects: Array = []
+
+var element_resistances = {
+	"fire": 1.0,
+	"ice": 1.0,
+	"lightning": 1.0,
+	"earth": 1.0,
+	"wind": 1.0,
+	"holy": 1.0,
+	"dark": 1.0,
+	"poison": 1.0
+}
+
+var attack_type_resistances = {
+	"slash": 1.0,
+	"pierce": 1.0,
+	"blunt": 1.0,
+	"ranged": 1.0,
+	"magic": 1.0
+}
 
 # === FUNÇÕES ===
 

@@ -51,14 +51,14 @@ var class_sprite_paths = {
 }
 
 var class_base_stats = {
-	"Knight":    {"STR": 9, "DEX": 5, "AGI": 3, "CON": 9, "MAG": 1, "INT": 2, "SPI": 4, "LCK": 3},
-	"Mage":      {"STR": 1, "DEX": 4, "AGI": 4, "CON": 2, "MAG": 10, "INT": 9, "SPI": 5, "LCK": 4},
-	"Thief":     {"STR": 5, "DEX": 9, "AGI": 9, "CON": 3, "MAG": 1, "INT": 3, "SPI": 2, "LCK": 10},
-	"Cleric":    {"STR": 2, "DEX": 4, "AGI": 20, "CON": 5, "MAG": 5, "INT": 6, "SPI": 10, "LCK": 6},
-	"Hunter":    {"STR": 7, "DEX": 10, "AGI": 8, "CON": 4, "MAG": 1, "INT": 3, "SPI": 3, "LCK": 7},
-	"Paladin":   {"STR": 7, "DEX": 6, "AGI": 4, "CON": 8, "MAG": 4, "INT": 5, "SPI": 8, "LCK": 4},
-	"Monk":      {"STR": 60, "DEX": 7, "AGI": 6, "CON": 7, "MAG": 2, "INT": 3, "SPI": 3, "LCK": 5},
-	"Summoner":  {"STR": 3, "DEX": 5, "AGI": 4, "CON": 3, "MAG": 10, "INT": 8, "SPI": 6, "LCK": 8},
+	"Knight":    {"STR": 9, "DEX": 5, "AGI": 3, "CON": 9, "MAG": 1, "INT": 2, "SPI": 4, "LCK": 3, "attack_type": "slash"},
+	"Mage":      {"STR": 1, "DEX": 4, "AGI": 20, "CON": 2, "MAG": 10, "INT": 9, "SPI": 5, "LCK": 4, "attack_type": "blunt"},
+	"Thief":     {"STR": 5, "DEX": 9, "AGI": 9, "CON": 3, "MAG": 1, "INT": 3, "SPI": 2, "LCK": 10, "attack_type": "pierce"},
+	"Cleric":    {"STR": 2, "DEX": 4, "AGI": 20, "CON": 5, "MAG": 5, "INT": 6, "SPI": 10, "LCK": 6, "attack_type": "blunt"},
+	"Hunter":    {"STR": 7, "DEX": 20, "AGI": 20, "CON": 4, "MAG": 1, "INT": 3, "SPI": 3, "LCK": 7, "attack_type": "ranged"},
+	"Paladin":   {"STR": 7, "DEX": 6, "AGI": 4, "CON": 8, "MAG": 4, "INT": 5, "SPI": 8, "LCK": 4, "attack_type": "slash"},
+	"Monk":      {"STR": 60, "DEX": 7, "AGI": 6, "CON": 7, "MAG": 2, "INT": 3, "SPI": 3, "LCK": 5, "attack_type": "blunt"},
+	"Summoner":  {"STR": 3, "DEX": 5, "AGI": 4, "CON": 3, "MAG": 10, "INT": 8, "SPI": 6, "LCK": 8, "attack_type": "blunt"},
 }
 
 var class_spell_slots = {
@@ -74,30 +74,32 @@ var class_spell_slots = {
 
 var spell_database = {
 	# Magias ofensivas
-	"Fire": {"type": "damage", "element": "fire", "power": 25, "power_max": 35, "cost": 5, "level": 1, "hit_chance": 95},
-	"Ice": {"type": "damage", "element": "ice", "power": 22, "power_max": 32, "cost": 5, "level": 1, "hit_chance": 95},
-	"Thunder": {"type": "damage", "element": "thunder", "power": 28, "power_max": 38, "cost": 6, "level": 1, "hit_chance": 90},
-	"Flare": {"type": "damage", "element": "fire", "power": 80, "power_max": 100, "cost": 20, "level": 3, "hit_chance": 85},
-
+	"Fire": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 25, "power_max": 35, "cost": 5, "level": 1, "hit_chance": 95, "target_group": "single"},
+	"Ice": {"type": "damage", "element": "ice", "attack_type": "magic", "power": 22, "power_max": 32, "cost": 5, "level": 1, "hit_chance": 95, "target_group": "single"},
+	"Thunder": {"type": "damage", "element": "lightning", "attack_type": "magic", "power": 28, "power_max": 38, "cost": 6, "level": 1, "hit_chance": 90, "target_group": "single"},
+	"Flare": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 80, "power_max": 100, "cost": 20, "level": 3, "hit_chance": 85, "target_group": "single"},
+	"Fire Rain": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 30, "cost": 8, "level": 2,"target_group": "line"},
+	"Mega Flare": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 60, "cost": 10, "level": 4,"target_group": "area"},
+	
 	# Cura
-	"Cure": {"type": "heal", "power": 30, "cost": 5, "level": 1},
-	"Cura": {"type": "heal", "power": 60, "cost": 10, "level": 2},
-	"Heal All": {"type": "heal", "power": 40, "cost": 12, "level": 3, "target_all": true},
+	"Cure": {"type": "heal", "attack_type": "magic", "power": 30, "cost": 5, "level": 1, "target_group": "single"},
+	"Cura": {"type": "heal", "attack_type": "magic", "power": 60, "cost": 10, "level": 2, "target_group": "single"},
+	"Heal All": {"type": "heal", "attack_type": "magic", "power": 40, "cost": 12, "level": 3, "target_group": "area"},
 
 	# Buffs e debuffs
-	"Protect": {"type": "buff", "attribute": "defense", "amount": 5, "duration": 3, "cost": 6, "level": 1},
-	"Shell": {"type": "buff", "attribute": "magic_defense", "amount": 5, "duration": 3, "cost": 6, "level": 1},
-	"Weaken": {"type": "debuff", "attribute": "strength", "amount": -5, "duration": 3, "cost": 8, "level": 2},
-	"Slow": {"type": "debuff", "attribute": "speed", "amount": -4, "duration": 3, "cost": 8, "level": 2},
+	"Protect": {"type": "buff", "attack_type": "magic", "attribute": "defense", "amount": 5, "duration": 3, "cost": 6, "level": 1, "target_group": "single"},
+	"Shell": {"type": "buff", "attack_type": "magic", "attribute": "magic_defense", "amount": 5, "duration": 3, "cost": 6, "level": 1, "target_group": "single"},
+	"Weaken": {"type": "debuff", "attack_type": "magic", "attribute": "strength", "amount": -5, "duration": 3, "cost": 8, "level": 2, "target_group": "single"},
+	"Slow": {"type": "debuff", "attack_type": "magic", "attribute": "speed", "amount": -4, "duration": 3, "cost": 8, "level": 2, "target_group": "single"},
 
 	# Especiais
-	"Summon Ifrit": {"type": "damage", "element": "fire", "power": 100, "power_max": 120, "cost": 25, "level": 4, "hit_chance": 100},
-	"Dispel": {"type": "special", "effect": "remove_buffs", "cost": 10, "level": 2}
+	"Summon Ifrit": {"type": "damage","element": "fire", "attack_type": "magic", "power": 100, "power_max": 120, "cost": 25, "level": 4, "hit_chance": 100},
+	"Dispel": {"type": "special", "attack_type": "magic","effect": "remove_buffs", "cost": 10, "level": 2, "target_group": "single"}
 }
 
 var skill_database = {
-	"Power Strike": {"effect_type": "damage", "power": 35, "cost": 4, "target_type": "enemy"},
-	"Quick Shot": {"effect_type": "damage", "power": 25, "cost": 3, "target_type": "enemy"},
+	"Power Strike": {"effect_type": "damage",  "attack_type": "blunt", "power": 35, "cost": 4, "target_type": "enemy"},
+	"Quick Shot": {"effect_type": "damage",  "attack_type": "pierce", "power": 25, "cost": 3, "target_type": "enemy"},
 	"Focus": {"effect_type": "buff", "scaling_stat": "AGI", "amount": 500, "duration": 3, "cost": 2, "target_type": "self"},
 	"Heal Self": {"effect_type": "heal", "power": 25, "cost": 5, "target_type": "self"},
 }
@@ -138,10 +140,10 @@ func perform_enemy_action(enemy_actor) -> void:
 
 func get_player_position(index: int) -> Vector2:
 	var positions = [
-		Vector2(1180, 350),  # Jogador 0
-		Vector2(1100, 550),  # Jogador 1
-		Vector2(1400, 350),  # Jogador 2
-		Vector2(1350, 560),  # Jogador 3
+		Vector2(1180, 400),  # Jogador 0
+		Vector2(1100, 600),  # Jogador 1
+		Vector2(1400, 400),  # Jogador 2
+		Vector2(1350, 610),  # Jogador 3
 	]
 	
 	if index >= 0 and index < positions.size():
@@ -151,7 +153,18 @@ func get_player_position(index: int) -> Vector2:
 		return Vector2(100, 500)
 
 func get_enemy_position(index: int) -> Vector2:
-	return Vector2(500, 400 + index * 70)
+	var base_x = 400
+	var base_y = 400
+	var offset_y = 110  # distância vertical entre inimigos na mesma linha
+	var offset_x = 250  # distância horizontal entre as duas linhas
+
+	if index < 3:
+		# Linha da frente
+		return Vector2(base_x, base_y + index * offset_y)
+	else:
+		# Linha de trás - mais atrás (X) e mais abaixo (Y)
+		var tras_index = index - 3
+		return Vector2(base_x + offset_x, base_y + tras_index * offset_y + 40)  # 40 a mais no Y
 
 func check_battle_state() -> bool:
 	# Verifica se todos os inimigos estão mortos
@@ -242,6 +255,31 @@ func _load_party() -> Array:
 		loaded_party.append(member)
 	return loaded_party
 
+func ajustar_dano_por_posicao(dano: int, atacante, alvo, is_ataque_fisico: bool) -> int:
+	if not is_ataque_fisico:
+		return dano  # ataques mágicos ou à distância não são afetados
+
+	# Reduzir dano causado se o atacante está na traseira
+	if atacante.position_line == "back":
+		dano *= 0.7
+	
+	# Reduzir dano recebido se o alvo está na traseira
+	if alvo.position_line == "back":
+		dano *= 0.5
+
+	return int(dano)
+
+func pode_atacar(alvo, atacante, is_ataque_fisico: bool) -> bool:
+	if not is_ataque_fisico:
+		return true
+
+	# Se alvo estiver na frente, tudo bem
+	if alvo.position_line == "front":
+		return true
+
+	# Se alvo estiver atrás, só pode atacar se atacante tiver alcance estendido
+	return atacante.alcance_estendido
+
 # CRIAÇÃO DE INIMIGOS E PLAYER
 
 
@@ -262,16 +300,24 @@ func spawn_party(party_data: Array) -> void:
 		player_node.INT = stats.get("INT", 0)
 		player_node.SPI = stats.get("SPI", 0)
 		player_node.LCK = stats.get("LCK", 0)
+		player_node.attack_type = stats.get("attack_type", " ")
 
 		player_node.calculate_stats()
-
+		
+		if i < 2:
+			player_node.position_line = "front"
+		else:
+			player_node.position_line = "back"
 		# --- Magias por classe como Spell Resource ---
 		player_node.spells = []
-
+		
+		if player_node.classe_name == "Hunter":
+			player_node.alcance_estendido = true
+			
 		var spells_for_class := []
 		match classe_name:
 			"Mage":
-				spells_for_class = ["Fire", "Ice", "Thunder", "Flare"]
+				spells_for_class = ["Fire", "Ice", "Thunder", "Flare", "Fire Rain"]
 			"Cleric":
 				spells_for_class = ["Cure", "Cura", "Heal All", "Protect", "Shell"]
 			"Paladin":
@@ -361,16 +407,25 @@ func spawn_enemies(enemy_data: Array) -> void:
 
 func generate_enemies() -> Array:
 	var enemies_array = []
-	var enemy_types = ["Goblin", "Little Orc"]
-	var enemy_count = 1
+	var enemy_types = ["Goblin"]
+	var enemy_count = 6
 
 	for i in range(enemy_count):
 		var rand_type = enemy_types[randi() % enemy_types.size()]
 		var base = enemy_base_stats.get(rand_type)
 
 		if base:
+			
 			var enemy_node := Enemy1990.new()
-			enemy_node.nome = rand_type
+			var position_indicator = ""
+			if i >= 3:
+				enemy_node.position_line = "front"
+				position_indicator = " [F]"
+			else:
+				enemy_node.position_line = "back"
+				position_indicator = " [B]"
+
+			enemy_node.nome = "%s%s" % [rand_type, position_indicator]
 			enemy_node.STR = base["STR"]
 			enemy_node.DEX = base["DEX"]
 			enemy_node.AGI = base["AGI"]
@@ -380,14 +435,14 @@ func generate_enemies() -> Array:
 			enemy_node.SPI = base["SPI"]
 			enemy_node.LCK = base["LCK"]
 			enemy_node.xp_value = base["xp_value"]
-			
+
 			var rng = RandomNumberGenerator.new()
 			rng.randomize()
 			# Gerar ID aleatório em string
 			enemy_node.id = "%s_%06d" % [name.to_lower().replace(" ", "_"), rng.randi_range(0, 999999)]
 			
 			enemy_node.calculate_stats()
-
+			enemy_node.set_type_resistances()
 			enemies_array.append({"instance": enemy_node, "sprite_path": base["sprite_path"]})
 	
 	return enemies_array
@@ -571,7 +626,10 @@ func create_spell(name: String, data: Dictionary) -> Spell:
 	s.attribute = data.get("attribute", "")
 	s.amount = data.get("amount", 0)
 	s.duration = data.get("duration", 3)
-	s.target_all = data.get("target_all", false)
+	s.target_group = data.get("target_group", "single")
+	s.target_all = data.get("target_all", s.target_group == "area")
+	s.element = data.get("element", "")
+	s.attack_type = data.get("attack_type", "")
 	return s
 
 func create_skill(name: String, data: Dictionary) -> Skill:
@@ -585,8 +643,10 @@ func create_skill(name: String, data: Dictionary) -> Skill:
 	s.effect_type = data.get("effect_type", "physical")
 	s.status_inflicted = data.get("status_inflicted", "")
 	s.status_chance = data.get("status_chance", 0.0)
+	s.element = data.get("element", "")
+	s.attack_type = data.get("attack_type", "")
 	return s
-
+	
 func get_spell_by_name(spells: Array, name: String) -> Spell:
 	for spell in spells:
 		if spell.name == name:
@@ -622,6 +682,14 @@ func aplicar_dano(alvo, atacante, dano: int) -> void:
 		hud.update_special_bar(sp_values)
 
 func _execute_skill(user, skill, alvo):
+	var is_fisico = skill.effect_type == "damage" and skill.effect_type != "magic"
+
+	if not pode_atacar(alvo, user, is_fisico):
+		hud.show_top_message("Alvo fora de alcance!")
+		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+		end_turn()
+		return
+		
 	var hit_roll = randf()
 	if hit_roll > skill.hit_chance:
 		hud.show_top_message("%s errou o uso de %s!" % [user.nome, skill.name])
@@ -644,6 +712,21 @@ func _execute_skill(user, skill, alvo):
 		var dano = base_dano - defesa_modificada
 		dano = max(dano, 1)
 
+		dano = ajustar_dano_por_posicao(dano, user, alvo, is_fisico)
+		
+		# Aplicar resistências
+		var element_res = 1.0
+		var attack_type_res = 1.0
+
+		# Só aplicar se skill tiver element e attack_type preenchidos
+		if skill.has_method("element") and skill.element != "":
+			element_res = alvo.element_resistances.get(skill.element.to_lower(), 1.0)
+
+		if skill.has_method("attack_type") and skill.attack_type != "":
+			attack_type_res = alvo.attack_type_resistances.get(skill.attack_type.to_lower(), 1.0)
+		
+		dano = dano * element_res * attack_type_res
+		
 		# Crítico opcional baseado em LCK
 		var crit_chance = user.LCK * 0.01
 		if randf() < crit_chance:
@@ -708,6 +791,23 @@ func _execute_spell_area(caster, spell_name, alvos):
 			var defesa_magica = alvo.get_modified_derived_stat("magic_defense")
 			var dano = base_dano - defesa_magica
 			dano = max(dano, 1)
+			
+			# Aplicar resistências
+			var element_res = 1.0
+			var attack_type_res = 1.0
+			
+			if spell.element != "":
+				element_res = alvo.element_resistances.get(spell.element.to_lower(), 1.0)
+			else:
+				element_res = 1.0
+
+			if spell.attack_type != "":
+				attack_type_res = alvo.attack_type_resistances.get(spell.attack_type.to_lower(), 1.0)
+			else:
+				attack_type_res = 1.0
+
+			dano *= element_res * attack_type_res
+			
 			aplicar_dano(alvo, caster, dano)
 			if alvo.current_hp <= 0:
 				alvo.current_hp = 0
@@ -737,7 +837,8 @@ func _execute_spell_area(caster, spell_name, alvos):
 	reset_atb(caster)
 	hud.update_enemy_info(enemies)
 	hud.update_party_info(party)
-	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+	await get_tree().create_timer(0).timeout
+	_create_menu()
 	end_turn()
 
 func _execute_spell_single(caster, spell_name, alvo):
@@ -763,7 +864,21 @@ func _execute_spell_single(caster, spell_name, alvo):
 			hud.show_top_message("CRÍTICO MÁGICO! %s usou %s e causou %d de dano em %s!" % [caster.nome, spell.name, dano, alvo.nome])
 		else:
 			hud.show_top_message("%s usou %s em %s causando %d de dano!" % [caster.nome, spell.name, alvo.nome, dano])
+		
+					# Aplicar resistências
+		var element_res = 1.0
+		var attack_type_res = 1.0
+		
+		if spell.element != "":
+			element_res = alvo.element_resistances.get(spell.element.to_lower(), 1.0)
+		else:
+			element_res = 1.0
 
+		if spell.attack_type != "":
+			attack_type_res = alvo.attack_type_resistances.get(spell.attack_type.to_lower(), 1.0)
+		else:
+			attack_type_res = 1.0
+		dano *= element_res * attack_type_res
 		aplicar_dano(alvo, caster, dano)
 		
 		if alvo.current_hp <= 0:
@@ -797,6 +912,14 @@ func _execute_spell_single(caster, spell_name, alvo):
 	end_turn()
 
 func perform_attack(attacker, target) -> void:
+	# Verifica se pode atacar (regra de posição/alcance)
+	var is_ataque_fisico = true  # aqui assumimos que este é um ataque físico normal
+	if not pode_atacar(target, attacker, is_ataque_fisico):
+		hud.show_top_message("Alvo fora de alcance!")
+		reset_atb(attacker)
+		hud.update_party_info(party)
+		return
+
 	# Obter stats modificados
 	var attacker_accuracy = attacker.get_modified_stat(attacker.accuracy, "accuracy")
 	var target_evasion = target.get_modified_stat(target.evasion, "evasion")
@@ -804,7 +927,7 @@ func perform_attack(attacker, target) -> void:
 	var attacker_dex = attacker.get_modified_stat(attacker.DEX, "DEX")
 	var target_def = target.get_modified_stat(target.defense, "defense")
 	var attacker_lck = attacker.get_modified_stat(attacker.LCK, "LCK")
-
+	
 	# Calcular chance de acerto
 	var hit_chance = attacker_accuracy / float(attacker_accuracy + target_evasion)
 	var roll = randf()
@@ -817,10 +940,24 @@ func perform_attack(attacker, target) -> void:
 	# Calcular chance de crítico
 	var crit_chance = attacker_lck * 0.01
 	var is_crit = randf() < crit_chance
+	
+		# Tipo de ataque do atacante (deve estar definido no personagem)
+	var attack_type = attacker.attack_type
 
-	# Calcular dano base
-	var damage = attacker_str + int(attacker_dex / 2) - target_def
+	# Modificador de defesa baseado no tipo de ataque
+	var defense_modifier = 1.0
+	
+	if attack_type in target.attack_type_resistances:
+		defense_modifier = target.attack_type_resistances[attack_type]
+
+	# Calcular dano base considerando o modificador
+	print(attacker_str + int(attacker_dex / 2) - int(target_def))
+	print(attacker_str + int(attacker_dex / 2) - int(target_def * defense_modifier))
+	var damage = attacker_str + int(attacker_dex / 2) - int(target_def * defense_modifier)
 	damage = max(damage, 1)
+	
+	# Ajuste de dano por posição (frente/trás)
+	damage = ajustar_dano_por_posicao(damage, attacker, target, is_ataque_fisico)
 
 	if is_crit:
 		damage *= 2
@@ -861,7 +998,6 @@ func _execute_special_area(caster, especial_data, alvos):
 	reset_atb(caster)
 	hud.update_enemy_info(enemies)
 	hud.update_party_info(party)
-	_create_menu()
 	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 	end_turn()
 
@@ -1135,9 +1271,9 @@ func _on_magic_selected(spell_name: String):
 	hud.magic_selected.disconnect(_on_magic_selected)
 
 	var caster = current_actor
-	
+
 	# Buscar spell no array pelo nome
-	var spell_data = null
+	var spell_data: Spell = null
 	for spell in caster.spells:
 		if spell.name.to_lower() == spell_name.to_lower():
 			spell_data = spell
@@ -1166,24 +1302,45 @@ func _on_magic_selected(spell_name: String):
 		next_turn()
 		return
 
-	var is_area = spell_data.target_all
+	var target_group = spell_data.target_group
 
-	if is_area:
-		_create_menu()
-		await _execute_spell_area(caster, spell_name, alvos)
-		
-	else:
-		hud.target_selected.connect(_on_magic_target_selected)
-		var formatted_targets = []
-		for target in alvos:
-			formatted_targets.append({
-				"id": target.id,
-				"nome": target.nome,
-				"node_ref": target
-			})
-		
-		hud.show_target_menu(formatted_targets)
-		hud.set_meta("spell_name", spell_name)
+	match target_group:
+		"area":
+			await _execute_spell_area(caster, spell_name, alvos)
+
+		"line":
+			# Jogador escolhe "frente" ou "trás"
+			hud.line_target_selected.connect(_on_line_target_selected)
+			hud.show_line_target_menu(["frente", "trás"])
+			hud.set_meta("spell_name", spell_name)
+
+		"single", _:
+			hud.target_selected.connect(_on_magic_target_selected)
+			var formatted_targets = []
+			for target in alvos:
+				formatted_targets.append({
+					"id": target.id,
+					"nome": target.nome,
+					"node_ref": target
+				})
+			hud.show_target_menu(formatted_targets)
+			hud.set_meta("spell_name", spell_name)
+
+func _on_line_target_selected(linha: String):
+	hud.line_target_selected.disconnect(_on_line_target_selected)
+
+	var spell_name = hud.get_meta("spell_name")
+	var caster = current_actor
+
+	var linha_alvos = []
+	for e in enemies:
+		print(e.position_line)
+	if linha == "frente":
+		linha_alvos = enemies.filter(func(e): return e.current_hp > 0 and e.position_line == "front")
+	elif linha == "trás":
+		linha_alvos = enemies.filter(func(e): return e.current_hp > 0 and e.position_line == "back")
+
+	await _execute_spell_area(caster, spell_name, linha_alvos)
 
 func _on_magic_target_selected(alvo):
 	hud.target_selected.disconnect(_on_magic_target_selected)
@@ -1268,7 +1425,7 @@ func _on_special_selected(special_name):
 		_:
 			hud.show_top_message("Tipo de alvo inválido")
 			return
-	
+
 func _on_special_target_selected(target_id, especial):
 
 	var alvo = null
