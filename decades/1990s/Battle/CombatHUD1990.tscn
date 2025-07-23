@@ -1,0 +1,55 @@
+[gd_scene load_steps=2 format=3 uid="uid://1ux32hkdxwre"]
+
+[ext_resource type="Script" uid="uid://ctwet31aeed33" path="res://decades/1990s/Battle/CombatHUD1990.gd" id="1_hbghx"]
+
+[node name="CombatHud1990" type="CanvasLayer"]
+script = ExtResource("1_hbghx")
+
+[node name="TopMessage" type="Label" parent="."]
+offset_left = 600.0
+offset_top = 20.0
+offset_right = 900.0
+offset_bottom = 120.0
+
+[node name="HUDPanel" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(500, 150)
+offset_top = 762.0
+offset_right = 500.0
+offset_bottom = 912.0
+
+[node name="ActionPanel" type="VBoxContainer" parent="HUDPanel"]
+layout_mode = 2
+
+[node name="MagicPanel" type="ScrollContainer" parent="HUDPanel"]
+layout_mode = 2
+
+[node name="VBoxMagicList" type="VBoxContainer" parent="HUDPanel/MagicPanel"]
+layout_mode = 2
+
+[node name="TargetPanel" type="ScrollContainer" parent="HUDPanel"]
+layout_mode = 2
+
+[node name="VBoxTargetList" type="VBoxContainer" parent="HUDPanel/TargetPanel"]
+layout_mode = 2
+
+[node name="ItemPanel" type="ScrollContainer" parent="HUDPanel"]
+layout_mode = 2
+
+[node name="VBoxItemList" type="VBoxContainer" parent="HUDPanel/ItemPanel"]
+layout_mode = 2
+
+[node name="PartyStatus" type="PanelContainer" parent="."]
+offset_left = 510.0
+offset_top = 762.0
+offset_right = 550.0
+offset_bottom = 802.0
+
+[node name="PartyInfo" type="GridContainer" parent="PartyStatus"]
+layout_mode = 2
+
+[node name="EnemyStatus" type="PanelContainer" parent="."]
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="EnemyInfo" type="GridContainer" parent="EnemyStatus"]
+layout_mode = 2

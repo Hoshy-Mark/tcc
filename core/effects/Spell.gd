@@ -10,6 +10,7 @@ class_name Spell
 @export var attribute: String = ""  
 @export var amount: int = 0         
 @export var duration: int = 3     
+@export var target_all: bool = false
 
 func is_buff() -> bool:
 	return type == "buff"

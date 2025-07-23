@@ -11,7 +11,7 @@ func load_selected_decade_scene() -> void:
 		1980:
 			get_tree().change_scene_to_file("res://decades/1980s/Game1980.tscn")
 		1990:
-			get_tree().change_scene_to_file("res://decades/1990s/Game1990.tscn")
+			get_tree().change_scene_to_file("res://decades/1990s/PartySelect1990.tscn")
 		2000:
 			get_tree().change_scene_to_file("res://decades/2000s/Game2000.tscn")
 		2010:

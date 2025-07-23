@@ -81,6 +81,10 @@ func show_target_selection(alvos: Array, _spell_type: String) -> void:
 	target_window.get_node("ScrollContainer").custom_minimum_size = Vector2(max_button_width, popup_height)
 	target_window.popup()
 
+func _on_target_button_pressed(alvo):
+	emit_signal("target_selected", alvo)
+	target_window.hide()
+
 func show_item_menu(inventario: Dictionary) -> void:
 	clear(item_window)
 
@@ -122,10 +126,6 @@ func show_item_menu(inventario: Dictionary) -> void:
 	item_window.get_node("ScrollContainer").custom_minimum_size = Vector2(max_button_width, popup_height)
 	item_window.popup()
 
-func _on_target_button_pressed(alvo):
-	emit_signal("target_selected", alvo)
-	target_window.hide()
-	
 func set_enabled(enabled: bool):
 	$VBoxContainer/Button.disabled = not enabled
 	$VBoxContainer/Button2.disabled = not enabled
@@ -256,13 +256,15 @@ func show_magic_menu(player: PlayerPartyMember, magias := {}) -> void:
 	scroll.custom_minimum_size = Vector2(max_button_width, popup_height)
 	magic_menu.popup()
 	
+func _on_spell_button_pressed(spell_name):
+	magic_menu.hide()
+	emit_signal("magic_selected", spell_name)
+	
 func _on_voltar_btn_pressed():
 	magic_menu.hide()
 	set_enabled(true)
 	
-func _on_spell_button_pressed(spell_name):
-	magic_menu.hide()
-	emit_signal("magic_selected", spell_name)
+
 
 func update_party_info(party_members: Array) -> void:
 	clear_container(party_info)

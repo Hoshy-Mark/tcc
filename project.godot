@@ -18,6 +18,7 @@ config/features=PackedStringArray("4.4", "Mobile")
 
 DecadeManager="*res://core/DecadeManager.gd"
 GameManager="*res://core/GameManager.gd"
+Global="*res://decades/1990s/Global.gd"
 
 [rendering]
 

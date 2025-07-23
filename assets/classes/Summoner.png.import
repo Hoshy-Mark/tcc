@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c260ntt5qgt5n"
-path="res://.godot/imported/Background.jpg-4778156f105d3bb8084fa6f7bd69c45e.ctex"
+uid="uid://blokle3oami55"
+path="res://.godot/imported/Summoner.png-5112322267674d26f561e8aa3c4d2d4f.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/Background.jpg"
-dest_files=["res://.godot/imported/Background.jpg-4778156f105d3bb8084fa6f7bd69c45e.ctex"]
+source_file="res://assets/classes/Summoner.png"
+dest_files=["res://.godot/imported/Summoner.png-5112322267674d26f561e8aa3c4d2d4f.ctex"]
 
 [params]
 

@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://b185d27tmu84m"]
+
+[ext_resource type="Script" uid="uid://7iaf4m86aa27" path="res://decades/1990s/Battle/PlayerSprite.gd" id="1_wxw1w"]
+
+[node name="PlayerSprite" type="Sprite2D"]
+script = ExtResource("1_wxw1w")

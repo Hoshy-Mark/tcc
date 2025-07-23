@@ -26,3 +26,6 @@ func resume_game() -> void:
 func resetar_dados() -> void:
 	saved_party_data.clear()
 	print("DEBUG: Dados salvos resetados!")
+	
+func has_saved_data() -> bool:
+	return saved_party_data.size() > 0

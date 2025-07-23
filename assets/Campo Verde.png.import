@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bkuqhxtgsbtxq"
-path="res://.godot/imported/Monk.png-f7f9be0059a6c0fd57b37b6c83cf2bf1.ctex"
+uid="uid://bxr5pqiq2ohuc"
+path="res://.godot/imported/Campo Verde.png-cf891e0fa193aee9fd670c45c67f46ab.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/Monk.png"
-dest_files=["res://.godot/imported/Monk.png-f7f9be0059a6c0fd57b37b6c83cf2bf1.ctex"]
+source_file="res://assets/Campo Verde.png"
+dest_files=["res://.godot/imported/Campo Verde.png-cf891e0fa193aee9fd670c45c67f46ab.ctex"]
 
 [params]
 

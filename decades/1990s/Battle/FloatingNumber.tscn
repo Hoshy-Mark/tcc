@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://b1aoyltg6ean3"]
+
+[ext_resource type="Script" uid="uid://ccyf3qjshl8ik" path="res://decades/1990s/Battle/FloatingNumber.gd" id="1_sruhn"]
+
+[node name="FloatingNumber" type="Label"]
+script = ExtResource("1_sruhn")

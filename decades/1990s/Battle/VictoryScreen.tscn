@@ -1,0 +1,40 @@
+[gd_scene load_steps=3 format=3 uid="uid://bekavpd25sm5b"]
+
+[ext_resource type="Script" uid="uid://0vmgk4aks1c3" path="res://decades/1990s/Battle/VictoryScreen.gd" id="1_e08q1"]
+[ext_resource type="Texture2D" uid="uid://krxrbom5pn40" path="res://assets/Vitoria.png" id="2_ikd88"]
+
+[node name="VictoryScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_e08q1")
+
+[node name="TextureRect" type="TextureRect" parent="."]
+layout_mode = 0
+offset_right = 1724.0
+offset_bottom = 970.0
+texture = ExtResource("2_ikd88")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 720.0
+offset_top = 500.0
+offset_right = 847.0
+offset_bottom = 613.0
+scale = Vector2(2, 2)
+alignment = 1
+
+[node name="ButtonNext" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Continuar"
+
+[node name="ButtonAgain" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Jogar de Novo"
+
+[node name="ButtonMainMenu" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Voltar ao Menu"
+
+[node name="ButtonSave" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Salvar"

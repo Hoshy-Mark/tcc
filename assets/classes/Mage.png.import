@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cfsffj1l8852o"
-path="res://.godot/imported/Thief.png-6fe6c84e585cf84663ef75dc3ddcc5f1.ctex"
+uid="uid://cjahr01bahxyo"
+path="res://.godot/imported/Mage.png-ceff1eac49184f7830685ff2d1e8ed34.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/Thief.png"
-dest_files=["res://.godot/imported/Thief.png-6fe6c84e585cf84663ef75dc3ddcc5f1.ctex"]
+source_file="res://assets/classes/Mage.png"
+dest_files=["res://.godot/imported/Mage.png-ceff1eac49184f7830685ff2d1e8ed34.ctex"]
 
 [params]
 

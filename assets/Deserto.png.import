@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cidy53prcm56y"
-path="res://.godot/imported/Hunter.png-b5877f5d0be9e538cec5154726504d2e.ctex"
+uid="uid://ygq74lmuayft"
+path="res://.godot/imported/Deserto.png-4a38faea4ce250499fff4f8d6df50bfc.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/Hunter.png"
-dest_files=["res://.godot/imported/Hunter.png-b5877f5d0be9e538cec5154726504d2e.ctex"]
+source_file="res://assets/Deserto.png"
+dest_files=["res://.godot/imported/Deserto.png-4a38faea4ce250499fff4f8d6df50bfc.ctex"]
 
 [params]
 

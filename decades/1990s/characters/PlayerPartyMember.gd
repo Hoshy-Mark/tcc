@@ -1,0 +1,271 @@
+extends Node
+class_name PlayerPartyMember1990
+
+signal died
+
+# Identidade
+var nome: String = "Herói"
+var classe_name: String = "Knight"
+var level: int = 1
+var xp: int = 0
+
+# Atributos base
+var STR: int = 0
+var DEX: int = 0
+var AGI: int = 0
+var CON: int = 0
+var MAG: int = 0
+var INT: int = 0
+var SPI: int = 0
+var LCK: int = 0
+
+# Atributos derivados
+var max_hp: int = 0
+var current_hp: int = 0
+var max_mp: int = 0
+var current_mp: int = 0
+var defense: int = 0
+var magic_defense: int = 0
+var accuracy: int = 0
+var evasion: int = 0
+var speed: int = 0
+var current_sp := 0
+var max_sp := 0
+var id: String = ""
+
+var atb_value := 0.0
+var atb_max := 100.0
+
+var special_charge := 0.0 # de 0 a 100
+var special_ready := false
+
+
+# Magia
+var spells: Array[Spell] = []
+var spell_slots := {}  # Ex: {1: 3, 2: 1}
+var max_spell_slots := {}  # Ex: {1: 5, 2: 2}
+var skills: Array[Skill] = []
+var sprite_ref: Sprite2D = null
+
+# Status
+var is_defending: bool = false
+var status_effects: Array = []
+var active_status_effects: Array = []
+
+# === FUNÇÕES ===
+
+func calculate_stats():
+	max_hp = CON * 6 + STR * 2
+	max_mp = MAG * 4 + INT * 4
+	max_sp = STR * 2 + CON * 2 + AGI
+	defense = CON * 2 + STR
+	magic_defense = SPI * 2 + INT
+	accuracy = DEX * 2 + LCK
+	evasion = AGI * 2 + LCK
+	speed = AGI + DEX
+	current_sp = max_sp
+	current_hp = max_hp
+	current_mp = max_mp
+	id = classe_name
+
+func is_alive():
+	return current_hp > 0
+
+func take_damage(amount: int):
+	var damage = amount
+	var final_hit_chance_mod := 1.0
+
+	if is_defending:
+		damage = int(damage * 0.8)
+		final_hit_chance_mod = 0.8  # Evasão aumentada em 20%
+		is_defending = false
+
+	current_hp = max(current_hp - damage, 0)
+
+
+func heal(amount: int):
+	current_hp = min(current_hp + amount, max_hp)
+
+func apply_status_effect(effect: StatusEffect):
+	for existing in active_status_effects:
+		if existing.attribute == effect.attribute and existing.type == effect.type:
+			existing.amount = effect.amount
+			existing.duration = effect.duration
+			return
+	active_status_effects.append(effect)
+
+func get_modified_stat(base: int, attribute: String) -> int:
+	var result = base
+	for effect in active_status_effects:
+		if effect.attribute == attribute:
+			result += effect.amount
+	return result
+
+func cast_spell(targets, spell_name := "fogo"):
+	var spell_data: Spell = null
+	for spell in spells:
+		if spell.name.to_lower() == spell_name.to_lower():
+			spell_data = spell
+			break
+
+	if spell_data == null:
+		return []
+
+	var spell_level = spell_data.level
+	if not spell_slots.has(spell_level) or spell_slots[spell_level] <= 0:
+		return []
+
+	var base_cost = spell_data.cost
+	var reduced_cost = int(base_cost * (1.0 - INT * 0.01))
+	var final_cost = max(reduced_cost, 1)
+
+	if current_mp < final_cost:
+		return []
+
+	current_mp -= final_cost
+	spell_slots[spell_level] -= 1
+
+	var result = []
+
+	var alvo_lista = []
+	if typeof(targets) == TYPE_ARRAY:
+		alvo_lista = targets
+	else:
+		alvo_lista = [targets]
+
+	for alvo in alvo_lista:
+		var efeito = 0
+		match spell_data.type:
+			"damage":
+				var power = spell_data.power
+				var power_max = spell_data.power_max
+				var base_random = power + randi() % (power_max - power + 1)
+
+				var base_hit_chance = 100
+				var total_hit = base_hit_chance + INT
+				if randf() * 100 > total_hit:
+					result.append({ "alvo": alvo, "efeito": 0, "miss": true })
+					continue
+
+				var normalized = float(base_random - power) / max(1, (power_max - power))
+				var boosted_damage = base_random + int((1.0 - normalized) * MAG)
+
+				var remaining_boost = max(0, MAG - alvo.magic_defense)
+				var final_damage = boosted_damage + remaining_boost - MAG
+				final_damage = max(final_damage, 0)
+
+				alvo.take_damage(final_damage)
+				efeito = final_damage
+
+			"heal":
+				efeito = abs(spell_data.power)
+				alvo.heal(efeito)
+				efeito = -efeito
+
+			"buff", "debuff":
+				var effect = StatusEffect.new()
+				effect.attribute = spell_data.attribute
+				effect.amount = spell_data.amount
+				effect.duration = spell_data.duration
+				effect.type = StatusEffect.Type.BUFF if spell_data.is_buff() else StatusEffect.Type.DEBUFF
+				alvo.apply_status_effect(effect)
+				efeito = 0
+
+		result.append({ "alvo": alvo, "efeito": efeito })
+
+	return result
+
+func restore_spell_slots():
+	for key in max_spell_slots.keys():
+		spell_slots[key] = max_spell_slots[key]
+
+func process_status_effects():
+	var remaining: Array = []
+	for effect in active_status_effects:
+		match effect.attribute:
+			"regen":
+				heal(5 + SPI)
+			"bleed":
+				take_damage(5)
+			"stun":
+				# Marcar jogador como incapacitado, ou ignorar o turno (em BattleManager)
+				pass
+		effect.duration -= 1
+		if effect.duration > 0:
+			remaining.append(effect)
+	active_status_effects = remaining
+	
+func get_available_spells() -> Dictionary:
+	var result := {}
+	for spell in spells:
+		result[spell.name] = spell
+	return result
+
+func is_magic_user() -> bool:
+	return classe_name in ["Mage", "Cleric", "Paladin", "Summoner"]
+
+func is_skill_user() -> bool:
+	return not is_magic_user()
+
+func get_global_position() -> Vector2:
+	if sprite_ref:
+		return sprite_ref.global_position
+	return Vector2.ZERO
+
+func check_if_dead():
+	if current_hp <= 0:
+		special_charge = 0
+		atb_value = 0
+		emit_signal("died")
+		
+func increase_special_charge(amount: float) -> bool:
+	if special_ready:
+		return false
+
+	special_charge += amount
+	special_charge = clamp(special_charge, 0, 100)
+
+	if special_charge >= 100:
+		special_ready = true
+		return true
+
+	return true
+		
+func get_specials() -> Dictionary:
+	return {
+		"Break Thunder": {"type": "damage", "power": 80, "target": "enemy"},
+		"Safe Guard": {"type": "heal", "power": 80, "target": "ally"},
+		"Blade Storm": {"type": "damage", "power": 80, "target": "all_enemies"},
+		"Divine Blessing": {"type": "heal", "power": 50, "target": "ally_party"},
+		"Shadow Form": {"type": "buff", "attribute": "AGI", "amount": 6, "duration": 3, "target": "self"}
+	}
+
+func get_modified_derived_stat(attribute: String) -> int:
+	var STR_mod = get_modified_stat(STR, "STR")
+	var DEX_mod = get_modified_stat(DEX, "DEX")
+	var AGI_mod = get_modified_stat(AGI, "AGI")
+	var CON_mod = get_modified_stat(CON, "CON")
+	var MAG_mod = get_modified_stat(MAG, "MAG")
+	var INT_mod = get_modified_stat(INT, "INT")
+	var SPI_mod = get_modified_stat(SPI, "SPI")
+	var LCK_mod = get_modified_stat(LCK, "LCK")
+
+	match attribute:
+		"speed":
+			return AGI_mod + DEX_mod
+		"defense":
+			return CON_mod * 2 + STR_mod
+		"magic_defense":
+			return SPI_mod * 2 + INT_mod
+		"accuracy":
+			return DEX_mod * 2 + LCK_mod
+		"evasion":
+			return AGI_mod * 2 + LCK_mod
+		"max_hp":
+			return CON_mod * 6 + STR_mod * 2
+		"max_mp":
+			return MAG_mod * 4 + INT_mod * 4
+		"max_sp":
+			return STR_mod * 2 + CON_mod * 2 + AGI_mod
+		_:
+			return 0

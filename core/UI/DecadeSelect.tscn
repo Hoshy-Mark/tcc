@@ -32,6 +32,10 @@ columns = 3
 layout_mode = 2
 text = "1980s"
 
+[node name="Button1990" type="Button" parent="VBoxContainer/GridContainer"]
+layout_mode = 2
+text = "1990s"
+
 [node name="ButtonVoltar" type="Button" parent="VBoxContainer"]
 layout_mode = 2
 text = "Voltar"

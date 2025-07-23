@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bleo4032varo6"
-path="res://.godot/imported/Cleric.png-aaffbbda119c6ea607a7cbcf195873cc.ctex"
+uid="uid://cfsffj1l8852o"
+path="res://.godot/imported/Thief.png-43ebfcf750d9c63e42c8d3928f5cb72a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/Cleric.png"
-dest_files=["res://.godot/imported/Cleric.png-aaffbbda119c6ea607a7cbcf195873cc.ctex"]
+source_file="res://assets/classes/Thief.png"
+dest_files=["res://.godot/imported/Thief.png-43ebfcf750d9c63e42c8d3928f5cb72a.ctex"]
 
 [params]
 
