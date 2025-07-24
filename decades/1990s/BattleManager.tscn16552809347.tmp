@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://c7e2vrfg8vj2t"]
+
+[ext_resource type="Script" uid="uid://bgkhjefq0pmwm" path="res://decades/1990s/BattleManager.gd" id="1_5x6of"]
+
+[node name="BattleManager" type="Node"]
+script = ExtResource("1_5x6of")
+
+[node name="Characters" type="Node2D" parent="."]

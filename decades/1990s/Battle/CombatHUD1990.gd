@@ -5,8 +5,9 @@ signal magic_selected(spell_name: String)
 signal target_selected(alvo)
 signal item_selected(item_name: String)
 signal skill_selected(skill_name: String)
-signal special_selected(special_name: String)
+signal special_selected(special)
 signal line_target_selected(linha: String)
+signal back_pressed
 
 @onready var action_panel = $HUDPanel/ActionPanel
 @onready var magic_panel = $HUDPanel/MagicPanel
@@ -77,8 +78,8 @@ func show_skill_menu(skills: Array, player_sp: int):
 	
 	for skill in skills:
 		var button = Button.new()
-		button.text = "%s | SP: %d" % [skill.name, skill.cost_sp]
-		button.disabled = player_sp < skill.cost_sp
+		button.text = "%s | SP: %d" % [skill.name, skill.cost]
+		button.disabled = player_sp < skill.cost
 		button.custom_minimum_size = Vector2(500, 40)
 		button.pressed.connect(_on_skill_button_pressed.bind(skill.name))
 		vbox_magic_list.add_child(button)
@@ -168,14 +169,14 @@ func show_magic_menu(spells: Dictionary, player_mp: int, spell_slots: Dictionary
 	back_button.pressed.connect(_on_back_button_pressed)
 	vbox_magic_list.add_child(back_button)
 
-func show_special_menu(specials: Dictionary) -> void:
+func show_special_menu(specials: Array) -> void:
 	_hide_all_panels()
 	clear(vbox_magic_list) # reutilizar o mesmo painel da magia
 	magic_panel.visible = true
 	
 	for special in specials:
 		var button = Button.new()
-		button.text = "%s" % [special]
+		button.text = "%s" % special.name
 		button.custom_minimum_size = Vector2(500, 40)
 		button.pressed.connect(_on_special_button_pressed.bind(special))
 		vbox_magic_list.add_child(button)
@@ -243,14 +244,13 @@ func _on_item_pressed(item_name: String):
 	item_selected.emit(item_name)
 
 func _on_back_button_pressed() -> void:
-	_hide_all_panels()
-	action_panel.visible = true
+	emit_signal("back_pressed")
 
 func _on_action_button_pressed(action_name: String) -> void:
 	emit_signal("action_selected", action_name)
 
-func _on_special_button_pressed(name: String) -> void:
-	special_selected.emit(name)
+func _on_special_button_pressed(special) -> void:
+	special_selected.emit(special)
 
 
 # UPDATES

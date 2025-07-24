@@ -3,7 +3,7 @@ class_name Skill
 
 @export var name: String = "Nome da Skill"
 @export_multiline var description: String = "Descrição da skill."
-@export var cost_sp: int = 5
+@export var cost: int = 5
 @export var power: int = 10
 @export var amount: int = 10 # valor upado oo buff ou debuff
 @export var scaling_stat: String = "STR"  # STR, DEX, AGI, etc.

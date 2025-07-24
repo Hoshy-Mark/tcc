@@ -31,11 +31,11 @@ const TEMPO_ESPERA_APOS_ACAO = 0.5
 var enemy_base_stats = {
 	"Goblin": {
 		"STR": 10, "DEX": 6, "AGI": 20, "CON": 3, "MAG": 1, "INT": 2, "SPI": 2, "LCK": 4,
-		"xp_value": 10, "sprite_path": "res://assets/Goblin.png"
+		"xp_value": 20, "sprite_path": "res://assets/Goblin.png"
 	},
 	"Little Orc": {
 		"STR": 10, "DEX": 4, "AGI": 20, "CON": 6, "MAG": 2, "INT": 3, "SPI": 3, "LCK": 3,
-		"xp_value": 20, "sprite_path": "res://assets/Little Orc.png"
+		"xp_value": 50, "sprite_path": "res://assets/Little Orc.png"
 	},
 }
 
@@ -51,10 +51,10 @@ var class_sprite_paths = {
 }
 
 var class_base_stats = {
-	"Knight":    {"STR": 9, "DEX": 5, "AGI": 3, "CON": 9, "MAG": 1, "INT": 2, "SPI": 4, "LCK": 3, "attack_type": "slash"},
+	"Knight":    {"STR": 9, "DEX": 20, "AGI": 3, "CON": 9, "MAG": 1, "INT": 2, "SPI": 4, "LCK": 3, "attack_type": "slash"},
 	"Mage":      {"STR": 1, "DEX": 4, "AGI": 20, "CON": 2, "MAG": 10, "INT": 9, "SPI": 5, "LCK": 4, "attack_type": "blunt"},
 	"Thief":     {"STR": 5, "DEX": 9, "AGI": 9, "CON": 3, "MAG": 1, "INT": 3, "SPI": 2, "LCK": 10, "attack_type": "pierce"},
-	"Cleric":    {"STR": 2, "DEX": 4, "AGI": 20, "CON": 5, "MAG": 5, "INT": 6, "SPI": 10, "LCK": 6, "attack_type": "blunt"},
+	"Cleric":    {"STR": 2, "DEX": 20, "AGI": 20, "CON": 5, "MAG": 5, "INT": 6, "SPI": 10, "LCK": 6, "attack_type": "blunt"},
 	"Hunter":    {"STR": 7, "DEX": 20, "AGI": 20, "CON": 4, "MAG": 1, "INT": 3, "SPI": 3, "LCK": 7, "attack_type": "ranged"},
 	"Paladin":   {"STR": 7, "DEX": 6, "AGI": 4, "CON": 8, "MAG": 4, "INT": 5, "SPI": 8, "LCK": 4, "attack_type": "slash"},
 	"Monk":      {"STR": 60, "DEX": 7, "AGI": 6, "CON": 7, "MAG": 2, "INT": 3, "SPI": 3, "LCK": 5, "attack_type": "blunt"},
@@ -80,6 +80,8 @@ var spell_database = {
 	"Flare": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 80, "power_max": 100, "cost": 20, "level": 3, "hit_chance": 85, "target_group": "single"},
 	"Fire Rain": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 30, "cost": 8, "level": 2,"target_group": "line"},
 	"Mega Flare": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 60, "cost": 10, "level": 4,"target_group": "area"},
+	"Divine Blade": {"effect_type": "damage", "attack_type": "holy", "power": 45, "cost": 10, "target_type": "enemy", "status_inflicted": "blind", "level": 4,"status_chance": 0.3, "duration": 3},
+	"Holy Smite": {"effect_type": "damage", "attack_type": "holy", "power": 60, "cost": 15, "level": 4, "target_type": "enemy"},
 	
 	# Cura
 	"Cure": {"type": "heal", "attack_type": "magic", "power": 30, "cost": 5, "level": 1, "target_group": "single"},
@@ -94,14 +96,165 @@ var spell_database = {
 
 	# Especiais
 	"Summon Ifrit": {"type": "damage","element": "fire", "attack_type": "magic", "power": 100, "power_max": 120, "cost": 25, "level": 4, "hit_chance": 100},
-	"Dispel": {"type": "special", "attack_type": "magic","effect": "remove_buffs", "cost": 10, "level": 2, "target_group": "single"}
+	"Dispel": {"type": "special", "attack_type": "magic","effect": "remove_buffs", "cost": 10, "level": 2, "target_group": "single"},
+	"Eidolon Burst": {"effect_type": "damage", "attack_type": "magic", "power": 50, "cost": 20,"level": 4, "target_type": "area"},
+	"Divine Light": {"type": "heal", "attack_type": "magic", "power": 75, "cost": 14, "level": 3, "target_group": "area"},
+	"Summon Phoenix": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 120, "power_max": 140, "cost": 30, "level": 5, "hit_chance": 100, "target_group": "area"},
 }
 
 var skill_database = {
 	"Power Strike": {"effect_type": "damage",  "attack_type": "blunt", "power": 35, "cost": 4, "target_type": "enemy"},
 	"Quick Shot": {"effect_type": "damage",  "attack_type": "pierce", "power": 25, "cost": 3, "target_type": "enemy"},
-	"Focus": {"effect_type": "buff", "scaling_stat": "AGI", "amount": 500, "duration": 3, "cost": 2, "target_type": "self"},
+	"Focus": {"effect_type": "buff", "scaling_stat": "AGI", "amount": 5, "duration": 3, "cost": 2, "target_type": "self"},
 	"Heal Self": {"effect_type": "heal", "power": 25, "cost": 5, "target_type": "self"},
+	"Shield Breaker": {"effect_type": "damage", "attack_type": "pierce", "power": 30, "cost": 6, "target_type": "enemy", "status_inflicted": "defense_down", "status_chance": 0.6, "duration": 3},
+	"Tracking Shot": {"effect_type": "damage", "attack_type": "pierce", "power": 35, "cost": 6, "target_type": "enemy", "status_inflicted": "accuracy_up", "status_chance": 0.7, "duration": 3},
+	"Steal": {"effect_type": "special", "attack_type": "None", "effect": "steal_item", "cost": 4, "target_type": "enemy"},
+	"Evade Boost": {"effect_type": "buff", "attribute": "evasion", "amount": 7, "duration": 3, "cost": 5, "target_type": "self"},
+	"Fury Punch": {"effect_type": "damage", "attack_type": "blunt", "power": 45, "cost": 8, "target_type": "enemy"},
+	"Holy Smite": {"effect_type": "damage", "attack_type": "holy", "power": 60, "cost": 15, "target_type": "enemy"},
+	"Crushing Blow": {"effect_type": "damage", "attack_type": "blunt", "power": 55, "cost": 8, "target_type": "enemy", "status_inflicted": "stun", "status_chance": 0.4, "duration": 1},
+	"Arrow Barrage": {"effect_type": "damage", "attack_type": "pierce", "power": 28, "cost": 6, "target_type": "line"},
+	"Shadow Jab": {"effect_type": "damage", "attack_type": "pierce", "power": 40, "cost": 5, "target_type": "enemy", "status_inflicted": "bleed", "status_chance": 0.35, "duration": 3},
+	"Chi Burst": {"effect_type": "hybrid", "attack_type": "magic", "power": 30, "heal": 30, "cost": 10, "target_type": "self"},
+}
+
+var class_spell_trees = {
+	"Mage": {
+		"spells": {
+			"Fire": {"level": 1, "INT": 6},
+			"Ice": {"level": 2, "INT": 7},
+			"Thunder": {"level": 3, "INT": 8},
+		},
+		"skills": {},
+		"specials": {
+			"Arcane Surge": {"level": 1, "INT": 5}
+		},
+		"spell_upgrades": {
+			"Fire": "Fire Rain",
+			"Fire Rain": "Flare"
+		},
+		"skill_upgrades": {}
+	},
+
+	"Cleric": {
+		"spells": {
+			"Cure": {"level": 1, "SPI": 6},
+			"Protect": {"level": 2, "SPI": 8},
+			"Shell": {"level": 3, "SPI": 10},
+		},
+		"skills": {},
+		"specials": {
+			"Safe Guard": {"level": 1, "INT": 2}
+		},
+		"spell_upgrades": {
+			"Cure": "Cura",
+			"Cura": "Heal All"
+		},
+		"skill_upgrades": {}
+	},
+
+	"Knight": {
+		"spells": {},
+		"skills": {
+			"Power Strike": {"level": 2, "STR": 10},
+			"Focus": {"level": 3, "AGI": 11},
+		},
+		"specials": {
+			"Shield Breaker": {"level": 1, "STR": 5}
+		},
+		"spell_upgrades": {},
+		"skill_upgrades": {
+			"Power Strike": "Crushing Blow"
+		}
+	},
+
+	"Hunter": {
+		"spells": {},
+		"skills": {
+			"Quick Shot": {"level": 1, "STR": 7},
+			"Focus": {"level": 2, "AGI": 11},
+		},
+		"specials": {
+			"Rain of Arrows": {"level": 1, "DEX": 2}
+		},
+		"spell_upgrades": {},
+		"skill_upgrades": {
+			"Quick Shot": "Arrow Barrage"
+		}
+	},
+
+	"Thief": {
+		"spells": {},
+		"skills": {
+			"Quick Shot": {"level": 1, "STR": 7},
+		},
+		"specials": {
+			"Shadow Strike": {"level": 1, "AGI": 2}
+		},
+		"spell_upgrades": {},
+		"skill_upgrades": {
+			"Quick Shot": "Shadow Jab"
+		}
+	},
+
+	"Monk": {
+		"spells": {},
+		"skills": {
+			"Power Strike": {"level": 1, "STR": 8},
+			"Heal Self": {"level": 2, "AGI": 11},
+		},
+		"specials": {
+			"Inner Focus": {"level": 1, "SPI": 5}
+		},
+		"spell_upgrades": {},
+		"skill_upgrades": {
+			"Heal Self": "Chi Burst"
+		}
+	},
+
+	"Paladin": {
+		"spells": {
+			"Cure": {"level": 1, "SPI": 6},
+			"Protect": {"level": 2, "SPI": 8},
+		},
+		"skills": {},
+		"specials": {
+			"Divine Blade": {"level": 1, "STR": 2}
+		},
+		"spell_upgrades": {
+			"Cure": "Divine Light"
+		},
+		"skill_upgrades": {}
+	},
+
+	"Summoner": {
+		"spells": {
+			"Summon Ifrit": {"level": 3, "SPI": 6},
+			"Fire": {"level": 1, "SPI": 8},
+			"Dispel": {"level": 2, "SPI": 8},
+		},
+		"skills": {},
+		"specials": {
+			"Eidolon Burst": {"level": 1, "SPI": 2}
+		},
+		"spell_upgrades": {
+			"Summon Ifrit": "Summon Phoenix"
+		},
+		"skill_upgrades": {}
+	}
+}
+
+var special_database = {
+	"Break Thunder": {"effect_type": "damage", "attack_type": "Slash", "power": 35, "target_type": "enemy"},
+	"Safe Guard": {"effect_type": "heal", "attack_type": "Magic", "power": 25, "target_type": "ally"},
+	"Arcane Surge": {"effect_type": "damage", "attack_type": "Magic", "power": 40, "target_type": "enemy"},
+	"Shield Breaker": {"effect_type": "damage", "attack_type": "Pierce", "power": 30, "target_type": "enemy", "status_inflicted": "defense_down", "status_chance": 0.6, "duration": 3},
+	"Rain of Arrows": {"effect_type": "damage", "attack_type": "Pierce", "power": 20, "target_type": "all_enemies"},
+	"Shadow Strike": {"effect_type": "damage", "attack_type": "Pierce", "power": 35, "target_type": "enemy", "status_inflicted": "stun", "status_chance": 0.4, "duration": 2},
+	"Inner Focus": {"effect_type": "buff", "attack_type": "None", "power": 0, "target_type": "self", "attribute": "SPI", "amount": 5, "duration": 4},
+	"Divine Blade": {"effect_type": "damage", "attack_type": "Holy", "power": 45, "target_type": "enemy", "status_inflicted": "blind", "status_chance": 0.3, "duration": 3},
+	"Eidolon Burst": {"effect_type": "damage", "attack_type": "Magic", "power": 50, "target_type": "all_enemies", }
 }
 
 # Estado da batalha
@@ -192,6 +345,12 @@ func end_battle(victory: bool) -> void:
 
 	if victory:
 		print("Fim da batalha: Vitória")
+		var total_xp = 0
+		for enemy in enemies:
+			total_xp += enemy.xp_value
+		for member in party:
+			member.gain_xp(total_xp)
+			unlock_available_spells_and_skills(member)
 		_save_party_status()
 		await get_tree().create_timer(5.0).timeout
 		start_battle()
@@ -222,9 +381,13 @@ func _save_party_status() -> void:
 			"current_sp": member.current_sp,
 			"spells": member.spells,
 			"spell_slots": member.spell_slots,
-			"skills": member.skills
+			"skills": member.skills,
+			"level": member.level,
+			"xp": member.xp,
+			"xp_to_next_level": member.xp_to_next_level,
 		}
 		saved_data.append(member_data)
+	
 	GameManager.saved_party_data = saved_data
 	print("DEBUG: Dados salvos para 1990.")
 
@@ -251,6 +414,9 @@ func _load_party() -> Array:
 		member.spells = member_data.get("spells", [])
 		member.spell_slots = member_data.get("spell_slots", {})
 		member.skills = member_data.get("skills", [])
+		member.level = member_data.get("level", 1)
+		member.xp = member_data.get("xp", 0)
+		member.xp_to_next_level = member_data.get("xp_to_next_level", 100)
 		member.calculate_stats()
 		loaded_party.append(member)
 	return loaded_party
@@ -280,6 +446,7 @@ func pode_atacar(alvo, atacante, is_ataque_fisico: bool) -> bool:
 	# Se alvo estiver atrás, só pode atacar se atacante tiver alcance estendido
 	return atacante.alcance_estendido
 
+
 # CRIAÇÃO DE INIMIGOS E PLAYER
 
 
@@ -303,73 +470,33 @@ func spawn_party(party_data: Array) -> void:
 		player_node.attack_type = stats.get("attack_type", " ")
 
 		player_node.calculate_stats()
-		
+		player_node.level = 1
+
+		unlock_available_spells_and_skills(player_node)
+		player_node.spell_upgrades = class_spell_trees.get(classe_name, {}).get("spell_upgrades", {})
+		player_node.skill_upgrades = class_spell_trees.get(classe_name, {}).get("skill_upgrades", {})
+
 		if i < 2:
 			player_node.position_line = "front"
 		else:
 			player_node.position_line = "back"
-		# --- Magias por classe como Spell Resource ---
-		player_node.spells = []
 		
 		if player_node.classe_name == "Hunter":
 			player_node.alcance_estendido = true
-			
-		var spells_for_class := []
-		match classe_name:
-			"Mage":
-				spells_for_class = ["Fire", "Ice", "Thunder", "Flare", "Fire Rain"]
-			"Cleric":
-				spells_for_class = ["Cure", "Cura", "Heal All", "Protect", "Shell"]
-			"Paladin":
-				spells_for_class = ["Cure", "Protect"]
-			"Summoner":
-				spells_for_class = ["Summon Ifrit", "Dispel", "Fire"]
-			_:  # classes físicas
-				spells_for_class = []
-
-		for spell_name in spells_for_class:
-			if spell_database.has(spell_name):
-				var spell = create_spell(spell_name, spell_database[spell_name])
-				player_node.spells.append(spell)
 		
 		player_node.spell_slots = class_spell_slots.get(classe_name, {})
-		
-		player_node.skills = []
 
-		var skills_for_class := []
-		
-		match classe_name:
-			"Knight":
-				skills_for_class = ["Power Strike", "Focus"]
-			"Thief":
-				skills_for_class = ["Quick Shot"]
-			"Monk":
-				skills_for_class = ["Power Strike", "Heal Self"]
-			"Hunter":
-				skills_for_class = ["Quick Shot", "Focus"]
-			_: # classes mágicas
-				skills_for_class = []
-
-		for skill_name in skills_for_class:
-			if skill_database.has(skill_name):
-				var skill = create_skill(skill_name, skill_database[skill_name])
-				player_node.skills.append(skill)
-		# Adiciona à party
 		party[i] = player_node
 
-		# Sprite
 		var player_sprite = preload("res://decades/1990s/Battle/PlayerSprite.tscn").instantiate()
 		player_sprite.set_sprite(class_sprite_paths.get(classe_name, ""))
 		player_sprite.position = get_player_position(i)
 		player_sprite.set_player(player_node)
-		
 
 		if classe_name == "Monk":
 			player_sprite.scale = Vector2(0.8, 0.8)
 
-		# Aqui: adiciona a referência do sprite ao player
 		player_node.sprite_ref = player_sprite
-
 		characters_node.add_child(player_sprite)
 
 func spawn_loaded_party(loaded_party: Array) -> void:
@@ -390,7 +517,7 @@ func spawn_loaded_party(loaded_party: Array) -> void:
 		# Adiciona ao array de party e à cena
 		party[i] = player_node
 		characters_node.add_child(player_sprite)
-		
+
 func spawn_enemies(enemy_data: Array) -> void:
 	for i in range(enemy_data.size()):
 		var enemy_info = enemy_data[i]
@@ -470,9 +597,9 @@ func _ready():
 
 	# 🔧 Conecte o sinal aqui
 	hud.action_selected.connect(_on_player_action_selected)
+	hud.back_pressed.connect(_on_hud_back_pressed)
 
 func start_battle(party_data: Array = []) -> void:
-	
 	if party_data.is_empty() and GameManager.saved_party_data.size() > 0:
 		party_data = _load_party()
 	elif party_data.is_empty():
@@ -483,41 +610,32 @@ func start_battle(party_data: Array = []) -> void:
 		child.queue_free()
 	enemy_sprites.clear()
 	enemies.clear()
-	# Armazena dados
-	party = party_data.duplicate()
-	enemies = generate_enemies()
 	
-	for member in party:
-		sp_values[member] = 0.0
-	# Spawn dos sprites na tela
-	
-	# Verifica o tipo dos dados: se é array de objetos (do save), ou nomes (novo jogo)
-	if typeof(party_data[0]) == TYPE_OBJECT:
+
+	if party_data[0] is PlayerPartyMember1990:
 		party = party_data.duplicate()
 		spawn_loaded_party(party)
 	else:
-		# Recebendo nomes de classes, gerar nova party
-		party.resize(party_data.size())  # Garante espaço no array
+		party.resize(party_data.size())
 		spawn_party(party_data)
 
+	for member in party:
+		sp_values[member] = 0.0
+
+	enemies = generate_enemies()
 	spawn_enemies(enemies)
 
-	# Atualiza HUD com dados iniciais
 	hud.update_party_info(party)
 	hud.update_enemy_info(enemies)
 	
 	battle_active = true
-	# Define ordem de turno
 	turn_order = party + enemies
-	
 	current_turn_index = 0
 
 	if not is_player(current_actor):
 		current_actor = get_next_player_actor(current_turn_index)
 
 	hud.show_top_message("Batalha Iniciada!")
-
-	# Inicia o primeiro turno
 	next_turn()
 
 func get_next_player_actor(start_index: int):
@@ -575,17 +693,22 @@ func _process(delta):
 		next_turn()
 
 func end_turn():
-	# Finaliza o turno atual, libera para próxima carga ATB
 	is_executing_turn = false
-	# Verifica estado da batalha e possivelmente começa próximo turno
+
+	for member in party:
+		for spell_name in member.spell_ap.keys():
+			check_ability_mastery(member, spell_name, true)
+		for skill_name in member.skill_ap.keys():
+			check_ability_mastery(member, skill_name, false)
+
+	# Continua fluxo de batalha
 	if not check_battle_state():
 		if ready_to_act.size() > 0:
 			next_turn()
-
+			
 func next_turn():
 	if ready_to_act.is_empty():
 		return
-	
 	current_actor = ready_to_act.pop_front()
 
 	if not current_actor or not current_actor.is_alive():
@@ -610,7 +733,7 @@ func next_turn():
 func reset_atb(actor):
 	actor.atb_value = 0
 	hud.update_atb_bars({actor: 0})
-	
+
 
 # CRIAÇÃO
 
@@ -635,7 +758,7 @@ func create_spell(name: String, data: Dictionary) -> Spell:
 func create_skill(name: String, data: Dictionary) -> Skill:
 	var s = Skill.new()
 	s.name = name
-	s.cost_sp = data.get("cost_sp", 0)
+	s.cost = data.get("cost", 0)
 	s.power = data.get("power", 0)
 	s.scaling_stat = data.get("scaling_stat", "STR")
 	s.hit_chance = data.get("hit_chance", 0.95)
@@ -646,7 +769,19 @@ func create_skill(name: String, data: Dictionary) -> Skill:
 	s.element = data.get("element", "")
 	s.attack_type = data.get("attack_type", "")
 	return s
-	
+
+func create_special(name: String, data: Dictionary) -> Special:
+	var s = Special.new()
+	s.name = name
+	s.effect_type = data.get("effect_type", "")
+	s.attack_type = data.get("attack_type", "")
+	s.power = data.get("power", 0)
+	s.target_type = data.get("target_type", "")
+	s.scaling_stat = data.get("scaling_stat", "")
+	s.amount = data.get("amount", 0)
+	s.duration = data.get("duration", 0)
+	return s
+
 func get_spell_by_name(spells: Array, name: String) -> Spell:
 	for spell in spells:
 		if spell.name == name:
@@ -656,15 +791,116 @@ func get_spell_by_name(spells: Array, name: String) -> Spell:
 func _create_menu() -> void:
 		hud._hide_all_panels()
 		hud.hide_arrow()
-		hud.show_action_menu()
+		hud.show_action_menu(current_actor)
+
+func unlock_available_spells_and_skills(player):
+	var tree = class_spell_trees.get(player.classe_name, {"spells": {}, "skills": {}})
+
+	player.spells.clear()
+	player.skills.clear()
+	player.specials.clear()
+
+	# Desbloquear magias
+	for spell_name in tree.spells.keys():
+		var reqs = tree.spells[spell_name]
+		# Confere level e atributos, default 0 caso não exista
+		var level_req = reqs.get("level", 0)
+		var int_req = reqs.get("INT", 0)
+		var spi_req = reqs.get("SPI", 0)
+
+		if player.level >= level_req and player.INT >= int_req and player.SPI >= spi_req:
+			if spell_database.has(spell_name):
+				var spell = create_spell(spell_name, spell_database[spell_name])
+				player.spells.append(spell)
+
+	# Desbloquear skills
+	for skill_name in tree.skills.keys():
+		var reqs = tree.skills[skill_name]
+		var level_req = reqs.get("level", 0)
+
+		var stat_req_pass = true
+		for stat in reqs.keys():
+			if stat == "level":
+				continue
+			# Verifica se o player tem stats mínimos (ex: STR, AGI, etc)
+			if player.get(stat) < reqs[stat]:
+				stat_req_pass = false
+				break
+
+		if player.level >= level_req and stat_req_pass:
+			if skill_database.has(skill_name):
+				var skill = create_skill(skill_name, skill_database[skill_name])
+				player.skills.append(skill)
+	
+	# Desbloquear specials
+	for special_name in tree.specials.keys():
+		var reqs = tree.specials[special_name]
+		var level_req = reqs.get("level", 0)
+
+		var stat_req_pass = true
+		for stat in reqs.keys():
+			if stat == "level":
+				continue
+			if player.get(stat) < reqs[stat]:
+				stat_req_pass = false
+				break
+
+		if player.level >= level_req and stat_req_pass:
+			if special_database.has(special_name):
+				var special = create_special(special_name, special_database[special_name])
+				player.specials.append(special)
+
+func check_ability_mastery(member, ability_name: String, is_spell: bool) -> void:
+	var ap_dict
+	if is_spell:
+		ap_dict = member.spell_ap
+	else:
+		ap_dict = member.skill_ap
+	var data = ap_dict[ability_name]
+	var current_level = data.get("level", 1)
+	var current_ap = data.get("current", 0)
+	
+	print(ability_name)
+	print(current_ap)
+	print(current_level)
+	
+	var ap_needed_per_level = {1: 50, 2: 100, 3: 200}
+
+	if current_level >= 3:
+		return
+
+	var ap_needed = ap_needed_per_level[current_level]
+	if current_ap >= ap_needed:
+		data["level"] += 1
+		data["current"] = 0
+		member.apply_mastery_bonus(ability_name, data["level"], is_spell)
+
+		if data["level"] == 3:
+			if is_spell and ability_name in member.spell_upgrades:
+				var evolved = member.spell_upgrades[ability_name]
+				if evolved in spell_database:
+					var evolved_spell = create_spell(evolved, spell_database[evolved])
+					member.spells.append(evolved_spell)
+					member.spell_ap[evolved] = {"current": 0, "level": 1}
+					print("%s desbloqueou %s!" % [member.nome, evolved])
+			elif not is_spell and ability_name in member.skill_upgrades:
+				var evolved = member.skill_upgrades[ability_name]  # Corrigido aqui
+				if evolved in skill_database:
+					# Se tiver função create_skill, use ela. Se não, create_spell pode funcionar.
+					var evolved_skill = create_skill(evolved, skill_database[evolved]) 
+					member.skills.append(evolved_skill)
+					member.skill_ap[evolved] = {"current": 0, "level": 1}
+					print("%s desbloqueou %s!" % [member.nome, evolved])
 
 
 # EXECUTA AÇÃO
+
 
 func aplicar_dano(alvo, atacante, dano: int) -> void:
 	alvo.current_hp -= dano
 	if alvo.current_hp < 0:
 		alvo.current_hp = 0
+		alvo.check_if_dead()
 
 	var updated := false
 
@@ -734,7 +970,9 @@ func _execute_skill(user, skill, alvo):
 			hud.show_top_message("CRÍTICO! %s usou %s e causou %d de dano em %s!" % [user.nome, skill.name, dano, alvo.nome])
 		else:
 			hud.show_top_message("%s usou %s e causou %d de dano em %s!" % [user.nome, skill.name, dano, alvo.nome])
-
+		
+		var ap_gain = int(100)  # Ganha mais AP se causar mais dano
+		user.gain_ap(skill.name, ap_gain, false)
 		aplicar_dano(alvo, user, dano)
 
 		if alvo.current_hp <= 0:
@@ -745,12 +983,16 @@ func _execute_skill(user, skill, alvo):
 
 	elif skill.effect_type == "heal":
 		var cura = skill.power + user.SPI
+		var ap_gain = int(100)  # Ganha mais AP se causar mais dano
+		user.gain_ap(skill.name, ap_gain, false)
 		alvo.current_hp = min(alvo.max_hp, alvo.current_hp + cura)
 		hud.show_top_message("%s usou %s e curou %d HP em %s!" % [user.nome, skill.name, cura, alvo.nome])
 		hud.show_floating_number(cura, alvo, "hp")
 
 	elif skill.effect_type == "buff":
 		var effect = StatusEffect.new()
+		var ap_gain = int(100)  # Ganha mais AP se causar mais dano
+		user.gain_ap(skill.name, ap_gain, false)
 		effect.attribute = skill.scaling_stat
 		effect.amount = skill.amount
 		effect.duration = skill.duration if skill.duration > 0 else 3
@@ -808,6 +1050,8 @@ func _execute_spell_area(caster, spell_name, alvos):
 
 			dano *= element_res * attack_type_res
 			
+			var ap_gain = int(100)  # Ganha mais AP se causar mais dano
+			caster.gain_ap(spell.name, ap_gain, false)
 			aplicar_dano(alvo, caster, dano)
 			if alvo.current_hp <= 0:
 				alvo.current_hp = 0
@@ -818,12 +1062,16 @@ func _execute_spell_area(caster, spell_name, alvos):
 
 		elif tipo == "heal":
 			var cura = spell.power + caster.get_modified_stat(caster.SPI, "SPI")
+			var ap_gain = int(100)  # Ganha mais AP se causar mais dano
+			caster.gain_ap(spell.name, ap_gain, false)
 			alvo.current_hp = min(alvo.max_hp, alvo.current_hp + cura)
 			hud.show_top_message("%s curado por %s: %d de HP!" % [alvo.nome, spell_name, cura])
 			hud.show_floating_number(cura, alvo, "hp")
 
 		elif tipo == "buff" or tipo == "debuff":
 			var effect = StatusEffect.new()
+			var ap_gain = int(100)  # Ganha mais AP se causar mais dano
+			caster.gain_ap(spell.name, ap_gain, false)
 			effect.attribute = spell.attribute
 			effect.amount = spell.amount
 			effect.duration = spell.duration
@@ -879,6 +1127,8 @@ func _execute_spell_single(caster, spell_name, alvo):
 		else:
 			attack_type_res = 1.0
 		dano *= element_res * attack_type_res
+		var ap_gain = int(100)  # Ganha mais AP se causar mais dano
+		caster.gain_ap(spell.name, ap_gain, false)
 		aplicar_dano(alvo, caster, dano)
 		
 		if alvo.current_hp <= 0:
@@ -890,6 +1140,8 @@ func _execute_spell_single(caster, spell_name, alvo):
 
 	elif tipo == "heal":
 		var cura = spell.power + caster.get_modified_stat(caster.SPI, "SPI")
+		var ap_gain = int(100)  # Ganha mais AP se causar mais dano
+		caster.gain_ap(spell.name, ap_gain, false)
 		alvo.current_hp = min(alvo.max_hp, alvo.current_hp + cura)
 		hud.show_top_message("%s curou %s com %s em %d de HP!" % [caster.nome, alvo.nome, spell.name, cura])
 		hud.show_floating_number(cura, alvo, "hp")
@@ -900,6 +1152,8 @@ func _execute_spell_single(caster, spell_name, alvo):
 		effect.amount = spell.amount
 		effect.duration = spell.duration
 		effect.type = StatusEffect.Type.BUFF if spell.type == "buff" else StatusEffect.Type.DEBUFF
+		var ap_gain = int(100)  # Ganha mais AP se causar mais dano
+		caster.gain_ap(spell.name, ap_gain, false)
 		alvo.apply_status_effect(effect)
 
 		var acao = "aumentado" if spell.type == "buff" else "reduzido"
@@ -951,8 +1205,6 @@ func perform_attack(attacker, target) -> void:
 		defense_modifier = target.attack_type_resistances[attack_type]
 
 	# Calcular dano base considerando o modificador
-	print(attacker_str + int(attacker_dex / 2) - int(target_def))
-	print(attacker_str + int(attacker_dex / 2) - int(target_def * defense_modifier))
 	var damage = attacker_str + int(attacker_dex / 2) - int(target_def * defense_modifier)
 	damage = max(damage, 1)
 	
@@ -981,63 +1233,83 @@ func perform_attack(attacker, target) -> void:
 	hud.update_enemy_info(enemies)
 	hud.update_party_info(party)
 
-func _execute_special_area(caster, especial_data, alvos):
+func _execute_special_area(caster, special: Special, alvos):
 	for alvo in alvos:
-		if especial_data.type == "damage":
-			var dano = especial_data.power + caster.STR
-			dano -= alvo.defense
-			dano = max(dano, 1)
-			aplicar_dano(alvo,caster,dano)
-			hud.show_floating_number(dano, alvo, "damage")
+		match special.effect_type:
+			"damage":
+				var dano = special.power + caster.get_modified_stat(caster.STR, "STR")
+				dano = ajustar_dano_por_posicao(dano, caster, alvo, true)
+				aplicar_dano(alvo, caster, dano)
+				hud.show_floating_number(dano, alvo, "damage")
 
-		elif especial_data.type == "heal":
-			var cura = especial_data.power + caster.SPI
-			alvo.current_hp = min(alvo.max_hp, alvo.current_hp + cura)
-			hud.show_floating_number(cura, alvo, "hp")
-	
+			"heal":
+				var cura = special.power + caster.get_modified_stat(caster.SPI, "SPI")
+				alvo.current_hp = min(alvo.max_hp, alvo.current_hp + cura)
+				hud.show_floating_number(cura, alvo, "hp")
+
+			"buff":
+				var effect = StatusEffect.new()
+				effect.attribute = special.attribute
+				effect.amount = special.amount
+				effect.duration = special.duration
+				effect.type = StatusEffect.Type.BUFF
+				alvo.apply_status_effect(effect)
+
+	# Exibir mensagem de ação do caster
+	hud.show_top_message("%s usou %s!" % [caster.nome, special.name])
+
+	# Pós-ação
 	reset_atb(caster)
 	hud.update_enemy_info(enemies)
 	hud.update_party_info(party)
 	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+
+	# Reset de especial
+	caster.special_charge = 0
+	sp_values[caster] = 0
+	caster.special_ready = false
+	hud.update_special_bar(sp_values)
+
+	_create_menu()
 	end_turn()
 
-func _execute_special_single(caster, especial_data: Dictionary, alvo):
-	if especial_data.type == "damage":
-		var dano = especial_data.power + caster.STR
-		dano -= alvo.defense # Enemy1990 e PlayerPartyMember1990 possuem 'defense'
-		dano = max(dano, 1)
-		aplicar_dano(alvo,caster,dano)
-		hud.show_floating_number(dano, alvo, "damage")
+func _execute_special_single(user, special, alvo):
+	match special.effect_type:
+		"damage":
+			var dano = special.power + user.get_modified_stat(user.STR, "STR")
+			dano = ajustar_dano_por_posicao(dano, user, alvo, true)
+			aplicar_dano(alvo, user, dano)
+			hud.show_top_message("%s usou %s e causou %d de dano!" % [user.nome, special.name, dano])
+			hud.show_floating_number(dano, alvo, "damage")
 
-	elif especial_data.type == "heal":
-		var cura = especial_data.power + caster.SPI
-		alvo.heal(cura)
-		hud.show_floating_number(cura, alvo, "hp")
+		"heal":
+			var cura = special.power + user.get_modified_stat(user.SPI, "SPI")
+			alvo.current_hp = min(alvo.max_hp, alvo.current_hp + cura)
+			hud.show_top_message("%s usou %s e curou %d HP!" % [user.nome, special.name, cura])
+			hud.show_floating_number(cura, alvo, "hp")
 
-	elif especial_data.type == "buff":
-		var effect = StatusEffect.new()
-		effect.attribute = especial_data.attribute
-		effect.amount = especial_data.amount
-		effect.duration = especial_data.duration
-		effect.type = StatusEffect.Type.BUFF
-		alvo.apply_status_effect(effect)
-		hud.show_top_message("Buff: +%s %s para o %s" % [especial_data.amount, especial_data.attribute, alvo.nome])
+		"buff":
+			var effect = StatusEffect.new()
+			effect.attribute = special.attribute
+			effect.amount = special.amount
+			effect.duration = special.duration
+			effect.type = StatusEffect.Type.BUFF
+			alvo.apply_status_effect(effect)
+			hud.show_top_message("%s usou %s e aumentou %s!" % [user.nome, special.name, special.attribute])
 
-	elif especial_data.type == "debuff":
-		var effect = StatusEffect.new()
-		effect.attribute = especial_data.attribute
-		effect.amount = especial_data.amount
-		effect.duration = especial_data.duration
-		effect.type = StatusEffect.Type.DEBUFF
-		alvo.apply_status_effect(effect)
-		hud.show_top_message("Debuff: -%s %s para o $s" % [especial_data.amount, especial_data.attribute, alvo.nome])
-
-	# Atualiza HUD e esper
-	reset_atb(caster)
-	hud.update_party_info(party)
+	# Pós-ação
+	reset_atb(user)
 	hud.update_enemy_info(enemies)
-	_create_menu()
+	hud.update_party_info(party)
 	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+
+	# Reset de especial
+	user.special_charge = 0
+	sp_values[user] = 0
+	user.special_ready = false
+	hud.update_special_bar(sp_values)
+
+	_create_menu()
 	end_turn()
 
 func usar_item_em_alvo(usuario, item_name: String, item_data: Dictionary, target_id) -> void:
@@ -1141,6 +1413,7 @@ func tentar_fugir(actor) -> void:
 
 # SELECIONA AÇÃO
 
+
 func _on_player_action_selected(action_name: String) -> void:
 	match action_name:
 		"Atacar":
@@ -1201,10 +1474,13 @@ func _on_player_action_selected(action_name: String) -> void:
 			await tentar_fugir(current_actor)
 			# Lógica de fuga
 		"Especial":
-			var especiais = current_actor.get_specials()
+			var especiais = current_actor.specials
 
 			if especiais.is_empty():
 				await hud.show_top_message("%s não possui habilidades especiais disponíveis." % current_actor.nome)
+				await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+				next_turn()
+				return
 
 			hud.special_selected.connect(_on_special_selected)
 			hud.show_special_menu(especiais)
@@ -1234,7 +1510,8 @@ func _on_alvo_ataque_selecionado(alvo_id):
 	end_turn()
 
 func _on_skill_selected(skill_name: String):
-	hud.skill_selected.disconnect(_on_skill_selected)
+	if hud.skill_selected.is_connected(_on_skill_selected):
+		hud.skill_selected.disconnect(_on_skill_selected)
 
 	var user = current_actor
 	var skill_matches = user.skills.filter(func(s): return s.name == skill_name)
@@ -1243,6 +1520,7 @@ func _on_skill_selected(skill_name: String):
 		return
 
 	var skill = skill_matches[0]
+	hud.set_meta("skill_name", skill_name)
 
 	var alvos = []
 	match skill.target_type:
@@ -1256,15 +1534,19 @@ func _on_skill_selected(skill_name: String):
 			alvos = enemies
 
 	if skill.target_type == "self":
-		await _execute_skill(user, skill, alvos[0])
+		await _execute_skill(user, skill, user)
 	else:
-		hud.target_selected.connect(func(id):
-			var alvo = find_enemy_by_id(id)
-			await _execute_skill(user, skill, alvo)
-		)
+		if hud.target_selected.is_connected(_on_skill_target_selected):
+			hud.target_selected.disconnect(_on_skill_target_selected)
+		hud.target_selected.connect(_on_skill_target_selected)
+
 		var formatted_targets = []
 		for target in alvos:
-			formatted_targets.append({"id": target.id, "nome": target.nome, "node_ref": target})
+			formatted_targets.append({
+				"id": target.id,
+				"nome": target.nome,
+				"node_ref": target
+			})
 		hud.show_target_menu(formatted_targets)
 
 func _on_magic_selected(spell_name: String):
@@ -1333,8 +1615,7 @@ func _on_line_target_selected(linha: String):
 	var caster = current_actor
 
 	var linha_alvos = []
-	for e in enemies:
-		print(e.position_line)
+	
 	if linha == "frente":
 		linha_alvos = enemies.filter(func(e): return e.current_hp > 0 and e.position_line == "front")
 	elif linha == "trás":
@@ -1362,6 +1643,34 @@ func _on_magic_target_selected(alvo):
 	else:
 		print("Alvo não encontrado:", alvo)
 
+func _on_skill_target_selected(target_id):
+	if hud.target_selected.is_connected(_on_skill_target_selected):
+		hud.target_selected.disconnect(_on_skill_target_selected)
+
+	var user = current_actor
+	var skill_name = hud.get_meta("skill_name")
+
+	var skill_matches = user.skills.filter(func(s): return s.name == skill_name)
+	if skill_matches.is_empty():
+		print("Skill não encontrada:", skill_name)
+		return
+
+	var skill = skill_matches[0]
+	var target = find_enemy_by_id(target_id)
+
+	if target == null:
+		for member in party:
+			if member.id == target_id:
+				target = member
+				break
+
+	if target:
+		await _execute_skill(user, skill, target)
+	else:
+		hud.show_top_message("Alvo inválido.")
+		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+		next_turn()
+
 func _on_item_selected(item_name: String) -> void:
 	var item_data = item_database.get(item_name, null)
 	if item_data == null:
@@ -1383,12 +1692,17 @@ func _on_item_selected(item_name: String) -> void:
 	)
 	hud.show_target_menu(target_list)
 
-func _on_special_selected(special_name):
+func _on_special_selected(especial):
+	
 	hud.hide_special_menu()
 
-	var especial = current_actor.get_specials()[special_name]
+	if especial == null:
+		hud.show_top_message("Especial não encontrado.")
+		await get_tree().create_timer(1.0).timeout
+		next_turn()
+		return
 
-	match especial["target"]:
+	match especial.target_type:
 		"all_enemies":
 			_execute_special_area(current_actor, especial, enemies)
 
@@ -1423,10 +1737,13 @@ func _on_special_selected(special_name):
 			hud.show_target_menu(alvos)
 
 		_:
-			hud.show_top_message("Tipo de alvo inválido")
-			return
+			hud.show_top_message("Tipo de alvo inválido.")
+			await get_tree().create_timer(1.0).timeout
+			next_turn()
 
 func _on_special_target_selected(target_id, especial):
+	if hud.target_selected.is_connected(_on_special_target_selected):
+		hud.target_selected.disconnect(_on_special_target_selected)
 
 	var alvo = null
 
@@ -1434,10 +1751,11 @@ func _on_special_target_selected(target_id, especial):
 		if enemy.id == target_id:
 			alvo = enemy
 			break
-	for ally in party:
-		if ally.id == target_id:
-			alvo = ally
-			break
+	if alvo == null:
+		for ally in party:
+			if ally.id == target_id:
+				alvo = ally
+				break
 
 	if alvo == null:
 		hud.show_top_message("Alvo inválido.")
@@ -1446,3 +1764,8 @@ func _on_special_target_selected(target_id, especial):
 		return
 
 	await _execute_special_single(current_actor, especial, alvo)
+
+func _on_hud_back_pressed():
+	hud.show_action_menu(current_actor)
+	hud.set_hud_buttons_enabled(true, current_actor)
+	hud.indicate_current_player(current_actor)

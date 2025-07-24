@@ -32,7 +32,7 @@ var atb_max := 100.0
 
 # Outros dados
 var nome: String = "Enemy"
-var xp_value: int = 0
+var xp_value: int = 20
 var id: String = ""
 var is_defending: bool = false
 var sprite_ref: Sprite2D = null

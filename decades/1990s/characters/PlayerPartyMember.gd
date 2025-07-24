@@ -41,12 +41,22 @@ var special_ready := false
 var position_line: String = "front"
 var alcance_estendido: bool = false  # se pode atacar a traseira com ataque físico
 
-# Magia
 var spells: Array[Spell] = []
+var skills: Array[Skill] = []
+var specials: Array[Special] = []
 var spell_slots := {}  # Ex: {1: 3, 2: 1}
 var max_spell_slots := {}  # Ex: {1: 5, 2: 2}
-var skills: Array[Skill] = []
 var sprite_ref: Sprite2D = null
+
+# AP por habilidade (armazenado por nome da habilidade)
+
+var spell_ap := {}
+var skill_ap := {}
+
+# Dicionário para upgrades (evoluções)
+
+var spell_upgrades := {}
+var skill_upgrades := {}
 
 # Status
 var is_defending: bool = false
@@ -70,6 +80,19 @@ var attack_type_resistances = {
 	"blunt": 1.0,
 	"ranged": 1.0,
 	"magic": 1.0
+}
+
+var xp_to_next_level: int = 100  # XP necessário para o próximo nível
+
+const class_growth_curves = {
+	"Knight":   {"STR": 2, "CON": 2, "DEX": 1, "AGI": 1},
+	"Mage":     {"MAG": 2, "INT": 2, "SPI": 1},
+	"Thief":    {"DEX": 2, "AGI": 2, "LCK": 1},
+	"Cleric":   {"MAG": 1, "INT": 1, "SPI": 2},
+	"Hunter":   {"DEX": 2, "AGI": 2, "LCK": 1},
+	"Paladin":  {"STR": 1, "CON": 2, "SPI": 1},
+	"Monk":     {"STR": 2, "CON": 1, "AGI": 1},
+	"Summoner": {"MAG": 2, "INT": 1, "SPI": 1}
 }
 
 # === FUNÇÕES ===
@@ -101,7 +124,6 @@ func take_damage(amount: int):
 		is_defending = false
 
 	current_hp = max(current_hp - damage, 0)
-
 
 func heal(amount: int):
 	current_hp = min(current_hp + amount, max_hp)
@@ -237,7 +259,7 @@ func check_if_dead():
 		special_charge = 0
 		atb_value = 0
 		emit_signal("died")
-		
+
 func increase_special_charge(amount: float) -> bool:
 	if special_ready:
 		return false
@@ -250,15 +272,6 @@ func increase_special_charge(amount: float) -> bool:
 		return true
 
 	return true
-		
-func get_specials() -> Dictionary:
-	return {
-		"Break Thunder": {"type": "damage", "power": 80, "target": "enemy"},
-		"Safe Guard": {"type": "heal", "power": 80, "target": "ally"},
-		"Blade Storm": {"type": "damage", "power": 80, "target": "all_enemies"},
-		"Divine Blessing": {"type": "heal", "power": 50, "target": "ally_party"},
-		"Shadow Form": {"type": "buff", "attribute": "AGI", "amount": 6, "duration": 3, "target": "self"}
-	}
 
 func get_modified_derived_stat(attribute: String) -> int:
 	var STR_mod = get_modified_stat(STR, "STR")
@@ -289,3 +302,71 @@ func get_modified_derived_stat(attribute: String) -> int:
 			return STR_mod * 2 + CON_mod * 2 + AGI_mod
 		_:
 			return 0
+
+func gain_xp(amount: int):
+	xp += amount
+	while xp >= xp_to_next_level:
+		xp -= xp_to_next_level
+		level_up()
+		
+func level_up():
+	level += 1
+	var growth = class_growth_curves.get(classe_name, {})
+	
+	for stat_name in growth.keys():
+		match stat_name:
+			"STR":
+				STR += growth[stat_name]
+			"DEX":
+				DEX += growth[stat_name]
+			"AGI":
+				AGI += growth[stat_name]
+			"CON":
+				CON += growth[stat_name]
+			"MAG":
+				MAG += growth[stat_name]
+			"INT":
+				INT += growth[stat_name]
+			"SPI":
+				SPI += growth[stat_name]
+			"LCK":
+				LCK += growth[stat_name]
+
+	# Aumentar dificuldade progressivamente
+	xp_to_next_level = int(xp_to_next_level + 100)
+
+	# Recalcular stats derivados
+	calculate_stats()
+
+	print("%s subiu para o nível %d!" % [nome, level])
+
+func gain_ap(ability_name: String, amount: int, is_spell: bool = true) -> void:
+	var ap_dict
+	if is_spell:
+		ap_dict = spell_ap
+	else:
+		ap_dict = skill_ap
+	
+	if not ap_dict.has(ability_name):
+		ap_dict[ability_name] = {"current": 0, "level": 1}
+
+	ap_dict[ability_name]["current"] += amount
+	
+
+					
+func apply_mastery_bonus(ability_name: String, new_level: int, is_spell: bool):
+	
+	var ability_list
+	if is_spell:
+		ability_list = spells 
+	else:
+		ability_list = skills
+
+	for ab in ability_list:
+		if ab.name == ability_name:
+			# Reduz custo e aumenta poder
+			ab.cost = int(ab.cost * 0.9)  # 10% de redução
+			ab.power = int(ab.power * 1.1)  # 10% a mais de dano
+			if new_level == 3:
+				ab.name += " ★"  # Marca como dominado
+			break
