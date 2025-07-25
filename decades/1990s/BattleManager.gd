@@ -31,11 +31,27 @@ const TEMPO_ESPERA_APOS_ACAO = 0.5
 var enemy_base_stats = {
 	"Goblin": {
 		"STR": 10, "DEX": 6, "AGI": 20, "CON": 3, "MAG": 1, "INT": 2, "SPI": 2, "LCK": 4,
-		"xp_value": 20, "sprite_path": "res://assets/Goblin.png"
+		"xp_value": 20, "sprite_path": "res://assets/Goblin.png", "enemy_type": "Beast", "attack_type":"blunt"
 	},
 	"Little Orc": {
 		"STR": 10, "DEX": 4, "AGI": 20, "CON": 6, "MAG": 2, "INT": 3, "SPI": 3, "LCK": 3,
-		"xp_value": 50, "sprite_path": "res://assets/Little Orc.png"
+		"xp_value": 50, "sprite_path": "res://assets/Little Orc.png", "enemy_type": "Beast", "attack_type":"blunt"
+	},
+	"Zumbi": {
+		"STR": 5, "DEX": 2, "AGI": 4, "CON": 3, "MAG": 1, "INT": 1, "SPI": 1, "LCK": 1,
+		"xp_value": 15, "sprite_path": "res://assets/Zumbi.png", "enemy_type": "Undead", "attack_type":"blunt"
+	},
+	"Necromante": {
+		"STR": 5, "DEX": 4, "AGI": 6, "CON": 6, "MAG": 6, "INT": 4, "SPI": 4, "LCK": 4,
+		"xp_value": 50, "sprite_path": "res://assets/Necromante.png", "enemy_type": "Undead", "attack_type":"blunt"
+	},
+	"Lobo": {
+		"STR": 8, "DEX": 6, "AGI": 8, "CON": 6, "MAG": 0, "INT": 0, "SPI": 4, "LCK": 6,
+		"xp_value": 50, "sprite_path": "res://assets/Lobo.png", "enemy_type": "Beast", "attack_type":"slash"
+	},
+	"Passaro": {
+		"STR": 6, "DEX": 7, "AGI": 10, "CON": 3, "MAG": 2, "INT": 2, "SPI": 2, "LCK": 4,
+		"xp_value": 30, "sprite_path": "res://assets/Passaro.png", "enemy_type": "Flying", "attack_type":"ranged"
 	},
 }
 
@@ -604,7 +620,7 @@ func spawn_enemies(enemy_data: Array) -> void:
 		enemy_sprite.position = get_enemy_position(i)
 
 		enemy_sprite.set_enemy(enemy_info["instance"])
-		
+		enemy_sprite.scale = Vector2(0.8, 0.8)
 		enemy_info["instance"].sprite_ref = enemy_sprite
 
 		enemies[i] = enemy_info["instance"]  # Substitui no array por instância
@@ -612,7 +628,7 @@ func spawn_enemies(enemy_data: Array) -> void:
 
 func generate_enemies() -> Array:
 	var enemies_array = []
-	var enemy_types = ["Goblin"]
+	var enemy_types = ["Zumbi", "Necromante", "Lobo", "Passaro"]
 	var enemy_count = 6
 
 	for i in range(enemy_count):
@@ -640,7 +656,12 @@ func generate_enemies() -> Array:
 			enemy_node.SPI = base["SPI"]
 			enemy_node.LCK = base["LCK"]
 			enemy_node.xp_value = base["xp_value"]
-
+			enemy_node.attack_type = base["attack_type"]
+			enemy_node.enemy_type = base["enemy_type"]
+			
+			if enemy_node.enemy_type == "Flying":
+				enemy_node.alcance_estendido = true
+			
 			var rng = RandomNumberGenerator.new()
 			rng.randomize()
 			# Gerar ID aleatório em string

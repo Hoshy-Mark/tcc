@@ -101,7 +101,78 @@ func set_type_resistances():
 				"ranged": 0.1,
 				"magic": 1.0
 			}
-		# Repita para Ghost, Flying, Demon, Dragon...
+		"Ghost":
+			element_resistances = {
+				"fire": 1.0,
+				"ice": 0.8,
+				"lightning": 1.0,
+				"earth": 0.5,
+				"wind": 1.2,
+				"holy": 2.0,
+				"dark": 0.3,
+				"poison": 0.0
+			}
+			attack_type_resistances = {
+				"slash": 0.5,
+				"pierce": 0.5,
+				"blunt": 0.8,
+				"ranged": 0.2,
+				"magic": 1.5
+			}
+		"Flying":
+			element_resistances = {
+				"fire": 1.0,
+				"ice": 1.0,
+				"lightning": 1.5,
+				"earth": 0.0,
+				"wind": 0.7,
+				"holy": 1.0,
+				"dark": 1.0,
+				"poison": 1.0
+			}
+			attack_type_resistances = {
+				"slash": 1.0,
+				"pierce": 1.2,
+				"blunt": 0.9,
+				"ranged": 1.3,
+				"magic": 1.0
+			}
+		"Demon":
+			element_resistances = {
+				"fire": 0.5,
+				"ice": 1.2,
+				"lightning": 1.2,
+				"earth": 1.0,
+				"wind": 1.0,
+				"holy": 2.5,
+				"dark": 0.3,
+				"poison": 1.0
+			}
+			attack_type_resistances = {
+				"slash": 1.1,
+				"pierce": 1.0,
+				"blunt": 1.1,
+				"ranged": 1.0,
+				"magic": 0.8
+			}
+		"Dragon":
+			element_resistances = {
+				"fire": 0.7,
+				"ice": 1.5,
+				"lightning": 1.3,
+				"earth": 1.0,
+				"wind": 1.0,
+				"holy": 1.5,
+				"dark": 1.0,
+				"poison": 0.5
+			}
+			attack_type_resistances = {
+				"slash": 1.0,
+				"pierce": 1.2,
+				"blunt": 1.3,
+				"ranged": 1.0,
+				"magic": 0.9
+			}
 		_:
 			# Default, tudo normal
 			element_resistances = {
