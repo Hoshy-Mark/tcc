@@ -45,6 +45,7 @@ var spells: Array[Spell] = []
 var skills: Array[Skill] = []
 var specials: Array[Special] = []
 var spell_slots := {}  # Ex: {1: 3, 2: 1}
+var obstruido = false
 var max_spell_slots := {}  # Ex: {1: 5, 2: 2}
 var sprite_ref: Sprite2D = null
 

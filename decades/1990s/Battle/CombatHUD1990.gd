@@ -21,6 +21,8 @@ signal back_pressed
 @onready var PartyInfo = $PartyStatus/PartyInfo
 @onready var PartyStatus = $PartyStatus
 @onready var EnemyStatus = $EnemyStatus/EnemyInfo
+@onready var gray_arrow_texture := preload("res://assets/Seta Desabilitada.png")
+@onready var normal_arrow_texture := preload("res://assets/Seta.png")
 
 var arrow_instance: Node2D = null
 var atb_bars = {}
@@ -91,33 +93,59 @@ func show_skill_menu(skills: Array, player_sp: int):
 	back_button.pressed.connect(_on_back_button_pressed)
 	vbox_magic_list.add_child(back_button)
 
-func show_target_menu(targets: Array):
+func show_target_menu(targets: Array, current_actor = null):
 	_hide_all_panels()
 	clear(vbox_target_list)
 	target_panel.visible = true
-	# Remove indicador anterior se existir
-	hide_arrow()  # remove seta do player
+	hide_arrow()
+
+	# Ordenar alvos: primeiro os da frente, depois os de trás
+	var front_targets = []
+	var back_targets = []
+
+	for t in targets:
+		if t["node_ref"].position_line == "back":
+			back_targets.append(t)
+		else:
+			front_targets.append(t)
+
+	targets = front_targets + back_targets
 
 	# Mostrar seta acima do primeiro alvo (opcional)
 	if targets.size() > 0:
 		var selected_enemy = targets[0]["node_ref"]
 		show_arrow_above_node(selected_enemy)
-		
+
 	for target in targets:
 		var button = Button.new()
-		button.text = target["nome"]  # texto exibido ao jogador
-		button.custom_minimum_size = Vector2(500, 40)  # altura opcional
-		button.pressed.connect(_on_target_button_pressed.bind(target["id"]))  # id usado internamente
-			# Mostra seta ao passar o mouse
+		var enemy_node = target["node_ref"]
+		var is_desabilitado = false
+
+		if not enemy_node.is_alive():
+			is_desabilitado = true
+		elif current_actor != null and enemy_node.obstruido and not current_actor.alcance_estendido:
+			is_desabilitado = true
+
+		button.text = target["nome"]
+		button.custom_minimum_size = Vector2(500, 40)
+		button.disabled = is_desabilitado
+
 		button.mouse_entered.connect(func():
 			if arrow_instance and target.has("node_ref"):
-					var target_pos = target["node_ref"].get_global_position() + Vector2(0, -90)
-					arrow_instance.initialize(target_pos)
+				var target_pos = enemy_node.get_global_position() + Vector2(0, -90)
+				arrow_instance.initialize(target_pos)
+				if is_desabilitado:
+					arrow_instance.arrow_sprite.texture = gray_arrow_texture
+				else:
+					arrow_instance.arrow_sprite.texture = normal_arrow_texture
 		)
-		
+
+		if not is_desabilitado:
+			button.pressed.connect(_on_target_button_pressed.bind(target["id"]))
+
 		vbox_target_list.add_child(button)
-	
-	# Botão de voltar	
+
+	# Botão de voltar
 	var back_button = Button.new()
 	back_button.text = "Voltar"
 	back_button.custom_minimum_size = Vector2(500, 40)
@@ -219,7 +247,7 @@ func show_line_target_menu(options: Array):
 	back_button.custom_minimum_size = Vector2(500, 40)
 	back_button.pressed.connect(_on_back_button_pressed)
 	vbox_target_list.add_child(back_button)
-	
+
 
 # PRESSIONAR BOTÃO
 

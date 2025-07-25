@@ -291,19 +291,26 @@ func perform_enemy_action(enemy_actor) -> void:
 	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 	end_turn()
 
-func get_player_position(index: int) -> Vector2:
-	var positions = [
-		Vector2(1180, 400),  # Jogador 0
-		Vector2(1100, 600),  # Jogador 1
-		Vector2(1400, 400),  # Jogador 2
-		Vector2(1350, 610),  # Jogador 3
+func get_player_position(index: int, is_front: bool) -> Vector2:
+	var front_positions = [
+		Vector2(1180, 400),  # Jogador 0 front
+		Vector2(1100, 600),  # Jogador 1 back
 	]
-	
-	if index >= 0 and index < positions.size():
-		return positions[index]
+	var back_positions = [
+		Vector2(1400, 400),  # Jogador 2 front
+		Vector2(1350, 610),  # Jogador 3 back
+	]
+
+	# Usa a posição baseada na linha
+	if is_front:
+		if index < front_positions.size():
+			return front_positions[index]
 	else:
-		# Posição padrão caso index seja inválido
-		return Vector2(100, 500)
+		if index < back_positions.size():
+			return back_positions[index]
+
+	# Fallback se algo der errado
+	return Vector2(100, 500)
 
 func get_enemy_position(index: int) -> Vector2:
 	var base_x = 400
@@ -435,25 +442,55 @@ func ajustar_dano_por_posicao(dano: int, atacante, alvo, is_ataque_fisico: bool)
 
 	return int(dano)
 
+func atualizar_obstrucao_inimigos() -> void:
+	for i in range(enemies.size()):
+		var enemy = enemies[i]
+		if enemy.position_line == "back":
+			var front_index = i - 3
+			if front_index < 0 and enemies[front_index].is_alive():
+				enemy.obstruido = true
+			else:
+				enemy.obstruido = false
+		else:
+			enemy.obstruido = false
+
+func atualizar_obstrucao_party() -> void:
+	for i in range(party.size()):
+		var player = party[i]
+		if player.position_line == "back":
+			var front_index = i - 2
+			if front_index >= 0 and party[front_index].is_alive():
+				player.obstruido = true
+			else:
+				player.obstruido = false
+		else:
+			player.obstruido = false
+
 func pode_atacar(alvo, atacante, is_ataque_fisico: bool) -> bool:
 	if not is_ataque_fisico:
-		return true
-
-	# Se alvo estiver na frente, tudo bem
+		return true  # Magias sempre podem atingir
+		
+	if not alvo.obstruido:
+		return true  # Pode atacar se não estiver obstruído
+	
+	if alvo.obstruido and not atacante.alcance_estendido:
+		return false  # Está atrás de alguém vivo e atacante não tem alcance
+	
 	if alvo.position_line == "front":
 		return true
 
-	# Se alvo estiver atrás, só pode atacar se atacante tiver alcance estendido
 	return atacante.alcance_estendido
-
 
 # CRIAÇÃO DE INIMIGOS E PLAYER
 
 
 func spawn_party(party_data: Array) -> void:
+	var has_paladin = "Paladin" in party_data
+	var has_hunter = "Hunter" in party_data
+	var front_index = 0
+	var back_index = 0
 	for i in range(party_data.size()):
 		var classe_name = party_data[i]
-
 		var player_node := PlayerPartyMember1990.new()
 		player_node.classe_name = classe_name
 		player_node.nome = classe_name
@@ -472,41 +509,80 @@ func spawn_party(party_data: Array) -> void:
 		player_node.calculate_stats()
 		player_node.level = 1
 
+
 		unlock_available_spells_and_skills(player_node)
 		player_node.spell_upgrades = class_spell_trees.get(classe_name, {}).get("spell_upgrades", {})
 		player_node.skill_upgrades = class_spell_trees.get(classe_name, {}).get("skill_upgrades", {})
 
-		if i < 2:
+		# Lógica de posição baseada na presença de Hunter e Paladin
+		if classe_name == "Paladin":
+			if has_hunter:
+				player_node.position_line = "front"
+			else:
+				player_node.position_line = "back"
+		elif classe_name == "Hunter":
+			if has_paladin:
+				player_node.position_line = "back"
+			else:
+				player_node.position_line = "front"
+		elif classe_name in ["Monk", "Knight", "Thief"]:
 			player_node.position_line = "front"
 		else:
 			player_node.position_line = "back"
-		
-		if player_node.classe_name == "Hunter":
-			player_node.alcance_estendido = true
-		
-		player_node.spell_slots = class_spell_slots.get(classe_name, {})
 
+		# Ajuste especial para Hunter
+		if classe_name == "Hunter":
+			player_node.alcance_estendido = true
+
+		player_node.spell_slots = class_spell_slots.get(classe_name, {})
 		party[i] = player_node
 
+
+		#Define posição do sprite com base na linha
+		var is_front = player_node.position_line == "front"
+		var sprite_pos_index = 0
+		if is_front:
+			sprite_pos_index = front_index
+		else:
+			sprite_pos_index = back_index
 		var player_sprite = preload("res://decades/1990s/Battle/PlayerSprite.tscn").instantiate()
 		player_sprite.set_sprite(class_sprite_paths.get(classe_name, ""))
-		player_sprite.position = get_player_position(i)
+		player_sprite.position = get_player_position(sprite_pos_index, is_front)
 		player_sprite.set_player(player_node)
+
+		if is_front:
+			front_index += 1
+		else:
+			back_index += 1
 
 		if classe_name == "Monk":
 			player_sprite.scale = Vector2(0.8, 0.8)
 
 		player_node.sprite_ref = player_sprite
 		characters_node.add_child(player_sprite)
+		
+	atualizar_obstrucao_party()
 
 func spawn_loaded_party(loaded_party: Array) -> void:
+	var front_index = 0
+	var back_index = 2  # Começa do índice 2 para os de trás
+	
 	for i in range(loaded_party.size()):
 		var player_node = loaded_party[i]
 
 		# Sprite
 		var player_sprite = preload("res://decades/1990s/Battle/PlayerSprite.tscn").instantiate()
 		player_sprite.set_sprite(class_sprite_paths.get(player_node.classe_name, ""))
-		player_sprite.position = get_player_position(i)
+		
+		var sprite_pos_index = 0
+		if player_node.position_line == "front":
+			sprite_pos_index = front_index
+			front_index += 1
+		else:
+			sprite_pos_index = back_index
+			back_index += 1
+
+		player_sprite.position = get_player_position(sprite_pos_index, player_node.position_line == "front")
 		player_sprite.set_player(player_node)
 
 		if player_node.classe_name == "Monk":
@@ -517,6 +593,8 @@ func spawn_loaded_party(loaded_party: Array) -> void:
 		# Adiciona ao array de party e à cena
 		party[i] = player_node
 		characters_node.add_child(player_sprite)
+		
+	atualizar_obstrucao_party()
 
 func spawn_enemies(enemy_data: Array) -> void:
 	for i in range(enemy_data.size()):
@@ -624,7 +702,8 @@ func start_battle(party_data: Array = []) -> void:
 
 	enemies = generate_enemies()
 	spawn_enemies(enemies)
-
+	atualizar_obstrucao_inimigos()
+	
 	hud.update_party_info(party)
 	hud.update_enemy_info(enemies)
 	
@@ -694,18 +773,18 @@ func _process(delta):
 
 func end_turn():
 	is_executing_turn = false
-
-	for member in party:
-		for spell_name in member.spell_ap.keys():
-			check_ability_mastery(member, spell_name, true)
-		for skill_name in member.skill_ap.keys():
-			check_ability_mastery(member, skill_name, false)
+	
+	if is_player(current_actor):
+		for spell_name in current_actor.spell_ap.keys():
+			check_ability_mastery(current_actor, spell_name, true)
+		for skill_name in current_actor.skill_ap.keys():
+			check_ability_mastery(current_actor, skill_name, false)
 
 	# Continua fluxo de batalha
 	if not check_battle_state():
 		if ready_to_act.size() > 0:
 			next_turn()
-			
+
 func next_turn():
 	if ready_to_act.is_empty():
 		return
@@ -789,9 +868,9 @@ func get_spell_by_name(spells: Array, name: String) -> Spell:
 	return null
 
 func _create_menu() -> void:
-		hud._hide_all_panels()
-		hud.hide_arrow()
-		hud.show_action_menu(current_actor)
+	hud._hide_all_panels()
+	hud.show_action_menu()
+	hud.hide_arrow()
 
 func unlock_available_spells_and_skills(player):
 	var tree = class_spell_trees.get(player.classe_name, {"spells": {}, "skills": {}})
@@ -859,11 +938,6 @@ func check_ability_mastery(member, ability_name: String, is_spell: bool) -> void
 	var data = ap_dict[ability_name]
 	var current_level = data.get("level", 1)
 	var current_ap = data.get("current", 0)
-	
-	print(ability_name)
-	print(current_ap)
-	print(current_level)
-	
 	var ap_needed_per_level = {1: 50, 2: 100, 3: 200}
 
 	if current_level >= 3:
@@ -874,7 +948,6 @@ func check_ability_mastery(member, ability_name: String, is_spell: bool) -> void
 		data["level"] += 1
 		data["current"] = 0
 		member.apply_mastery_bonus(ability_name, data["level"], is_spell)
-
 		if data["level"] == 3:
 			if is_spell and ability_name in member.spell_upgrades:
 				var evolved = member.spell_upgrades[ability_name]
@@ -916,8 +989,19 @@ func aplicar_dano(alvo, atacante, dano: int) -> void:
 
 	if updated:
 		hud.update_special_bar(sp_values)
-
+		
+	atualizar_obstrucao_inimigos()
+	atualizar_obstrucao_party()
+	
 func _execute_skill(user, skill, alvo):
+	
+	if user.current_sp < skill.cost:
+		hud.show_top_message("%s não tem SP suficiente para usar %s!" % [user.nome, skill.name])
+		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+		end_turn()
+		return
+	user.current_sp -= skill.cost
+	
 	var is_fisico = skill.effect_type == "damage" and skill.effect_type != "magic"
 
 	if not pode_atacar(alvo, user, is_fisico):
@@ -1017,6 +1101,109 @@ func _execute_skill(user, skill, alvo):
 	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 	end_turn()
 
+func _execute_skill_area(user, skill, alvos):
+	
+	if user.current_sp < skill.cost:
+		hud.show_top_message("%s não tem SP suficiente para usar %s!" % [user.nome, skill.name])
+		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+		end_turn()
+		return
+		
+	user.current_sp -= skill.cost
+	
+	var is_fisico = skill.effect_type == "damage" and skill.effect_type != "magic"
+
+	for alvo in alvos:
+		if alvo.current_hp <= 0:
+			continue  # Ignora inimigos mortos
+
+		if not pode_atacar(alvo, user, is_fisico):
+			continue  # Pula alvos fora de alcance
+
+		var hit_roll = randf()
+		if hit_roll > skill.hit_chance:
+			hud.show_top_message("%s errou %s em %s!" % [user.nome, skill.name, alvo.nome])
+			continue  # Erro individual por alvo
+
+		if skill.effect_type == "damage":
+			var base_dano = skill.power
+			match skill.scaling_stat:
+				"STR": base_dano += user.get_modified_stat(user.STR, "STR")
+				"DEX": base_dano += user.get_modified_stat(user.DEX, "DEX")
+				"INT": base_dano += user.get_modified_stat(user.INT, "INT")
+				"SPI": base_dano += user.get_modified_stat(user.SPI, "SPI")
+				_: base_dano += user.get_modified_stat(user.STR, "STR")
+
+			var defesa_modificada = alvo.get_modified_stat(alvo.defense, "defense")
+			var dano = base_dano - defesa_modificada
+			dano = max(dano, 1)
+
+			dano = ajustar_dano_por_posicao(dano, user, alvo, is_fisico)
+
+			var element_res = 1.0
+			var attack_type_res = 1.0
+
+			if skill.has_method("element") and skill.element != "":
+				element_res = alvo.element_resistances.get(skill.element.to_lower(), 1.0)
+
+			if skill.has_method("attack_type") and skill.attack_type != "":
+				attack_type_res = alvo.attack_type_resistances.get(skill.attack_type.to_lower(), 1.0)
+
+			dano *= element_res * attack_type_res
+
+			var crit_chance = user.LCK * 0.01
+			var crit = randf() < crit_chance
+			if crit:
+				dano *= 2
+				hud.show_top_message("CRÍTICO! %s usou %s e causou %d de dano em %s!" % [user.nome, skill.name, dano, alvo.nome])
+			else:
+				hud.show_top_message("%s usou %s e causou %d de dano em %s!" % [user.nome, skill.name, dano, alvo.nome])
+
+			user.gain_ap(skill.name, 100, false)
+			aplicar_dano(alvo, user, dano)
+
+			if alvo.current_hp <= 0:
+				alvo.current_hp = 0
+				if alvo.has_method("check_if_dead"):
+					alvo.check_if_dead()
+
+			hud.show_floating_number(dano, alvo, "damage")
+
+		elif skill.effect_type == "heal":
+			var cura = skill.power + user.get_modified_stat(user.SPI, "SPI")
+			user.gain_ap(skill.name, 100, false)
+			alvo.current_hp = min(alvo.max_hp, alvo.current_hp + cura)
+			hud.show_top_message("%s usou %s e curou %d HP em %s!" % [user.nome, skill.name, cura, alvo.nome])
+			hud.show_floating_number(cura, alvo, "hp")
+
+		elif skill.effect_type == "buff":
+			var effect = StatusEffect.new()
+			user.gain_ap(skill.name, 100, false)
+			effect.attribute = skill.scaling_stat
+			effect.amount = skill.amount
+			effect.duration = skill.duration if skill.duration > 0 else 3
+			effect.type = StatusEffect.Type.BUFF
+			alvo.apply_status_effect(effect)
+			hud.show_top_message("%s aumentou %s de %s com %s!" % [user.nome, effect.attribute, alvo.nome, skill.name])
+
+		# Aplica status secundário se existir
+		if skill.status_inflicted != "":
+			if randf() <= skill.status_chance:
+				var status_effect = StatusEffect.new()
+				status_effect.attribute = skill.status_inflicted
+				status_effect.amount = 0
+				status_effect.duration = skill.duration if skill.duration > 0 else 2
+				status_effect.type = StatusEffect.Type.DEBUFF
+				alvo.apply_status_effect(status_effect)
+				hud.show_top_message("%s foi afetado por %s!" % [alvo.nome, skill.status_inflicted])
+
+	reset_atb(user)
+	hud.update_enemy_info(enemies)
+	hud.update_party_info(party)
+	await get_tree().create_timer(0).timeout
+	_create_menu()
+	end_turn()
+
 func _execute_spell_area(caster, spell_name, alvos):
 	var spell = get_spell_by_name(caster.spells, spell_name)
 	if spell == null:
@@ -1025,63 +1212,66 @@ func _execute_spell_area(caster, spell_name, alvos):
 		end_turn()
 		return
 
+	if caster.current_mp < spell.cost:
+		hud.show_top_message("%s não tem MP suficiente para usar %s!" % [caster.nome, spell.name])
+		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+		end_turn()
+		return
+
+	if !caster.spell_slots.has(spell.level) or caster.spell_slots[spell.level] <= 0:
+		hud.show_top_message("%s não tem slots de nível %d suficientes para usar %s!" % [caster.nome, spell.level, spell.name])
+		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+		end_turn()
+		return
+
+	caster.current_mp -= spell.cost
+	caster.spell_slots[spell.level] -= 1
+
 	var tipo = spell.type
 
 	for alvo in alvos:
+		if alvo.current_hp <= 0:
+			continue  # Pular inimigos mortos
+
 		if tipo == "damage":
 			var base_dano = spell.power + caster.get_modified_stat(caster.INT, "INT")
 			var defesa_magica = alvo.get_modified_derived_stat("magic_defense")
 			var dano = base_dano - defesa_magica
 			dano = max(dano, 1)
-			
-			# Aplicar resistências
-			var element_res = 1.0
-			var attack_type_res = 1.0
-			
-			if spell.element != "":
-				element_res = alvo.element_resistances.get(spell.element.to_lower(), 1.0)
-			else:
-				element_res = 1.0
 
-			if spell.attack_type != "":
-				attack_type_res = alvo.attack_type_resistances.get(spell.attack_type.to_lower(), 1.0)
-			else:
-				attack_type_res = 1.0
-
+			var element_res = alvo.element_resistances.get(spell.element.to_lower(), 1.0) if spell.element != "" else 1.0
+			var attack_type_res = alvo.attack_type_resistances.get(spell.attack_type.to_lower(), 1.0) if spell.attack_type != "" else 1.0
 			dano *= element_res * attack_type_res
-			
-			var ap_gain = int(100)  # Ganha mais AP se causar mais dano
-			caster.gain_ap(spell.name, ap_gain, false)
+
+			caster.gain_ap(spell.name, 100, true)
 			aplicar_dano(alvo, caster, dano)
+
 			if alvo.current_hp <= 0:
 				alvo.current_hp = 0
 				if alvo.has_method("check_if_dead"):
 					alvo.check_if_dead()
+
 			hud.show_top_message("%s atingido por %s: %d de dano!" % [alvo.nome, spell_name, dano])
 			hud.show_floating_number(dano, alvo, "damage")
 
 		elif tipo == "heal":
 			var cura = spell.power + caster.get_modified_stat(caster.SPI, "SPI")
-			var ap_gain = int(100)  # Ganha mais AP se causar mais dano
-			caster.gain_ap(spell.name, ap_gain, false)
+			caster.gain_ap(spell.name, 100, true)
 			alvo.current_hp = min(alvo.max_hp, alvo.current_hp + cura)
 			hud.show_top_message("%s curado por %s: %d de HP!" % [alvo.nome, spell_name, cura])
 			hud.show_floating_number(cura, alvo, "hp")
 
 		elif tipo == "buff" or tipo == "debuff":
 			var effect = StatusEffect.new()
-			var ap_gain = int(100)  # Ganha mais AP se causar mais dano
-			caster.gain_ap(spell.name, ap_gain, false)
+			caster.gain_ap(spell.name, 100, true)
 			effect.attribute = spell.attribute
 			effect.amount = spell.amount
 			effect.duration = spell.duration
 			effect.type = StatusEffect.Type.BUFF if tipo == "buff" else StatusEffect.Type.DEBUFF
-
 			alvo.apply_status_effect(effect)
-
 			var acao = "aumentado" if tipo == "buff" else "reduzido"
 			hud.show_top_message("%s teve %s %s por %s!" % [alvo.nome, spell.attribute, acao, spell_name])
-	
+
 	reset_atb(caster)
 	hud.update_enemy_info(enemies)
 	hud.update_party_info(party)
@@ -1096,6 +1286,21 @@ func _execute_spell_single(caster, spell_name, alvo):
 		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 		end_turn()
 		return
+
+	if caster.current_mp < spell.cost:
+		hud.show_top_message("%s não tem MP suficiente para usar %s!" % [caster.nome, spell.name])
+		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+		end_turn()
+		return
+
+	if !caster.spell_slots.has(spell.level) or caster.spell_slots[spell.level] <= 0:
+		hud.show_top_message("%s não tem slots de nível %d suficientes para usar %s!" % [caster.nome, spell.level, spell.name])
+		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+		end_turn()
+		return
+
+	caster.current_mp -= spell.cost
+	caster.spell_slots[spell.level] -= 1
 
 	var tipo = spell.type
 	var efeito = 0
@@ -1128,7 +1333,7 @@ func _execute_spell_single(caster, spell_name, alvo):
 			attack_type_res = 1.0
 		dano *= element_res * attack_type_res
 		var ap_gain = int(100)  # Ganha mais AP se causar mais dano
-		caster.gain_ap(spell.name, ap_gain, false)
+		caster.gain_ap(spell.name, ap_gain, true)
 		aplicar_dano(alvo, caster, dano)
 		
 		if alvo.current_hp <= 0:
@@ -1141,7 +1346,7 @@ func _execute_spell_single(caster, spell_name, alvo):
 	elif tipo == "heal":
 		var cura = spell.power + caster.get_modified_stat(caster.SPI, "SPI")
 		var ap_gain = int(100)  # Ganha mais AP se causar mais dano
-		caster.gain_ap(spell.name, ap_gain, false)
+		caster.gain_ap(spell.name, ap_gain, true)
 		alvo.current_hp = min(alvo.max_hp, alvo.current_hp + cura)
 		hud.show_top_message("%s curou %s com %s em %d de HP!" % [caster.nome, alvo.nome, spell.name, cura])
 		hud.show_floating_number(cura, alvo, "hp")
@@ -1153,7 +1358,7 @@ func _execute_spell_single(caster, spell_name, alvo):
 		effect.duration = spell.duration
 		effect.type = StatusEffect.Type.BUFF if spell.type == "buff" else StatusEffect.Type.DEBUFF
 		var ap_gain = int(100)  # Ganha mais AP se causar mais dano
-		caster.gain_ap(spell.name, ap_gain, false)
+		caster.gain_ap(spell.name, ap_gain, true)
 		alvo.apply_status_effect(effect)
 
 		var acao = "aumentado" if spell.type == "buff" else "reduzido"
@@ -1235,6 +1440,9 @@ func perform_attack(attacker, target) -> void:
 
 func _execute_special_area(caster, special: Special, alvos):
 	for alvo in alvos:
+		if alvo.current_hp <= 0:
+			continue  # Ignorar inimigos mortos
+
 		match special.effect_type:
 			"damage":
 				var dano = special.power + caster.get_modified_stat(caster.STR, "STR")
@@ -1255,16 +1463,12 @@ func _execute_special_area(caster, special: Special, alvos):
 				effect.type = StatusEffect.Type.BUFF
 				alvo.apply_status_effect(effect)
 
-	# Exibir mensagem de ação do caster
 	hud.show_top_message("%s usou %s!" % [caster.nome, special.name])
-
-	# Pós-ação
 	reset_atb(caster)
 	hud.update_enemy_info(enemies)
 	hud.update_party_info(party)
 	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 
-	# Reset de especial
 	caster.special_charge = 0
 	sp_values[caster] = 0
 	caster.special_ready = false
@@ -1427,7 +1631,7 @@ func _on_player_action_selected(action_name: String) -> void:
 						"node_ref": enemy
 					})
 			hud.target_selected.connect(_on_alvo_ataque_selecionado)
-			hud.show_target_menu(targets)
+			hud.show_target_menu(targets, current_actor)
 
 		"Magia", "Skills":
 			if current_actor.is_magic_user():
@@ -1530,12 +1734,25 @@ func _on_skill_selected(skill_name: String):
 			alvos = [user]
 		"ally":
 			alvos = party.filter(func(p): return p.current_hp > 0)
+		"all_enemies":
+			alvos = enemies.filter(func(e): return e.current_hp > 0)
+		"line":
+			# Habilita seleção de linha (frente/trás)
+			if hud.line_target_selected.is_connected(_on_skill_line_target_selected):
+				hud.line_target_selected.disconnect(_on_skill_line_target_selected)
+			hud.line_target_selected.connect(_on_skill_line_target_selected)
+			hud.set_meta("spell_name", skill.name)
+			hud.show_line_target_menu(["frente", "trás"])
+			return  # Aguarda seleção do jogador
 		_:
-			alvos = enemies
+			alvos = enemies.filter(func(e): return e.current_hp > 0)
 
 	if skill.target_type == "self":
 		await _execute_skill(user, skill, user)
+	elif skill.target_type == "all_enemies":
+		await _execute_skill_area(user, skill, alvos)
 	else:
+		# Caso padrão: mostra seleção de alvos
 		if hud.target_selected.is_connected(_on_skill_target_selected):
 			hud.target_selected.disconnect(_on_skill_target_selected)
 		hud.target_selected.connect(_on_skill_target_selected)
@@ -1547,7 +1764,7 @@ func _on_skill_selected(skill_name: String):
 				"nome": target.nome,
 				"node_ref": target
 			})
-		hud.show_target_menu(formatted_targets)
+		hud.show_target_menu(formatted_targets, current_actor)
 
 func _on_magic_selected(spell_name: String):
 	hud.magic_selected.disconnect(_on_magic_selected)
@@ -1592,7 +1809,7 @@ func _on_magic_selected(spell_name: String):
 
 		"line":
 			# Jogador escolhe "frente" ou "trás"
-			hud.line_target_selected.connect(_on_line_target_selected)
+			hud.line_target_selected.connect(_on_magic_line_target_selected)
 			hud.show_line_target_menu(["frente", "trás"])
 			hud.set_meta("spell_name", spell_name)
 
@@ -1608,8 +1825,8 @@ func _on_magic_selected(spell_name: String):
 			hud.show_target_menu(formatted_targets)
 			hud.set_meta("spell_name", spell_name)
 
-func _on_line_target_selected(linha: String):
-	hud.line_target_selected.disconnect(_on_line_target_selected)
+func _on_magic_line_target_selected(linha: String):
+	hud.line_target_selected.disconnect(_on_magic_line_target_selected)
 
 	var spell_name = hud.get_meta("spell_name")
 	var caster = current_actor
@@ -1622,6 +1839,27 @@ func _on_line_target_selected(linha: String):
 		linha_alvos = enemies.filter(func(e): return e.current_hp > 0 and e.position_line == "back")
 
 	await _execute_spell_area(caster, spell_name, linha_alvos)
+
+func _on_skill_line_target_selected(linha: String):
+	hud.line_target_selected.disconnect(_on_skill_line_target_selected)
+
+	var skill_name = hud.get_meta("skill_name")  # Corrigido de "spell_name" para "skill_name"
+	var caster = current_actor
+
+	var skill_matches = caster.skills.filter(func(s): return s.name == skill_name)
+	if skill_matches.is_empty():
+		print("Skill não encontrada:", skill_name)
+		return
+
+	var skill = skill_matches[0]
+
+	var linha_alvos = []
+	if linha == "frente":
+		linha_alvos = enemies.filter(func(e): return e.current_hp > 0 and e.position_line == "front")
+	elif linha == "trás":
+		linha_alvos = enemies.filter(func(e): return e.current_hp > 0 and e.position_line == "back")
+
+	await _execute_skill_area(caster, skill, linha_alvos)
 
 func _on_magic_target_selected(alvo):
 	hud.target_selected.disconnect(_on_magic_target_selected)
@@ -1766,6 +2004,29 @@ func _on_special_target_selected(target_id, especial):
 	await _execute_special_single(current_actor, especial, alvo)
 
 func _on_hud_back_pressed():
-	hud.show_action_menu(current_actor)
+	# Desconecta todos os sinais temporários
+	if hud.magic_selected.is_connected(_on_magic_selected):
+		hud.magic_selected.disconnect(_on_magic_selected)
+	if hud.skill_selected.is_connected(_on_skill_selected):
+		hud.skill_selected.disconnect(_on_skill_selected)
+	if hud.special_selected.is_connected(_on_special_selected):
+		hud.special_selected.disconnect(_on_special_selected)
+	if hud.target_selected.is_connected(_on_skill_target_selected):
+		hud.target_selected.disconnect(_on_skill_target_selected)
+	if hud.target_selected.is_connected(_on_magic_target_selected):
+		hud.target_selected.disconnect(_on_magic_target_selected)
+	if hud.target_selected.is_connected(_on_special_target_selected):
+		hud.target_selected.disconnect(_on_special_target_selected)
+	if hud.line_target_selected.is_connected(_on_magic_line_target_selected):
+		hud.line_target_selected.disconnect(_on_magic_line_target_selected)
+	if hud.line_target_selected.is_connected(_on_skill_line_target_selected):
+		hud.line_target_selected.disconnect(_on_skill_line_target_selected)
+
+	# Limpa quaisquer metadados pendentes
+	hud.set_meta("skill_name", null)
+	hud.set_meta("spell_name", null)
+
+	# Retorna ao menu de ações
+	hud.show_action_menu()
 	hud.set_hud_buttons_enabled(true, current_actor)
 	hud.indicate_current_player(current_actor)

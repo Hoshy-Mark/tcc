@@ -38,6 +38,7 @@ var is_defending: bool = false
 var sprite_ref: Sprite2D = null
 var position_line: String = "front"  # ou "back"
 var alcance_estendido: bool = false 
+var obstruido := false
 
 # Status
 var status_effects: Array = []

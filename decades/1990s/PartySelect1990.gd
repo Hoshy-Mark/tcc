@@ -43,6 +43,9 @@ const CLASS_DATA = {
 		},
 }
 
+const MAGIC_CLASSES := ["Mage", "Cleric", "Summoner", "Paladin"]
+const PHYSICAL_CLASSES := ["Monk", "Knight", "Thief", "Hunter"]
+
 var selected_classes := []
 const MAX_SELECTION := 4
 
@@ -100,16 +103,50 @@ func _ready():
 func _on_class_selected(class_id: String, button: TextureButton):
 	if class_id in selected_classes:
 		selected_classes.erase(class_id)
-		button.remove_theme_stylebox_override("panel")  # Remove a borda azul
+		button.remove_theme_stylebox_override("panel")
 	else:
 		if selected_classes.size() >= MAX_SELECTION:
 			return
+		
+		# Limite de 2 por tipo
+		var magic_count = selected_classes.filter(func(c): return c in MAGIC_CLASSES).size()
+		var physical_count = selected_classes.filter(func(c): return c in PHYSICAL_CLASSES).size()
+
+		if class_id in MAGIC_CLASSES and magic_count >= 2:
+			return
+		if class_id in PHYSICAL_CLASSES and physical_count >= 2:
+			return
+
 		selected_classes.append(class_id)
 
 	_update_selection_label()
+	_update_button_states()
 	description_label.text = CLASS_DATA[class_id].description
 	confirm_button.disabled = selected_classes.size() != MAX_SELECTION
-	
+
+
+func _update_button_states():
+	var magic_count = selected_classes.filter(func(c): return c in MAGIC_CLASSES).size()
+	var physical_count = selected_classes.filter(func(c): return c in PHYSICAL_CLASSES).size()
+
+	for box in class_grid.get_children():
+		var button = box.get_child(1)
+		var class_id = button.name
+		var is_selected = class_id in selected_classes
+
+		if is_selected:
+			button.disabled = false
+			button.modulate.a = 1.0  # Totalmente visível
+		elif class_id in MAGIC_CLASSES and magic_count >= 2:
+			button.disabled = true
+			button.modulate.a = 0.3  # Transparente
+		elif class_id in PHYSICAL_CLASSES and physical_count >= 2:
+			button.disabled = true
+			button.modulate.a = 0.3
+		else:
+			button.disabled = false
+			button.modulate.a = 1.0
+
 func _update_selection_label():
 	selection_label.text = "Selecionados: %d/%d" % [selected_classes.size(), MAX_SELECTION]
 
