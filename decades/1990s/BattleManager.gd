@@ -67,14 +67,38 @@ var class_sprite_paths = {
 }
 
 var class_base_stats = {
-	"Knight":    {"STR": 9, "DEX": 20, "AGI": 3, "CON": 9, "MAG": 1, "INT": 2, "SPI": 4, "LCK": 3, "attack_type": "slash"},
-	"Mage":      {"STR": 1, "DEX": 4, "AGI": 20, "CON": 2, "MAG": 10, "INT": 9, "SPI": 5, "LCK": 4, "attack_type": "blunt"},
-	"Thief":     {"STR": 5, "DEX": 9, "AGI": 9, "CON": 3, "MAG": 1, "INT": 3, "SPI": 2, "LCK": 10, "attack_type": "pierce"},
-	"Cleric":    {"STR": 2, "DEX": 20, "AGI": 20, "CON": 5, "MAG": 5, "INT": 6, "SPI": 10, "LCK": 6, "attack_type": "blunt"},
-	"Hunter":    {"STR": 7, "DEX": 20, "AGI": 20, "CON": 4, "MAG": 1, "INT": 3, "SPI": 3, "LCK": 7, "attack_type": "ranged"},
-	"Paladin":   {"STR": 7, "DEX": 6, "AGI": 4, "CON": 8, "MAG": 4, "INT": 5, "SPI": 8, "LCK": 4, "attack_type": "slash"},
-	"Monk":      {"STR": 60, "DEX": 7, "AGI": 6, "CON": 7, "MAG": 2, "INT": 3, "SPI": 3, "LCK": 5, "attack_type": "blunt"},
-	"Summoner":  {"STR": 3, "DEX": 5, "AGI": 4, "CON": 3, "MAG": 10, "INT": 8, "SPI": 6, "LCK": 8, "attack_type": "blunt"},
+	"Knight": {
+		"STR": 10, "DEX": 7, "AGI": 4, "CON": 10, "MAG": 1, "INT": 3, "SPI": 5, "LCK": 5,
+		"attack_type": "slash"
+	},
+	"Mage": {
+		"STR": 1, "DEX": 4, "AGI": 7, "CON": 3, "MAG": 15, "INT": 13, "SPI": 10, "LCK": 7,
+		"attack_type": "blunt"
+	},
+	"Thief": {
+		"STR": 5, "DEX": 10, "AGI": 12, "CON": 4, "MAG": 1, "INT": 4, "SPI": 2, "LCK": 12,
+		"attack_type": "pierce"
+	},
+	"Cleric": {
+		"STR": 3, "DEX": 5, "AGI": 6, "CON": 6, "MAG": 10, "INT": 8, "SPI": 15, "LCK": 7,
+		"attack_type": "blunt"
+	},
+	"Hunter": {
+		"STR": 7, "DEX": 12, "AGI": 12, "CON": 5, "MAG": 1, "INT": 3, "SPI": 3, "LCK": 17,
+		"attack_type": "ranged"
+	},
+	"Paladin": {
+		"STR": 8, "DEX": 6, "AGI": 5, "CON": 9, "MAG": 6, "INT": 5, "SPI": 12, "LCK": 9,
+		"attack_type": "slash"
+	},
+	"Monk": {
+		"STR": 14, "DEX": 8, "AGI": 8, "CON": 9, "MAG": 2, "INT": 3, "SPI": 4, "LCK": 12,
+		"attack_type": "blunt"
+	},
+	"Summoner": {
+		"STR": 2, "DEX": 5, "AGI": 5, "CON": 4, "MAG": 14, "INT": 12, "SPI": 10, "LCK": 8,
+		"attack_type": "blunt"
+	},
 }
 
 var class_spell_slots = {
@@ -221,7 +245,7 @@ var class_spell_trees = {
 			"Heal Self": {"level": 2, "AGI": 11},
 		},
 		"specials": {
-			"Inner Focus": {"level": 1, "SPI": 5}
+			"Inner Focus": {"level": 1, "SPI": 2}
 		},
 		"spell_upgrades": {},
 		"skill_upgrades": {
@@ -999,12 +1023,12 @@ func aplicar_dano(alvo, atacante, dano: int) -> void:
 	var updated := false
 
 	if is_player(alvo):
-		if alvo.increase_special_charge(dano * 100):
+		if alvo.increase_special_charge(dano * 0.75):
 			sp_values[alvo] = alvo.special_charge
 			updated = true
 
 	if is_player(atacante):
-		if atacante.increase_special_charge(dano * 100):
+		if atacante.increase_special_charge(dano * 0.5):
 			sp_values[atacante] = atacante.special_charge
 			updated = true
 
@@ -1076,7 +1100,7 @@ func _execute_skill(user, skill, alvo):
 		else:
 			hud.show_top_message("%s usou %s e causou %d de dano em %s!" % [user.nome, skill.name, dano, alvo.nome])
 		
-		var ap_gain = int(100)  # Ganha mais AP se causar mais dano
+		var ap_gain = int(10)  # Ganha mais AP se causar mais dano
 		user.gain_ap(skill.name, ap_gain, false)
 		aplicar_dano(alvo, user, dano)
 
