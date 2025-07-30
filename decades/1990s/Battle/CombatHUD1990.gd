@@ -10,14 +10,20 @@ signal line_target_selected(linha: String)
 signal back_pressed
 
 @onready var action_panel = $HUDPanel/ActionPanel
-@onready var magic_panel = $HUDPanel/MagicPanel
+@onready var magic_panel = $MagicPanel
+@onready var vbox_magic_main = $MagicPanel/VBoxMagicMain
+@onready var description_label = $MagicPanel/VBoxMagicMain/DescriptionPanel/DescriptionLabel
+@onready var hbox_main_content = $MagicPanel/VBoxMagicMain/HBoxMainContent
+@onready var spells_scroll_container = $MagicPanel/VBoxMagicMain/HBoxMainContent/VBoxSpellsWrapper/ScrollContainer
+@onready var vbox_spells_by_level = $MagicPanel/VBoxMagicMain/HBoxMainContent/VBoxSpellsWrapper/ScrollContainer/VBoxSpellsByLevel
+@onready var player_info_panel = $MagicPanel/VBoxMagicMain/HBoxMainContent/PlayerInfoPanel
 @onready var item_panel = $HUDPanel/ItemPanel
 @onready var target_panel = $HUDPanel/TargetPanel
-@onready var vbox_magic_list = $HUDPanel/MagicPanel/VBoxMagicList
 @onready var vbox_item_list = $HUDPanel/ItemPanel/VBoxItemList
 @onready var vbox_target_list = $HUDPanel/TargetPanel/VBoxTargetList
 @onready var hud_panel = $HUDPanel
-@onready var top_message = $TopMessage
+@onready var top_message_panel = $TopMessageContainer/TopMessagePanel
+@onready var top_message_label = $TopMessageContainer/TopMessagePanel/TopMessageLabel
 @onready var PartyInfo = $PartyStatus/PartyInfo
 @onready var PartyStatus = $PartyStatus
 @onready var EnemyStatus = $EnemyStatus/EnemyInfo
@@ -30,22 +36,75 @@ var special_bars = {}
 var special_buttons := []
 var buttons = {}
 var current_player_node: Node = null
+var original_hud_position := Vector2()
+var original_hud_size := Vector2()
 
 func _ready():
+	
+	# Cria o estilo da moldura
 	var style = StyleBoxFlat.new()
 	style.bg_color = Color(0.1, 0.1, 0.3)
 	style.border_color = Color(0.5, 0.5, 1.0)
 	style.set_border_width_all(2)
 	style.set_corner_radius_all(6)
 	
+	# Margens internas do conteúdo para espaçamento do texto à borda
+	style.content_margin_left = 10
+	style.content_margin_right = 10
+	style.content_margin_top = 6
+	style.content_margin_bottom = 6
+	
+	# Aplica o estilo a outros painéis do HUD (exemplo seu)
 	PartyStatus.add_theme_stylebox_override("panel", style)
-	hud_panel.add_theme_stylebox_override("panel", style.duplicate()) # <- Aqui a moldura do painel de ações
-
+	hud_panel.add_theme_stylebox_override("panel", style.duplicate())
+	magic_panel.add_theme_stylebox_override("panel", style.duplicate())
+	
 	_create_action_buttons()
 	show_action_menu()
-	magic_panel.custom_minimum_size = Vector2(500, 210)
 	item_panel.custom_minimum_size = Vector2(500, 210)
 	target_panel.custom_minimum_size = Vector2(500, 210)
+	
+	var container = $TopMessageContainer
+	container.anchor_left = 0.4
+	container.anchor_top = 0
+	container.anchor_right = 0.7
+	container.anchor_bottom = 0
+
+	# Cria MarginContainer para margens internas
+	var margin_container = MarginContainer.new()
+	margin_container.name = "MarginWrapper"
+	margin_container.add_theme_constant_override("margin_left", 8)
+	margin_container.add_theme_constant_override("margin_top", 20)
+	margin_container.add_theme_constant_override("margin_right", 8)
+	margin_container.add_theme_constant_override("margin_bottom", 8)
+	container.add_child(margin_container)
+	margin_container.owner = get_tree().current_scene
+	
+	# Move painel para dentro do margin
+	var top_message_panel = container.get_node("TopMessagePanel")
+	container.remove_child(top_message_panel)
+	margin_container.add_child(top_message_panel)
+
+	# Estilo do painel
+	top_message_panel.add_theme_stylebox_override("panel", style)
+	top_message_panel.visible = false
+	
+	# Configura flags para centralizar e dar largura mínima
+	top_message_panel.size_flags_horizontal = Control.SIZE_FILL
+	top_message_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	top_message_panel.custom_minimum_size = Vector2(400, 48)  # largura mínima e altura fixa
+	
+	# Centralizar o painel dentro do margin container
+	margin_container.size_flags_horizontal = Control.SIZE_FILL
+	margin_container.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	margin_container.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	
+	# Configura label
+	var label = top_message_panel.get_node("TopMessageLabel")
+	
+	label.autowrap_mode = 0
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 
 func _create_action_buttons(player = null):
 	clear(action_panel)
@@ -73,25 +132,6 @@ func _create_action_buttons(player = null):
 # MOSTRAR MENUS
 
 
-func show_skill_menu(skills: Array, player_sp: int):
-	_hide_all_panels()
-	clear(vbox_magic_list) # reutilizar o mesmo painel da magia
-	magic_panel.visible = true
-	
-	for skill in skills:
-		var button = Button.new()
-		button.text = "%s | SP: %d" % [skill.name, skill.cost]
-		button.disabled = player_sp < skill.cost
-		button.custom_minimum_size = Vector2(500, 40)
-		button.pressed.connect(_on_skill_button_pressed.bind(skill.name))
-		vbox_magic_list.add_child(button)
-
-	# Botão de voltar	
-	var back_button = Button.new()
-	back_button.text = "Voltar"
-	back_button.custom_minimum_size = Vector2(500, 40)
-	back_button.pressed.connect(_on_back_button_pressed)
-	vbox_magic_list.add_child(back_button)
 
 func show_target_menu(targets: Array, current_actor = null):
 	_hide_all_panels()
@@ -171,50 +211,167 @@ func show_item_menu(items: Dictionary):
 	back_button.pressed.connect(_on_back_button_pressed)
 	vbox_item_list.add_child(back_button)
 
-func show_magic_menu(spells: Dictionary, player_mp: int, spell_slots: Dictionary) -> void:
+func show_ability_menu(abilities: Array, tipo: String,custo_disponivel: int, slots_por_nivel := {}, player_info := {}):
+
 	_hide_all_panels()
+	clear($MagicPanel/VBoxMagicMain)
+
 	magic_panel.visible = true
-	clear(vbox_magic_list)
+	PartyStatus.visible = false
+	hud_panel.visible = false
+	magic_panel.custom_minimum_size = Vector2(1700, 300)
+	magic_panel.position = Vector2(10, 670)
 
-	for spell_name in spells.keys():
-		var spell = spells[spell_name]
-		var slot_level = spell.level
-		var slots_disponiveis = spell_slots.get(slot_level, 0)
+	for child in magic_panel.get_children():
+		magic_panel.remove_child(child)
 
+	var description_label = Label.new()
+	description_label.name = "DescriptionLabel"
+	description_label.text = ""
+	description_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	description_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	description_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	description_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	description_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 
+	var root_vbox = VBoxContainer.new()
+	root_vbox.name = "VBoxMagicMain"
+	root_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	root_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	root_vbox.set("separation", 4)
+	magic_panel.add_child(root_vbox)
 
-		var button = Button.new()
-		button.text = "%s | MP: %d | Slots: %d" % [spell_name.capitalize(), spell.cost, slots_disponiveis]
-		button.disabled = (player_mp < spell.cost or slots_disponiveis <= 0)
-		button.custom_minimum_size = Vector2(500, 40)
-		button.pressed.connect(_on_spell_button_pressed.bind(spell_name))
-		vbox_magic_list.add_child(button)
-	
-	# Botão de voltar	
+	# === Painel de descrição (fixo no topo) ===
+	var desc_panel = PanelContainer.new()
+	desc_panel.custom_minimum_size = Vector2(100, 60)
+	desc_panel.add_child(description_label)
+	root_vbox.add_child(desc_panel)
+
+	# === HBox com magias (com scroll) e player (fixo) ===
+	var hbox_main_content = HBoxContainer.new()
+	hbox_main_content.name = "HBoxMainContent"
+	hbox_main_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hbox_main_content.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	root_vbox.add_child(hbox_main_content)
+
+	# === Wrapper de magias com scroll ===
+	var spells_wrapper = VBoxContainer.new()
+	spells_wrapper.name = "VBoxSpellsWrapper"
+	spells_wrapper.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spells_wrapper.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	hbox_main_content.add_child(spells_wrapper)
+
+	var scroll = ScrollContainer.new()
+	scroll.name = "ScrollContainer"
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.custom_minimum_size = Vector2(100, 220)
+	spells_wrapper.add_child(scroll)
+
+	var vbox_spells_by_level = VBoxContainer.new()
+	vbox_spells_by_level.name = "VBoxSpellsByLevel"
+	vbox_spells_by_level.custom_minimum_size = Vector2(1000, 0)
+	vbox_spells_by_level.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox_spells_by_level.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	scroll.add_child(vbox_spells_by_level)
+
+	# === Painel do player (fixo ao lado) ===
+	var player_panel = _create_player_info_panel(tipo, player_info)
+	player_panel.custom_minimum_size = Vector2(200, 220)
+	player_panel.size_flags_horizontal = Control.SIZE_FILL
+	player_panel.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	hbox_main_content.add_child(player_panel)
+
+	# === Adiciona magias por nível ===
+	var levels := []
+	for ability in abilities:
+		if ability.level not in levels:
+			levels.append(ability.level)
+	levels.sort()
+
+	for level in levels:
+		var spells_this_level = abilities.filter(func(a): return a.level == level)
+
+		var level_label = Label.new()
+		level_label.text = "Nível %d  [Slots  %d]" % [level, slots_por_nivel[level]]
+		level_label.add_theme_font_size_override("font_size", 18)
+		vbox_spells_by_level.add_child(level_label)
+
+		var hbox = HBoxContainer.new()
+		hbox.name = "Level%d" % level
+		hbox.add_theme_constant_override("separation", 6)
+
+		for ability in spells_this_level:
+			var button = Button.new()
+			var custo = ability.cost
+			var disponivel = custo_disponivel >= custo
+			var slots_disp = slots_por_nivel.get(ability.level, 0)
+
+			button.text = "%s" % [ability.name.capitalize()]
+			button.disabled = not (disponivel and slots_disp > 0)
+			button.custom_minimum_size = Vector2(480, 50)
+
+			button.mouse_entered.connect(func():
+				description_label.text = ability.description
+			)
+			button.pressed.connect(func():
+				match tipo:
+					"MP":
+						_on_spell_button_pressed(ability.name)
+					"SP":
+						_on_skill_button_pressed(ability.name)
+					"Especial":
+						_on_special_button_pressed(ability)
+			)
+
+			hbox.add_child(button)
+
+		vbox_spells_by_level.add_child(hbox)
+
+	# === Botão voltar (fora do scroll, fixo no fundo) ===
 	var back_button = Button.new()
 	back_button.text = "Voltar"
-	back_button.custom_minimum_size = Vector2(500, 40)
+	back_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	back_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	back_button.custom_minimum_size = Vector2(0, 60)
 	back_button.pressed.connect(_on_back_button_pressed)
-	vbox_magic_list.add_child(back_button)
 
-func show_special_menu(specials: Array) -> void:
-	_hide_all_panels()
-	clear(vbox_magic_list) # reutilizar o mesmo painel da magia
-	magic_panel.visible = true
-	
-	for special in specials:
-		var button = Button.new()
-		button.text = "%s" % special.name
-		button.custom_minimum_size = Vector2(500, 40)
-		button.pressed.connect(_on_special_button_pressed.bind(special))
-		vbox_magic_list.add_child(button)
-	
-	# Botão de voltar
-	var back_button = Button.new()
-	back_button.text = "Voltar"
-	back_button.custom_minimum_size = Vector2(500, 40)
-	back_button.pressed.connect(_on_back_button_pressed)
-	vbox_magic_list.add_child(back_button)
+	# Espaço antes do botão
+	var spacing = Control.new()
+	spacing.custom_minimum_size = Vector2(0, 72)
+	vbox_spells_by_level.add_child(spacing)
+
+	vbox_spells_by_level.add_child(back_button)
+
+
+func _create_player_info_panel(tipo: String, info: Dictionary) -> PanelContainer:
+	var panel = PanelContainer.new()
+	panel.name = "PlayerInfoPanel"
+	panel.custom_minimum_size = Vector2(200, 200)
+
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0.15, 0.15, 0.15, 1)
+	panel.add_theme_stylebox_override("panel", style)
+
+	var vbox = VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+
+	var nome = Label.new()
+	nome.text = info.get("nome", "???")
+	nome.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(nome)
+
+	if tipo in ["MP", "SP"]:
+		var custo_label = Label.new()
+		custo_label.text = "%s: %d / %d" % [
+			tipo,
+			info.get("atual", 0),
+			info.get("max", 0)
+		]
+		custo_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		vbox.add_child(custo_label)
+
+	panel.add_child(vbox)
+	return panel
 
 func show_action_menu(player = null):
 	_hide_all_panels()
@@ -254,6 +411,7 @@ func show_line_target_menu(options: Array):
 
 func _on_skill_button_pressed(skill_name: String) -> void:
 	magic_panel.visible = false
+	hud_panel.visible = true  # <- Adicione esta linha
 	emit_signal("skill_selected", skill_name)
 
 func _on_target_button_pressed(target_id: String) -> void:
@@ -266,18 +424,23 @@ func _on_target_button_pressed(target_id: String) -> void:
 
 func _on_spell_button_pressed(spell_name: String) -> void:
 	magic_panel.visible = false
+	hud_panel.visible = true  # <- Adicione esta linha
 	emit_signal("magic_selected", spell_name)
-
+	
 func _on_item_pressed(item_name: String):
 	item_selected.emit(item_name)
 
 func _on_back_button_pressed() -> void:
+	magic_panel.visible = false  # <- O painel de magia precisa ser fechado
+	hud_panel.visible = true     # <- O HUD precisa reaparecer
 	emit_signal("back_pressed")
 
 func _on_action_button_pressed(action_name: String) -> void:
 	emit_signal("action_selected", action_name)
 
 func _on_special_button_pressed(special) -> void:
+	magic_panel.visible = false
+	hud_panel.visible = true  # <- Adicione esta linha
 	special_selected.emit(special)
 
 
@@ -485,10 +648,11 @@ func show_arrow_above_node(target_node: Node):
 	arrow_instance.scale = Vector2(0.2, 0.2)
 
 func show_top_message(text: String, duration := 2.0):
-	top_message.text = text
-	top_message.visible = true
+	top_message_label.add_theme_font_size_override("font_size", 18)
+	top_message_label.text = text
+	top_message_panel.visible = true
 	await get_tree().create_timer(duration).timeout
-	top_message.visible = false
+	top_message_panel.visible = false
 
 
 # OCULTAR
@@ -504,6 +668,7 @@ func _hide_all_panels():
 	magic_panel.visible = false
 	item_panel.visible = false
 	target_panel.visible = false
+	PartyStatus.visible = true
 
 func hide_special_menu() -> void:
 	if has_node("SpecialMenu"):

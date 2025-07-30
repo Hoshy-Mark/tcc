@@ -9,6 +9,7 @@ class_name Special
 @export var target_type: String = "enemy"  # enemy, ally, all_allies, etc.
 @export var effect_type: String = "magical"  # magical, heal, buff, debuff, etc.
 @export var duration: int = 2  # Duração de efeito como buff/debuff
+@export var level: int = 1
 
 @export var amount: int = 15  # Intensidade do efeito (cura, buff, etc.)
 @export var hit_chance: float = 1.0  # Magias geralmente não erram, mas pode variar

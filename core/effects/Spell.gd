@@ -14,6 +14,9 @@ class_name Spell
 @export var target_group: String = "single"  # Valores: "single", "line", "area"
 @export var element: String = ""
 @export var attack_type: String = ""
+@export var status_effects = []
+@export var chance: int = 100  # default 100% de chance de aplicar
+@export var description: String = ""
 
 func is_buff() -> bool:
 	return type == "buff"

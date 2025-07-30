@@ -31,28 +31,44 @@ const TEMPO_ESPERA_APOS_ACAO = 0.5
 var enemy_base_stats = {
 	"Goblin": {
 		"STR": 10, "DEX": 6, "AGI": 20, "CON": 3, "MAG": 1, "INT": 2, "SPI": 2, "LCK": 4,
-		"xp_value": 20, "sprite_path": "res://assets/Goblin.png", "enemy_type": "Beast", "attack_type":"blunt"
+		"xp_value": 20, "sprite_path": "res://assets/Goblin.png", "enemy_type": "Beast", "attack_type": "blunt"
 	},
 	"Little Orc": {
 		"STR": 10, "DEX": 4, "AGI": 20, "CON": 6, "MAG": 2, "INT": 3, "SPI": 3, "LCK": 3,
-		"xp_value": 50, "sprite_path": "res://assets/Little Orc.png", "enemy_type": "Beast", "attack_type":"blunt"
+		"xp_value": 50, "sprite_path": "res://assets/Little Orc.png", "enemy_type": "Beast", "attack_type": "blunt"
 	},
 	"Zumbi": {
-		"STR": 5, "DEX": 2, "AGI": 4, "CON": 3, "MAG": 1, "INT": 1, "SPI": 1, "LCK": 1,
-		"xp_value": 15, "sprite_path": "res://assets/Zumbi.png", "enemy_type": "Undead", "attack_type":"blunt"
+		"STR": 5, "DEX": 15, "AGI": 4, "CON": 3, "MAG": 1, "INT": 1, "SPI": 1, "LCK": 1,
+		"xp_value": 15, "sprite_path": "res://assets/Zumbi.png", "enemy_type": "Undead", "attack_type": "blunt"
 	},
 	"Necromante": {
 		"STR": 5, "DEX": 4, "AGI": 6, "CON": 6, "MAG": 6, "INT": 4, "SPI": 4, "LCK": 4,
-		"xp_value": 50, "sprite_path": "res://assets/Necromante.png", "enemy_type": "Undead", "attack_type":"blunt"
+		"xp_value": 50, "sprite_path": "res://assets/Necromante.png", "enemy_type": "Undead", "attack_type": "blunt"
 	},
 	"Lobo": {
 		"STR": 8, "DEX": 6, "AGI": 8, "CON": 6, "MAG": 0, "INT": 0, "SPI": 4, "LCK": 6,
-		"xp_value": 50, "sprite_path": "res://assets/Lobo.png", "enemy_type": "Beast", "attack_type":"slash"
+		"xp_value": 50, "sprite_path": "res://assets/Lobo.png", "enemy_type": "Beast", "attack_type": "slash"
 	},
 	"Passaro": {
 		"STR": 6, "DEX": 7, "AGI": 10, "CON": 3, "MAG": 2, "INT": 2, "SPI": 2, "LCK": 4,
-		"xp_value": 30, "sprite_path": "res://assets/Passaro.png", "enemy_type": "Flying", "attack_type":"ranged"
+		"xp_value": 30, "sprite_path": "res://assets/Passaro.png", "enemy_type": "Flying", "attack_type": "ranged"
 	},
+	"Aguia": {
+		"STR": 6, "DEX": 8, "AGI": 12, "CON": 5, "MAG": 0, "INT": 2, "SPI": 3, "LCK": 9,
+		"xp_value": 40, "sprite_path": "res://assets/Aguia.png", "enemy_type": "Flying", "attack_type": "slash"
+	},
+	"Lobisomen": {
+		"STR": 12, "DEX": 7, "AGI": 8, "CON": 9, "MAG": 0, "INT": 2, "SPI": 2, "LCK": 5,
+		"xp_value": 45, "sprite_path": "res://assets/Lobisomen.png", "enemy_type": "Beast", "attack_type": "slash"
+	},
+	"Oni": {
+		"STR": 14, "DEX": 6, "AGI": 6, "CON": 10, "MAG": 4, "INT": 5, "SPI": 6, "LCK": 9,
+		"xp_value": 70, "sprite_path": "res://assets/Oni.png", "enemy_type": "Demon", "attack_type": "blunt"
+	},
+	"Dragao": {
+		"STR": 18, "DEX": 8, "AGI": 8, "CON": 14, "MAG": 8, "INT": 6, "SPI": 6, "LCK": 7,
+		"xp_value": 150, "sprite_path": "res://assets/Dragão.png", "enemy_type": "Dragon", "attack_type": "magic"
+	}
 }
 
 var class_sprite_paths = {
@@ -80,7 +96,7 @@ var class_base_stats = {
 		"attack_type": "pierce"
 	},
 	"Cleric": {
-		"STR": 3, "DEX": 5, "AGI": 6, "CON": 6, "MAG": 10, "INT": 8, "SPI": 15, "LCK": 7,
+		"STR": 3, "DEX": 50, "AGI": 50, "CON": 6, "MAG": 10, "INT": 8, "SPI": 15, "LCK": 7,
 		"attack_type": "blunt"
 	},
 	"Hunter": {
@@ -92,7 +108,7 @@ var class_base_stats = {
 		"attack_type": "slash"
 	},
 	"Monk": {
-		"STR": 14, "DEX": 8, "AGI": 8, "CON": 9, "MAG": 2, "INT": 3, "SPI": 4, "LCK": 12,
+		"STR": 50, "DEX": 8, "AGI": 8, "CON": 9, "MAG": 2, "INT": 3, "SPI": 4, "LCK": 12,
 		"attack_type": "blunt"
 	},
 	"Summoner": {
@@ -103,13 +119,13 @@ var class_base_stats = {
 
 var class_spell_slots = {
 	"Mage": {1: 4, 2: 3, 3: 2},
-	"Cleric": {1: 3, 2: 2, 3: 1},
-	"Paladin": {1: 2},
+	"Cleric": {1: 5, 2: 5, 3: 5},
+	"Paladin":  {1: 3, 2: 2},
 	"Summoner": {1: 3, 2: 2},
-	"Monk": {},
-	"Hunter": {},
-	"Thief": {},
-	"Knight": {}
+	"Monk":  {1: 3, 2: 2},
+	"Hunter":  {1: 3, 2: 2},
+	"Thief":  {1: 3, 2: 2},
+	"Knight":  {1: 3, 2: 2}
 }
 
 var spell_database = {
@@ -118,45 +134,63 @@ var spell_database = {
 	"Ice": {"type": "damage", "element": "ice", "attack_type": "magic", "power": 22, "power_max": 32, "cost": 5, "level": 1, "hit_chance": 95, "target_group": "single"},
 	"Thunder": {"type": "damage", "element": "lightning", "attack_type": "magic", "power": 28, "power_max": 38, "cost": 6, "level": 1, "hit_chance": 90, "target_group": "single"},
 	"Flare": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 80, "power_max": 100, "cost": 20, "level": 3, "hit_chance": 85, "target_group": "single"},
-	"Fire Rain": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 30, "cost": 8, "level": 2,"target_group": "line"},
-	"Mega Flare": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 60, "cost": 10, "level": 4,"target_group": "area"},
-	"Divine Blade": {"effect_type": "damage", "attack_type": "holy", "power": 45, "cost": 10, "target_type": "enemy", "status_inflicted": "blind", "level": 4,"status_chance": 0.3, "duration": 3},
-	"Holy Smite": {"effect_type": "damage", "attack_type": "holy", "power": 60, "cost": 15, "level": 4, "target_type": "enemy"},
-	
+	"Fire Rain": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 30, "cost": 8, "level": 2, "target_group": "line"},
+	"Mega Flare": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 60, "cost": 10, "level": 4, "target_group": "area"},
+	"Divine Blade": {"type": "damage", "attack_type": "holy", "power": 45, "cost": 10, "level": 4, "target_group": "single", "status_effects": [{"attribute": "blind", "amount": -1, "duration": 3, "chance": 30}]},
+	"Holy Smite": {"type": "damage", "attack_type": "holy", "power": 60, "cost": 15, "level": 4, "target_group": "single"},
+
 	# Cura
 	"Cure": {"type": "heal", "attack_type": "magic", "power": 30, "cost": 5, "level": 1, "target_group": "single"},
 	"Cura": {"type": "heal", "attack_type": "magic", "power": 60, "cost": 10, "level": 2, "target_group": "single"},
 	"Heal All": {"type": "heal", "attack_type": "magic", "power": 40, "cost": 12, "level": 3, "target_group": "area"},
 
-	# Buffs e debuffs
-	"Protect": {"type": "buff", "attack_type": "magic", "attribute": "defense", "amount": 5, "duration": 3, "cost": 6, "level": 1, "target_group": "single"},
-	"Shell": {"type": "buff", "attack_type": "magic", "attribute": "magic_defense", "amount": 5, "duration": 3, "cost": 6, "level": 1, "target_group": "single"},
+	# Buffs
+	"Haste": {"type": "buff", "attack_type": "magic", "attribute": "haste", "amount": 0, "duration": 3, "cost": 8, "level": 2, "target_group": "single"},
+	"Blink": {"type": "buff", "attack_type": "magic", "attribute": "blink", "amount": 2, "duration": 5, "cost": 10, "level": 3, "target_group": "single"},
+	"Reflect": {"type": "buff", "attack_type": "magic", "attribute": "reflect", "amount": 1, "duration": 3, "cost": 10, "level": 3, "target_group": "single"},
+	"Protect": {"type": "buff", "attack_type": "magic", "attribute": "protect", "amount": 5, "duration": 3, "cost": 6, "level": 1, "target_group": "single"},
+	"Shell": {"type": "buff", "attack_type": "magic", "attribute": "shell", "amount": 5, "duration": 3, "cost": 6, "level": 1, "target_group": "single"},
+
+	# Debuffs com efeitos negativos
 	"Weaken": {"type": "debuff", "attack_type": "magic", "attribute": "strength", "amount": -5, "duration": 3, "cost": 8, "level": 2, "target_group": "single"},
+	"Poison Cloud": {"type": "debuff", "attack_type": "magic", "cost": 6, "level": 1, "target_group": "single", "status_effects": [{"attribute": "poison", "amount": -1, "duration": 4, "chance": 80}]},
+	"Dark Mist": {"type": "debuff", "attack_type": "magic", "cost": 5, "level": 1, "target_group": "single", "status_effects": [{"attribute": "blind", "amount": -1, "duration": 3, "chance": 70}]},
+	"Sleep": {"type": "debuff", "attack_type": "magic", "cost": 6, "level": 2, "target_group": "single", "status_effects": [{"attribute": "sleep", "amount": -1, "duration": 3, "chance": 75}]},
+	"Paralyze": {"type": "debuff", "attack_type": "magic", "cost": 7, "level": 2, "target_group": "single", "status_effects": [{"attribute": "paralysis", "amount": -1, "duration": 3, "chance": 60}]},
+	"Confuse": {"type": "debuff", "attack_type": "magic", "cost": 10, "level": 3, "target_group": "single", "status_effects": [{"attribute": "confuse", "amount": -1, "duration": 3, "chance": 50}]},
+	"Charm": {"type": "debuff", "attack_type": "magic", "cost": 5, "level": 1, "target_group": "single", "status_effects": [{"attribute": "charm", "amount": -1, "duration": 3, "chance": 100}]},
+	"Stone Gaze": {"type": "debuff", "attack_type": "magic", "cost": 5, "level": 1, "target_group": "single", "status_effects": [{"attribute": "petrify", "amount": -1, "duration": 0, "chance": 100}]},
+	"Curse": {"type": "debuff", "attack_type": "magic", "cost": 10, "level": 3, "target_group": "single", "status_effects": [{"attribute": "curse", "amount": -1, "duration": 5, "chance": 60}]},
+	"Doom": {"type": "debuff", "attack_type": "magic", "cost": 18, "level": 4, "target_group": "single", "status_effects": [{"attribute": "doom", "amount": -1, "duration": 5, "chance": 50}]},
+	"Stop Time": {"type": "debuff", "attack_type": "magic", "cost": 12, "level": 4, "target_group": "single", "status_effects": [{"attribute": "stop", "amount": -1, "duration": 2, "chance": 50}]},
+	"Stun Bolt": {"type": "debuff", "attack_type": "magic", "cost": 8, "level": 2, "target_group": "single", "status_effects": [{"attribute": "stun", "amount": -1, "duration": 1, "chance": 60}]},
+	"Knockout": {"type": "damage", "attack_type": "magic", "power": 9999, "cost": 5, "level": 1, "hit_chance": 100, "target_group": "single", "status_effects": [{"attribute": "knockout", "amount": -1, "duration": 0, "chance": 100}]},
 	"Slow": {"type": "debuff", "attack_type": "magic", "attribute": "speed", "amount": -4, "duration": 3, "cost": 8, "level": 2, "target_group": "single"},
 
 	# Especiais
-	"Summon Ifrit": {"type": "damage","element": "fire", "attack_type": "magic", "power": 100, "power_max": 120, "cost": 25, "level": 4, "hit_chance": 100},
-	"Dispel": {"type": "special", "attack_type": "magic","effect": "remove_buffs", "cost": 10, "level": 2, "target_group": "single"},
-	"Eidolon Burst": {"effect_type": "damage", "attack_type": "magic", "power": 50, "cost": 20,"level": 4, "target_type": "area"},
+	"Summon Ifrit": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 100, "power_max": 120, "cost": 25, "level": 4, "hit_chance": 100, "target_group": "area"},
+	"Dispel": {"type": "special", "attack_type": "magic", "effect": "remove_buffs", "cost": 10, "level": 2, "target_group": "single"},
+	"Eidolon Burst": {"type": "damage", "attack_type": "magic", "power": 50, "cost": 20, "level": 4, "target_group": "area"},
 	"Divine Light": {"type": "heal", "attack_type": "magic", "power": 75, "cost": 14, "level": 3, "target_group": "area"},
 	"Summon Phoenix": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 120, "power_max": 140, "cost": 30, "level": 5, "hit_chance": 100, "target_group": "area"},
 }
 
+
 var skill_database = {
-	"Power Strike": {"effect_type": "damage",  "attack_type": "blunt", "power": 35, "cost": 4, "target_type": "enemy"},
-	"Quick Shot": {"effect_type": "damage",  "attack_type": "pierce", "power": 25, "cost": 3, "target_type": "enemy"},
-	"Focus": {"effect_type": "buff", "scaling_stat": "AGI", "amount": 5, "duration": 3, "cost": 2, "target_type": "self"},
-	"Heal Self": {"effect_type": "heal", "power": 25, "cost": 5, "target_type": "self"},
-	"Shield Breaker": {"effect_type": "damage", "attack_type": "pierce", "power": 30, "cost": 6, "target_type": "enemy", "status_inflicted": "defense_down", "status_chance": 0.6, "duration": 3},
-	"Tracking Shot": {"effect_type": "damage", "attack_type": "pierce", "power": 35, "cost": 6, "target_type": "enemy", "status_inflicted": "accuracy_up", "status_chance": 0.7, "duration": 3},
-	"Steal": {"effect_type": "special", "attack_type": "None", "effect": "steal_item", "cost": 4, "target_type": "enemy"},
-	"Evade Boost": {"effect_type": "buff", "attribute": "evasion", "amount": 7, "duration": 3, "cost": 5, "target_type": "self"},
-	"Fury Punch": {"effect_type": "damage", "attack_type": "blunt", "power": 45, "cost": 8, "target_type": "enemy"},
-	"Holy Smite": {"effect_type": "damage", "attack_type": "holy", "power": 60, "cost": 15, "target_type": "enemy"},
-	"Crushing Blow": {"effect_type": "damage", "attack_type": "blunt", "power": 55, "cost": 8, "target_type": "enemy", "status_inflicted": "stun", "status_chance": 0.4, "duration": 1},
-	"Arrow Barrage": {"effect_type": "damage", "attack_type": "pierce", "power": 28, "cost": 6, "target_type": "line"},
-	"Shadow Jab": {"effect_type": "damage", "attack_type": "pierce", "power": 40, "cost": 5, "target_type": "enemy", "status_inflicted": "bleed", "status_chance": 0.35, "duration": 3},
-	"Chi Burst": {"effect_type": "hybrid", "attack_type": "magic", "power": 30, "heal": 30, "cost": 10, "target_type": "self"},
+	"Power Strike": {"effect_type": "damage",  "attack_type": "blunt", "power": 35, "cost": 4, "target_type": "enemy", "level": 1},
+	"Quick Shot": {"effect_type": "damage",  "attack_type": "pierce", "power": 25, "cost": 3, "target_type": "enemy", "level": 1},
+	"Focus": {"effect_type": "buff", "scaling_stat": "AGI", "amount": 5, "duration": 3, "cost": 2, "target_type": "self", "level": 1},
+	"Heal Self": {"effect_type": "heal", "power": 25, "cost": 5, "target_type": "self", "level": 1},
+	"Shield Breaker": {"effect_type": "damage", "attack_type": "pierce", "power": 30, "cost": 6, "target_type": "enemy", "status_inflicted": "defense_down", "status_chance": 0.6, "duration": 3, "level": 2},
+	"Tracking Shot": {"effect_type": "damage", "attack_type": "pierce", "power": 35, "cost": 6, "target_type": "enemy", "status_inflicted": "accuracy_up", "status_chance": 0.7, "duration": 3, "level": 2},
+	"Steal": {"effect_type": "special", "attack_type": "None", "effect": "steal_item", "cost": 4, "target_type": "enemy", "level": 1},
+	"Evade Boost": {"effect_type": "buff", "attribute": "evasion", "amount": 7, "duration": 3, "cost": 5, "target_type": "self", "level": 1},
+	"Fury Punch": {"effect_type": "damage", "attack_type": "blunt", "power": 45, "cost": 8, "target_type": "enemy", "level": 2},
+	"Holy Smite": {"effect_type": "damage", "attack_type": "holy", "power": 60, "cost": 15, "target_type": "enemy", "level": 3},
+	"Crushing Blow": {"effect_type": "damage", "attack_type": "blunt", "power": 55, "cost": 8, "target_type": "enemy", "status_inflicted": "stun", "status_chance": 0.4, "duration": 1, "level": 3},
+	"Arrow Barrage": {"effect_type": "damage", "attack_type": "pierce", "power": 28, "cost": 6, "target_type": "line", "level": 2},
+	"Shadow Jab": {"effect_type": "damage", "attack_type": "pierce", "power": 40, "cost": 5, "target_type": "enemy", "status_inflicted": "bleed", "status_chance": 0.35, "duration": 3, "level": 2},
+	"Chi Burst": {"effect_type": "hybrid", "attack_type": "magic", "power": 30, "heal": 30, "cost": 10, "target_type": "self", "level": 2},
 }
 
 var class_spell_trees = {
@@ -180,8 +214,9 @@ var class_spell_trees = {
 	"Cleric": {
 		"spells": {
 			"Cure": {"level": 1, "SPI": 6},
-			"Protect": {"level": 2, "SPI": 8},
-			"Shell": {"level": 3, "SPI": 10},
+			"Charm": {"level": 1, "SPI": 1},
+			"Stone Gaze": {"level": 1, "SPI": 1},
+			"Weaken": {"level": 1, "SPI": 1}
 		},
 		"skills": {},
 		"specials": {
@@ -286,15 +321,15 @@ var class_spell_trees = {
 }
 
 var special_database = {
-	"Break Thunder": {"effect_type": "damage", "attack_type": "Slash", "power": 35, "target_type": "enemy"},
-	"Safe Guard": {"effect_type": "heal", "attack_type": "Magic", "power": 25, "target_type": "ally"},
-	"Arcane Surge": {"effect_type": "damage", "attack_type": "Magic", "power": 40, "target_type": "enemy"},
-	"Shield Breaker": {"effect_type": "damage", "attack_type": "Pierce", "power": 30, "target_type": "enemy", "status_inflicted": "defense_down", "status_chance": 0.6, "duration": 3},
-	"Rain of Arrows": {"effect_type": "damage", "attack_type": "Pierce", "power": 20, "target_type": "all_enemies"},
-	"Shadow Strike": {"effect_type": "damage", "attack_type": "Pierce", "power": 35, "target_type": "enemy", "status_inflicted": "stun", "status_chance": 0.4, "duration": 2},
-	"Inner Focus": {"effect_type": "buff", "attack_type": "None", "power": 0, "target_type": "self", "attribute": "SPI", "amount": 5, "duration": 4},
-	"Divine Blade": {"effect_type": "damage", "attack_type": "Holy", "power": 45, "target_type": "enemy", "status_inflicted": "blind", "status_chance": 0.3, "duration": 3},
-	"Eidolon Burst": {"effect_type": "damage", "attack_type": "Magic", "power": 50, "target_type": "all_enemies", }
+	"Break Thunder": {"effect_type": "damage", "attack_type": "Slash", "power": 35, "target_type": "enemy", "level": 1},
+	"Safe Guard": {"effect_type": "heal", "attack_type": "Magic", "power": 25, "target_type": "ally", "level": 1},
+	"Arcane Surge": {"effect_type": "damage", "attack_type": "Magic", "power": 40, "target_type": "enemy","level": 1},
+	"Shield Breaker": {"effect_type": "damage", "attack_type": "Pierce", "power": 30, "target_type": "enemy", "status_inflicted": "defense_down", "status_chance": 0.6, "duration": 3,"level": 1},
+	"Rain of Arrows": {"effect_type": "damage", "attack_type": "Pierce", "power": 20, "target_type": "all_enemies", "level": 1},
+	"Shadow Strike": {"effect_type": "damage", "attack_type": "Pierce", "power": 35, "target_type": "enemy", "status_inflicted": "stun", "status_chance": 0.4, "duration": 2, "level": 1},
+	"Inner Focus": {"effect_type": "buff", "attack_type": "None", "power": 0, "target_type": "self", "attribute": "SPI", "amount": 5, "duration": 4, "level": 1},
+	"Divine Blade": {"effect_type": "damage", "attack_type": "Holy", "power": 45, "target_type": "enemy", "status_inflicted": "blind", "status_chance": 0.3, "duration": 3, "level": 1},
+	"Eidolon Burst": {"effect_type": "damage", "attack_type": "Magic", "power": 50, "target_type": "all_enemies", "level": 1 }
 }
 
 # Estado da batalha
@@ -312,14 +347,44 @@ func is_player(actor) -> bool:
 	return party.has(actor)
 
 func perform_enemy_action(enemy_actor) -> void:
-	var alive_party = party.filter(func(p): return p.current_hp > 0)
-	if alive_party.size() == 0:
-		hud.show_top_message("Todos os jogadores foram derrotados!")
-		return
-
 	var rng = RandomNumberGenerator.new()
 	rng.randomize()
-	var target = alive_party[rng.randi_range(0, alive_party.size() - 1)]
+
+	print("Inimigo agindo:", enemy_actor.name)
+
+	var target
+
+	if enemy_actor.is_charmed:
+		print("Status: Charm ativo para", enemy_actor.name)
+		# Charm: ataca apenas aliados (outros inimigos) ou ele mesmo
+		var allies = enemies.filter(func(e): return e.is_alive())
+		if allies.is_empty():
+			print("Nenhum aliado vivo para atacar, finalizando turno.")
+			end_turn()
+			return
+		target = allies[rng.randi_range(0, allies.size() - 1)]
+		print("Charm: alvo escolhido:", target.name)
+
+	elif enemy_actor.is_confused:
+		print("Status: Confusão ativo para", enemy_actor.name)
+		# Confuse: ataca qualquer um aleatóriamente, inclusive ele mesmo
+		var all_targets = (party + enemies).filter(func(a): return a.is_alive())
+		if all_targets.is_empty():
+			print("Nenhum alvo vivo disponível para confusão, finalizando turno.")
+			end_turn()
+			return
+		target = all_targets[rng.randi_range(0, all_targets.size() - 1)]
+		print("Confusão: alvo escolhido:", target.name)
+
+	else:
+		# Comportamento padrão: ataca jogadores não invisíveis
+		var alive_party = party.filter(func(p): return p.is_alive() and not p.is_invisible)
+		if alive_party.is_empty():
+			print("Todos os jogadores estão invisíveis ou mortos!")
+			hud.show_top_message("Todos os jogadores visíveis foram derrotados ou estão invisíveis!")
+			end_turn()
+			return
+		target = alive_party[rng.randi_range(0, alive_party.size() - 1)]
 
 	await perform_attack(enemy_actor, target)
 
@@ -355,8 +420,8 @@ func get_player_position(index: int, is_front: bool) -> Vector2:
 func get_enemy_position(index: int) -> Vector2:
 	var base_x = 400
 	var base_y = 400
-	var offset_y = 110  # distância vertical entre inimigos na mesma linha
-	var offset_x = 250  # distância horizontal entre as duas linhas
+	var offset_y = 120  # distância vertical entre inimigos na mesma linha
+	var offset_x = 280  # distância horizontal entre as duas linhas
 
 	if index < 3:
 		# Linha da frente
@@ -364,7 +429,7 @@ func get_enemy_position(index: int) -> Vector2:
 	else:
 		# Linha de trás - mais atrás (X) e mais abaixo (Y)
 		var tras_index = index - 3
-		return Vector2(base_x + offset_x, base_y + tras_index * offset_y + 40)  # 40 a mais no Y
+		return Vector2(base_x + offset_x, base_y + tras_index * offset_y)  # 40 a mais no Y
 
 func check_battle_state() -> bool:
 	# Verifica se todos os inimigos estão mortos
@@ -432,9 +497,13 @@ func _save_party_status() -> void:
 			"level": member.level,
 			"xp": member.xp,
 			"xp_to_next_level": member.xp_to_next_level,
+			"position_line": member.position_line,
+			"alcance_estendido": member.alcance_estendido,
+			"spell_upgrades": member.spell_upgrades,
+			"skill_upgrades": member.skill_upgrades,
 		}
 		saved_data.append(member_data)
-	
+
 	GameManager.saved_party_data = saved_data
 	print("DEBUG: Dados salvos para 1990.")
 
@@ -464,6 +533,11 @@ func _load_party() -> Array:
 		member.level = member_data.get("level", 1)
 		member.xp = member_data.get("xp", 0)
 		member.xp_to_next_level = member_data.get("xp_to_next_level", 100)
+		member.position_line = member_data.get("position_line", "back")
+		member.alcance_estendido = member_data.get("alcance_estendido", false)
+		member.spell_upgrades = member_data.get("spell_upgrades", {})
+		member.skill_upgrades = member_data.get("skill_upgrades", {})
+
 		member.calculate_stats()
 		loaded_party.append(member)
 	return loaded_party
@@ -485,6 +559,11 @@ func ajustar_dano_por_posicao(dano: int, atacante, alvo, is_ataque_fisico: bool)
 func atualizar_obstrucao_inimigos() -> void:
 	for i in range(enemies.size()):
 		var enemy = enemies[i]
+		# Se houver 3 ou menos inimigos, ninguém está obstruído
+		if enemies.size() <= 3:
+			enemy.obstruido = false
+			continue
+		
 		if enemy.position_line == "back":
 			var front_index = i - 3
 			if front_index < 0 and enemies[front_index].is_alive():
@@ -520,6 +599,7 @@ func pode_atacar(alvo, atacante, is_ataque_fisico: bool) -> bool:
 		return true
 
 	return atacante.alcance_estendido
+
 
 # CRIAÇÃO DE INIMIGOS E PLAYER
 
@@ -575,6 +655,8 @@ func spawn_party(party_data: Array) -> void:
 			player_node.alcance_estendido = true
 
 		player_node.spell_slots = class_spell_slots.get(classe_name, {})
+		print(classe_name)
+		print(player_node.spell_slots)
 		party[i] = player_node
 
 
@@ -605,33 +687,34 @@ func spawn_party(party_data: Array) -> void:
 
 func spawn_loaded_party(loaded_party: Array) -> void:
 	var front_index = 0
-	var back_index = 2  # Começa do índice 2 para os de trás
+	var back_index = 0
 	
 	for i in range(loaded_party.size()):
 		var player_node = loaded_party[i]
+		player_node.restore_spell_slots()
 
-		# Sprite
-		var player_sprite = preload("res://decades/1990s/Battle/PlayerSprite.tscn").instantiate()
-		player_sprite.set_sprite(class_sprite_paths.get(player_node.classe_name, ""))
-		
+				#Define posição do sprite com base na linha
+		var is_front = player_node.position_line == "front"
 		var sprite_pos_index = 0
-		if player_node.position_line == "front":
+		
+		if is_front:
 			sprite_pos_index = front_index
-			front_index += 1
 		else:
 			sprite_pos_index = back_index
-			back_index += 1
-
-		player_sprite.position = get_player_position(sprite_pos_index, player_node.position_line == "front")
+		var player_sprite = preload("res://decades/1990s/Battle/PlayerSprite.tscn").instantiate()
+		player_sprite.set_sprite(class_sprite_paths.get(player_node.classe_name, ""))
+		player_sprite.position = get_player_position(sprite_pos_index, is_front)
 		player_sprite.set_player(player_node)
+
+		if is_front:
+			front_index += 1
+		else:
+			back_index += 1
 
 		if player_node.classe_name == "Monk":
 			player_sprite.scale = Vector2(0.8, 0.8)
 
 		player_node.sprite_ref = player_sprite
-
-		# Adiciona ao array de party e à cena
-		party[i] = player_node
 		characters_node.add_child(player_sprite)
 		
 	atualizar_obstrucao_party()
@@ -644,7 +727,6 @@ func spawn_enemies(enemy_data: Array) -> void:
 		enemy_sprite.position = get_enemy_position(i)
 
 		enemy_sprite.set_enemy(enemy_info["instance"])
-		enemy_sprite.scale = Vector2(0.8, 0.8)
 		enemy_info["instance"].sprite_ref = enemy_sprite
 
 		enemies[i] = enemy_info["instance"]  # Substitui no array por instância
@@ -652,15 +734,45 @@ func spawn_enemies(enemy_data: Array) -> void:
 
 func generate_enemies() -> Array:
 	var enemies_array = []
-	var enemy_types = ["Zumbi", "Necromante", "Lobo", "Passaro"]
-	var enemy_count = 6
+	var party_level = party[0].level if party.size() > 0 else 1
+
+	var enemy_pool = []
+	var enemy_count = 6  # padrão
+
+	match party_level:
+		1:
+			enemy_pool = ["Passaro", "Zumbi"]
+			enemy_count = 6
+		2:
+			enemy_pool = ["Passaro", "Zumbi", "Lobo"]
+			enemy_count = 6
+		3:
+			enemy_pool = ["Passaro", "Zumbi", "Lobo", "Necromante"]
+			enemy_count = 6
+		4:
+			enemy_pool = ["Lobisomen", "Aguia"]
+			enemy_count = 6
+		5:
+			# 2 Oni fixos, + 3 entre Lobisomen e Passaro
+			enemy_pool = []
+			enemy_count = 5
+			for i in range(2):
+				enemy_pool.append("Oni")
+			var pool = ["Lobisomen", "Passaro"]
+			for i in range(3):
+				enemy_pool.append(pool[randi() % pool.size()])
+		6:
+			enemy_pool = ["Dragao", "Oni", "Oni"]
+			enemy_count = 3
+		_:
+			enemy_pool = ["Zumbi"]
+			enemy_count = 3
 
 	for i in range(enemy_count):
-		var rand_type = enemy_types[randi() % enemy_types.size()]
+		var rand_type = enemy_pool[i % enemy_pool.size()]
 		var base = enemy_base_stats.get(rand_type)
 
 		if base:
-			
 			var enemy_node := Enemy1990.new()
 			var position_indicator = ""
 			if i >= 3:
@@ -669,7 +781,6 @@ func generate_enemies() -> Array:
 			else:
 				enemy_node.position_line = "back"
 				position_indicator = " [B]"
-
 			enemy_node.nome = "%s%s" % [rand_type, position_indicator]
 			enemy_node.STR = base["STR"]
 			enemy_node.DEX = base["DEX"]
@@ -682,19 +793,22 @@ func generate_enemies() -> Array:
 			enemy_node.xp_value = base["xp_value"]
 			enemy_node.attack_type = base["attack_type"]
 			enemy_node.enemy_type = base["enemy_type"]
-			
+
 			if enemy_node.enemy_type == "Flying":
 				enemy_node.alcance_estendido = true
-			
+
 			var rng = RandomNumberGenerator.new()
 			rng.randomize()
-			# Gerar ID aleatório em string
-			enemy_node.id = "%s_%06d" % [name.to_lower().replace(" ", "_"), rng.randi_range(0, 999999)]
-			
+			enemy_node.id = "%s_%06d" % [rand_type.to_lower(), rng.randi_range(0, 999999)]
+
 			enemy_node.calculate_stats()
 			enemy_node.set_type_resistances()
-			enemies_array.append({"instance": enemy_node, "sprite_path": base["sprite_path"]})
-	
+
+			enemies_array.append({
+				"instance": enemy_node,
+				"sprite_path": base["sprite_path"]
+			})
+
 	return enemies_array
 
 func find_enemy_by_id(id: String) -> Enemy1990:
@@ -794,8 +908,15 @@ func _process(delta):
 	for actor in turn_order:
 		if actor.is_alive():
 			var modified_speed = actor.get_modified_derived_stat("speed")
+
+			if actor.active_status_effects.any(func(e): return e.attribute == "haste"):
+				modified_speed *= 1.5
+			if actor.active_status_effects.any(func(e): return e.attribute == "slow"):
+				modified_speed *= 0.5
+			if actor.active_status_effects.any(func(e): return e.attribute in ["stop", "stun", "paralysis"]):
+				continue
+
 			actor.atb_value += modified_speed * delta
-			actor.atb_value = min(actor.atb_value, actor.atb_max)
 
 	# Verifica quem está pronto
 	var actors_filled = []
@@ -838,20 +959,33 @@ func next_turn():
 	if not current_actor or not current_actor.is_alive():
 		next_turn()
 		return
-		
+
+	#Se petrificado, ignorar turno completamente
+	if current_actor.is_petrified:
+		current_actor.atb_value = 0
+		next_turn()
+		return
+
+	# Processar status a cada turno
+	current_actor.process_status_effects()
+
+	if not current_actor.can_act:
+		current_actor.atb_value = 0
+		next_turn()
+		return
+
 	if current_actor is PlayerPartyMember and current_actor.is_defending:
 		current_actor.is_defending = false
-		
+
 	is_executing_turn = true
 
-	# Verifica se é jogador
 	if is_player(current_actor):
 		hud.set_hud_buttons_enabled(true, current_actor)
 		hud.indicate_current_player(current_actor)
 	else:
 		await get_tree().create_timer(0.5).timeout
 		perform_enemy_action(current_actor)
-	
+
 	current_actor.atb_value = 0
 
 func reset_atb(actor):
@@ -877,6 +1011,74 @@ func create_spell(name: String, data: Dictionary) -> Spell:
 	s.target_all = data.get("target_all", s.target_group == "area")
 	s.element = data.get("element", "")
 	s.attack_type = data.get("attack_type", "")
+	
+	s.status_effects = []
+
+	# Caso seja um buff com atributo direto (como Haste, Blink, Protect...)
+	if s.type == "buff" and data.has("attribute"):
+		var effect = StatusEffect.new()
+		effect.attribute = data["attribute"]
+		effect.amount = data.get("amount", 0)
+		effect.duration = data.get("duration", 3)
+		effect.type = StatusEffect.Type.BUFF
+		effect.status_type = data["attribute"]  # Pode ser usado para identificar efeito por nome
+		s.status_effects.append(effect)
+
+	# Caso tenha lista de status_effects (ex: debuffs como Poison Cloud, Sleep, etc.)
+	elif data.has("status_effects"):
+		for effect_dict in data["status_effects"]:
+			print("DEBUG: effect_dict =", effect_dict)  # debug
+			var effect = StatusEffect.new()
+			effect.attribute = effect_dict.get("attribute", "")
+			effect.amount = effect_dict.get("amount", -1)
+			effect.duration = effect_dict.get("duration", 3)
+			effect.chance = effect_dict.get("chance", 100)
+			effect.status_type = effect_dict.get("attribute", "")
+			effect.type = StatusEffect.Type.DEBUFF
+			s.status_effects.append(effect)
+	
+	# Geração automática da descrição
+	var desc_parts = []
+
+	match s.type:
+		"damage":
+			var dmg = "Causa %d-%d de dano" % [s.power, s.power_max]
+			if s.element != "":
+				dmg += " de elemento %s" % s.element
+			if s.attack_type != "":
+				dmg += " (%s)" % s.attack_type
+			desc_parts.append(dmg)
+
+		"heal":
+			desc_parts.append("Restaura %d de HP" % s.power)
+
+		"buff":
+			desc_parts.append("Aplica buff: %s por %d turnos" % [s.attribute.capitalize(), s.duration])
+
+		"debuff":
+			desc_parts.append("Tenta aplicar debuff")
+
+	# Adiciona efeitos de status, se houver
+	if not s.status_effects.is_empty():
+		for eff in s.status_effects:
+			var status = "%s (%d%% de chance, %d turno(s))" % [eff.attribute.capitalize(), eff.chance, eff.duration]
+			desc_parts.append("Efeito: " + status)
+
+	# Tipo de alvo
+	match s.target_group:
+		"single":
+			desc_parts.append("Alvo único")
+		"line":
+			desc_parts.append("Afeta inimigos em linha")
+		"area":
+			desc_parts.append("Afeta todos os inimigos")
+
+	# Custo
+	desc_parts.append("Custo: %d MP" % s.cost)
+
+	# Junta tudo na descrição final
+	s.description = ". ".join(desc_parts) + "."
+	
 	return s
 
 func create_skill(name: String, data: Dictionary) -> Skill:
@@ -892,6 +1094,7 @@ func create_skill(name: String, data: Dictionary) -> Skill:
 	s.status_chance = data.get("status_chance", 0.0)
 	s.element = data.get("element", "")
 	s.attack_type = data.get("attack_type", "")
+	s.level = data.get("level", 1)
 	return s
 
 func create_special(name: String, data: Dictionary) -> Special:
@@ -904,6 +1107,7 @@ func create_special(name: String, data: Dictionary) -> Special:
 	s.scaling_stat = data.get("scaling_stat", "")
 	s.amount = data.get("amount", 0)
 	s.duration = data.get("duration", 0)
+	s.level = data.get("level", 1)
 	return s
 
 func get_spell_by_name(spells: Array, name: String) -> Spell:
@@ -1015,7 +1219,13 @@ func check_ability_mastery(member, ability_name: String, is_spell: bool) -> void
 
 
 func aplicar_dano(alvo, atacante, dano: int) -> void:
-	alvo.current_hp -= dano
+	
+	if alvo.has_blink_active():
+		alvo.consume_blink_charge()
+		hud.show_top_message("%s desviou com Blink!" % alvo.nome)
+		return  # Cancela o dano
+
+	alvo.current_hp -= int(dano)
 	if alvo.current_hp < 0:
 		alvo.current_hp = 0
 		alvo.check_if_dead()
@@ -1037,7 +1247,7 @@ func aplicar_dano(alvo, atacante, dano: int) -> void:
 		
 	atualizar_obstrucao_inimigos()
 	atualizar_obstrucao_party()
-	
+
 func _execute_skill(user, skill, alvo):
 	
 	if user.current_sp < skill.cost:
@@ -1046,6 +1256,7 @@ func _execute_skill(user, skill, alvo):
 		end_turn()
 		return
 	user.current_sp -= skill.cost
+	user.spell_slots[skill.level] -= 1
 	
 	var is_fisico = skill.effect_type == "damage" and skill.effect_type != "magic"
 
@@ -1092,6 +1303,10 @@ func _execute_skill(user, skill, alvo):
 		
 		dano = dano * element_res * attack_type_res
 		
+		if alvo.get_meta("protect_active", false):
+			dano *= 0.5
+			hud.show_top_message("%s foi protegido por Protect!" % alvo.nome)
+			
 		# Crítico opcional baseado em LCK
 		var crit_chance = user.LCK * 0.01
 		if randf() < crit_chance:
@@ -1155,6 +1370,7 @@ func _execute_skill_area(user, skill, alvos):
 		return
 		
 	user.current_sp -= skill.cost
+	user.spell_slots[skill.level] -= 1
 	
 	var is_fisico = skill.effect_type == "damage" and skill.effect_type != "magic"
 
@@ -1272,11 +1488,15 @@ func _execute_spell_area(caster, spell_name, alvos):
 	caster.current_mp -= spell.cost
 	caster.spell_slots[spell.level] -= 1
 
-	var tipo = spell.type
-
 	for alvo in alvos:
 		if alvo.current_hp <= 0:
-			continue  # Pular inimigos mortos
+			continue
+
+		if alvo.has_status("float") and spell.element == "earth":
+			hud.show_top_message("%s flutuou e evitou o ataque!" % alvo.nome)
+			continue
+
+		var tipo = spell.type
 
 		if tipo == "damage":
 			var base_dano = spell.power + caster.get_modified_stat(caster.INT, "INT")
@@ -1284,9 +1504,32 @@ func _execute_spell_area(caster, spell_name, alvos):
 			var dano = base_dano - defesa_magica
 			dano = max(dano, 1)
 
-			var element_res = alvo.element_resistances.get(spell.element.to_lower(), 1.0) if spell.element != "" else 1.0
-			var attack_type_res = alvo.attack_type_resistances.get(spell.attack_type.to_lower(), 1.0) if spell.attack_type != "" else 1.0
+			var crit_chance = caster.get_modified_stat(caster.LCK, "LCK") * 0.01
+			if randf() < crit_chance:
+				dano *= 2
+				hud.show_top_message("CRÍTICO MÁGICO! %s usou %s e causou %d de dano em %s!" % [caster.nome, spell.name, dano, alvo.nome])
+			else:
+				hud.show_top_message("%s usou %s em %s causando %d de dano!" % [caster.nome, spell.name, alvo.nome, dano])
+
+			var element_res = 1.0
+			var attack_type_res = 1.0
+
+			if spell.element != "":
+				element_res = alvo.element_resistances.get(spell.element.to_lower(), 1.0)
+			if spell.attack_type != "":
+				attack_type_res = alvo.attack_type_resistances.get(spell.attack_type.to_lower(), 1.0)
+
 			dano *= element_res * attack_type_res
+
+			if alvo.get_meta("reflect_active", false):
+				hud.show_top_message("%s refletiu a magia de volta para %s!" % [alvo.nome, caster.nome])
+				aplicar_dano(caster, alvo, dano)
+				hud.show_floating_number(dano, caster, "damage")
+				continue
+
+			if alvo.get_meta("shell_active", false):
+				dano *= 0.5
+				hud.show_top_message("%s foi protegido por Shell!" % alvo.nome)
 
 			caster.gain_ap(spell.name, 100, true)
 			aplicar_dano(alvo, caster, dano)
@@ -1296,40 +1539,60 @@ func _execute_spell_area(caster, spell_name, alvos):
 				if alvo.has_method("check_if_dead"):
 					alvo.check_if_dead()
 
-			hud.show_top_message("%s atingido por %s: %d de dano!" % [alvo.nome, spell_name, dano])
 			hud.show_floating_number(dano, alvo, "damage")
 
 		elif tipo == "heal":
 			var cura = spell.power + caster.get_modified_stat(caster.SPI, "SPI")
 			caster.gain_ap(spell.name, 100, true)
 			alvo.current_hp = min(alvo.max_hp, alvo.current_hp + cura)
-			hud.show_top_message("%s curado por %s: %d de HP!" % [alvo.nome, spell_name, cura])
+			hud.show_top_message("%s curado por %s: %d de HP!" % [alvo.nome, spell.name, cura])
 			hud.show_floating_number(cura, alvo, "hp")
 
 		elif tipo == "buff" or tipo == "debuff":
-			var effect = StatusEffect.new()
-			caster.gain_ap(spell.name, 100, true)
-			effect.attribute = spell.attribute
-			effect.amount = spell.amount
-			effect.duration = spell.duration
-			effect.type = StatusEffect.Type.BUFF if tipo == "buff" else StatusEffect.Type.DEBUFF
-			alvo.apply_status_effect(effect)
-			var acao = "aumentado" if tipo == "buff" else "reduzido"
-			hud.show_top_message("%s teve %s %s por %s!" % [alvo.nome, spell.attribute, acao, spell_name])
+			var ap_gain = int(100)
+			caster.gain_ap(spell.name, ap_gain, true)
+
+			# Aplicar efeito simples (buffs diretos)
+			if spell.attribute != "":
+				var effect = StatusEffect.new()
+				effect.attribute = spell.attribute
+				effect.amount = spell.amount
+				effect.duration = spell.duration
+				effect.type = StatusEffect.Type.BUFF if spell.type == "buff" else StatusEffect.Type.DEBUFF
+				alvo.apply_status_effect(effect)
+
+				var acao = "aumentado" if spell.type == "buff" else "reduzido"
+				hud.show_top_message("%s teve %s %s por %s!" % [alvo.nome, spell.attribute, acao, spell.name])
+
+			# Aplicar múltiplos status_effects se existirem
+			for entry in spell.status_effects:
+				if randf() * 100 <= entry.get("chance", 100):  # chance de aplicar
+					var extra_effect = StatusEffect.new()
+					extra_effect.attribute = entry.get("attribute", "")
+					extra_effect.amount = entry.get("amount", 0)
+					extra_effect.duration = entry.get("duration", 3)
+					extra_effect.type = StatusEffect.Type.DEBUFF  # sempre debuff nos casos listados
+					alvo.apply_status_effect(extra_effect)
+
+					hud.show_top_message("%s sofreu o efeito %s de %s!" % [alvo.nome, extra_effect.attribute, spell.name])
 
 	reset_atb(caster)
 	hud.update_enemy_info(enemies)
 	hud.update_party_info(party)
-	await get_tree().create_timer(0).timeout
-	_create_menu()
+	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 	end_turn()
 
 func _execute_spell_single(caster, spell_name, alvo):
 	var spell = get_spell_by_name(caster.spells, spell_name)
+	print(spell)
 	if spell == null:
 		hud.show_top_message("Magia não encontrada.")
 		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 		end_turn()
+		return
+	
+	if alvo.has_status("float") and spell.element == "earth":
+		hud.show_top_message("%s flutuou e evitou o ataque!" % alvo.nome)
 		return
 
 	if caster.current_mp < spell.cost:
@@ -1377,6 +1640,12 @@ func _execute_spell_single(caster, spell_name, alvo):
 		else:
 			attack_type_res = 1.0
 		dano *= element_res * attack_type_res
+		
+		# SHELL — reduz dano mágico
+		if alvo.get_meta("shell_active", false):
+			dano *= 0.5
+			hud.show_top_message("%s foi protegido por Shell!" % alvo.nome)
+			
 		var ap_gain = int(100)  # Ganha mais AP se causar mais dano
 		caster.gain_ap(spell.name, ap_gain, true)
 		aplicar_dano(alvo, caster, dano)
@@ -1397,17 +1666,37 @@ func _execute_spell_single(caster, spell_name, alvo):
 		hud.show_floating_number(cura, alvo, "hp")
 
 	elif tipo == "buff" or tipo == "debuff":
-		var effect = StatusEffect.new()
-		effect.attribute = spell.attribute
-		effect.amount = spell.amount
-		effect.duration = spell.duration
-		effect.type = StatusEffect.Type.BUFF if spell.type == "buff" else StatusEffect.Type.DEBUFF
-		var ap_gain = int(100)  # Ganha mais AP se causar mais dano
+		var ap_gain = int(100)
 		caster.gain_ap(spell.name, ap_gain, true)
-		alvo.apply_status_effect(effect)
 
-		var acao = "aumentado" if spell.type == "buff" else "reduzido"
-		hud.show_top_message("%s teve %s %s por %s!" % [alvo.nome, spell.attribute, acao, spell.name])
+		# Só aplica efeito direto SE status_effects estiver vazio e spell.attribute existir
+		if spell.status_effects.size() == 0 and spell.attribute != "":
+			var effect = StatusEffect.new()
+			effect.attribute = spell.attribute
+			effect.amount = spell.amount
+			effect.duration = spell.duration
+			effect.type = StatusEffect.Type.BUFF if spell.type == "buff" else StatusEffect.Type.DEBUFF
+			effect.status_type = spell.attribute
+			alvo.apply_status_effect(effect)
+
+			var acao = "aumentado" if spell.type == "buff" else "reduzido"
+			hud.show_top_message("%s teve %s %s por %s!" % [alvo.nome, spell.attribute, acao, spell.name])
+
+		# Agora aplica a lista de status_effects
+		for entry in spell.status_effects:
+			var effect = StatusEffect.new()
+			print(entry["attribute"])
+			effect.attribute = entry["attribute"]
+			effect.amount = entry["amount"]
+			effect.duration = entry["duration"]
+			effect.type = StatusEffect.Type.DEBUFF if spell.type == "debuff" else StatusEffect.Type.BUFF
+			effect.status_type = entry["status_type"]
+			effect.chance = entry["chance"]
+
+			if randf() * 100 <= effect.chance:
+				alvo.apply_status_effect(effect)
+				var desc = effect.status_type if effect.status_type != "" else effect.attribute
+				hud.show_top_message("%s sofreu o efeito %s de %s!" % [alvo.nome, desc, spell.name])
 	
 	reset_atb(caster)
 	hud.update_enemy_info(enemies)
@@ -1467,6 +1756,10 @@ func perform_attack(attacker, target) -> void:
 	else:
 		hud.show_top_message("%s causou %d de dano!" % [attacker.nome, damage])
 
+	if target.get_meta("protect_active", false):
+		damage *= 0.5
+		hud.show_top_message("%s foi protegido por Protect!" % target.nome)
+		
 	# Aplicar dano
 	aplicar_dano(target, attacker, damage)
 	hud.show_floating_number(damage, target, "damage")
@@ -1560,6 +1853,28 @@ func _execute_special_single(user, special, alvo):
 
 	_create_menu()
 	end_turn()
+
+func apply_spell_effects(target, spell, caster):
+	for status in spell.get("status_effects", []):
+		if status.has("chance") and randf() * 100 > status["chance"]:
+			continue  # falhou
+		
+		var effect = StatusEffect.new()
+		effect.attribute = status.get("attribute", "")
+		effect.amount = status.get("amount", 0)
+		effect.duration = status.get("duration", 3)
+		effect.status_type = status.get("status_type", "")
+		if status.get("amount", 0) >= 0:
+			effect.type = StatusEffect.Type.BUFF
+		else:
+			effect.type = StatusEffect.Type.DEBUFF
+		target.apply_status_effect(effect)
+
+		var acao = effect.type == StatusEffect.Type.BUFF and "aumentado" or "reduzido"
+		if effect.status_type != "":
+			hud.show_top_message("%s foi afetado por %s!" % [target.nome, effect.status_type])
+		elif effect.attribute != "":
+			hud.show_top_message("%s teve %s %s!" % [target.nome, effect.attribute, acao])
 
 func usar_item_em_alvo(usuario, item_name: String, item_data: Dictionary, target_id) -> void:
 	# Encontrar o personagem da party com o ID correspondente
@@ -1666,21 +1981,58 @@ func tentar_fugir(actor) -> void:
 func _on_player_action_selected(action_name: String) -> void:
 	match action_name:
 		"Atacar":
-			var alvos_validos = enemies.filter(func(e): return e.is_alive())
-			var targets = []
-			for enemy in enemies:
-				if enemy.is_alive():
-					targets.append({
-						"id": enemy.id,
-						"nome": enemy.nome,
-						"node_ref": enemy
-					})
-			hud.target_selected.connect(_on_alvo_ataque_selecionado)
-			hud.show_target_menu(targets, current_actor)
+			if current_actor.is_charmed:
+				# Charm: ataca jogadores aleatórios
+				var vivos = party.filter(func(p): return p.is_alive() and p != current_actor)
+				if vivos.is_empty():
+					end_turn()
+					return
+				var rng = RandomNumberGenerator.new()
+				rng.randomize()
+				var alvo = vivos[rng.randi_range(0, vivos.size() - 1)]
+				await perform_attack(current_actor, alvo)
+				await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+				end_turn()
+				return
+
+			elif current_actor.is_confused:
+				# Confuse: ataca qualquer um (inimigo ou aliado)
+				var possiveis_alvos = (party + enemies).filter(func(a): return a.is_alive() and a != current_actor)
+				if possiveis_alvos.is_empty():
+					end_turn()
+					return
+				var rng = RandomNumberGenerator.new()
+				rng.randomize()
+				var alvo = possiveis_alvos[rng.randi_range(0, possiveis_alvos.size() - 1)]
+				await perform_attack(current_actor, alvo)
+				await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+				end_turn()
+				return
+
+			else:
+				# Caso normal
+				var alvos_validos = enemies.filter(func(e): return e.is_alive())
+				var targets = []
+				for enemy in enemies:
+					if enemy.is_alive():
+						targets.append({
+							"id": enemy.id,
+							"nome": enemy.nome,
+							"node_ref": enemy
+						})
+				hud.target_selected.connect(_on_alvo_ataque_selecionado)
+				hud.show_target_menu(targets, current_actor)
 
 		"Magia", "Skills":
+			# Impede uso se estiver com status mental
+			if current_actor.is_charmed or current_actor.is_confused:
+				hud.show_top_message("%s está desorientado demais para usar habilidades!" % current_actor.nome)
+				await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+				return
+
 			if current_actor.is_magic_user():
-				var magias = current_actor.get_available_spells()
+				var magias_dict = current_actor.get_available_spells()
+				var magias = magias_dict.values()  # Pega só os objetos spell
 				var mp = current_actor.current_mp
 				var slots = current_actor.spell_slots
 				if magias.is_empty():
@@ -1689,7 +2041,17 @@ func _on_player_action_selected(action_name: String) -> void:
 					next_turn()
 					return
 				hud.magic_selected.connect(_on_magic_selected)
-				hud.show_magic_menu(magias, mp, slots)
+				hud.show_ability_menu(
+					magias,
+					"MP",
+					current_actor.current_mp,
+					current_actor.spell_slots,
+					{
+						"nome": current_actor.nome,
+						"atual": current_actor.current_mp,
+						"max": current_actor.max_mp
+					}
+				)
 			else:
 				var skills = current_actor.skills
 				if skills.is_empty():
@@ -1698,7 +2060,17 @@ func _on_player_action_selected(action_name: String) -> void:
 					next_turn()
 					return
 				hud.skill_selected.connect(_on_skill_selected)
-				hud.show_skill_menu(skills, current_actor.current_sp)
+				hud.show_ability_menu(
+					skills,
+					"SP",
+					current_actor.current_sp,
+					current_actor.spell_slots,  # skills não usam slots
+					{
+						"nome": current_actor.nome,
+						"atual": current_actor.current_sp,
+						"max": current_actor.max_sp
+					}
+				)
 		"Item":
 			var items = inventory
 			if items.is_empty():
@@ -1732,7 +2104,13 @@ func _on_player_action_selected(action_name: String) -> void:
 				return
 
 			hud.special_selected.connect(_on_special_selected)
-			hud.show_special_menu(especiais)
+			hud.show_ability_menu(
+				especiais,
+				"Especial",
+				0,
+				{},
+				{ "nome": current_actor.nome }
+			)
 
 func _on_alvo_ataque_selecionado(alvo_id):
 	if hud.target_selected.is_connected(_on_alvo_ataque_selecionado):

@@ -5,37 +5,6 @@
 [node name="CombatHud1990" type="CanvasLayer"]
 script = ExtResource("1_hbghx")
 
-[node name="MagicPanel" type="PanelContainer" parent="."]
-offset_top = 762.0
-offset_right = 500.0
-offset_bottom = 912.0
-
-[node name="VBoxMagicMain" type="VBoxContainer" parent="MagicPanel"]
-layout_mode = 2
-
-[node name="DescriptionPanel" type="Panel" parent="MagicPanel/VBoxMagicMain"]
-layout_mode = 2
-
-[node name="DescriptionLabel" type="Label" parent="MagicPanel/VBoxMagicMain/DescriptionPanel"]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 23.0
-
-[node name="HBoxMainContent" type="HBoxContainer" parent="MagicPanel/VBoxMagicMain"]
-layout_mode = 2
-
-[node name="VBoxSpellsWrapper" type="VBoxContainer" parent="MagicPanel/VBoxMagicMain/HBoxMainContent"]
-layout_mode = 2
-
-[node name="ScrollContainer" type="ScrollContainer" parent="MagicPanel/VBoxMagicMain/HBoxMainContent/VBoxSpellsWrapper"]
-layout_mode = 2
-
-[node name="VBoxSpellsByLevel" type="VBoxContainer" parent="MagicPanel/VBoxMagicMain/HBoxMainContent/VBoxSpellsWrapper/ScrollContainer"]
-layout_mode = 2
-
-[node name="PlayerInfoPanel" type="PanelContainer" parent="MagicPanel/VBoxMagicMain/HBoxMainContent/VBoxSpellsWrapper"]
-layout_mode = 2
-
 [node name="TopMessageContainer" type="Control" parent="."]
 layout_mode = 3
 anchors_preset = 5
@@ -53,11 +22,34 @@ layout_mode = 2
 
 [node name="HUDPanel" type="PanelContainer" parent="."]
 custom_minimum_size = Vector2(500, 150)
-offset_top = 750.0
+offset_top = 762.0
 offset_right = 500.0
-offset_bottom = 900.0
+offset_bottom = 912.0
 
 [node name="ActionPanel" type="VBoxContainer" parent="HUDPanel"]
+layout_mode = 2
+
+[node name="MagicPanel" type="ScrollContainer" parent="HUDPanel"]
+layout_mode = 2
+
+[node name="VBoxMagicMain" type="VBoxContainer" parent="HUDPanel/MagicPanel"]
+layout_mode = 2
+
+[node name="DescriptionPanel" type="Panel" parent="HUDPanel/MagicPanel/VBoxMagicMain"]
+layout_mode = 2
+
+[node name="DescriptionLabel" type="Label" parent="HUDPanel/MagicPanel/VBoxMagicMain/DescriptionPanel"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+
+[node name="HBoxPartySpells" type="HBoxContainer" parent="HUDPanel/MagicPanel/VBoxMagicMain"]
+layout_mode = 2
+
+[node name="VBoxSpellsByLevel" type="VBoxContainer" parent="HUDPanel/MagicPanel/VBoxMagicMain/HBoxPartySpells"]
+layout_mode = 2
+
+[node name="PlayerInfoPanel" type="PanelContainer" parent="HUDPanel/MagicPanel/VBoxMagicMain/HBoxPartySpells"]
 layout_mode = 2
 
 [node name="TargetPanel" type="ScrollContainer" parent="HUDPanel"]
@@ -73,9 +65,9 @@ layout_mode = 2
 layout_mode = 2
 
 [node name="PartyStatus" type="PanelContainer" parent="."]
-offset_left = 522.0
+offset_left = 510.0
 offset_top = 762.0
-offset_right = 562.0
+offset_right = 550.0
 offset_bottom = 802.0
 
 [node name="PartyInfo" type="GridContainer" parent="PartyStatus"]

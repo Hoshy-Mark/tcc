@@ -61,6 +61,13 @@ var skill_upgrades := {}
 
 # Status
 var is_defending: bool = false
+var can_act: bool = true
+var can_target: bool = true
+var is_confused: bool = false
+var is_charmed: bool = false
+var is_petrified: bool = false
+var is_invisible: bool = false
+var doom_counter: int = -1
 var status_effects: Array = []
 var active_status_effects: Array = []
 
@@ -224,20 +231,74 @@ func restore_spell_slots():
 
 func process_status_effects():
 	var remaining: Array = []
+	can_act = true
+	can_target = true
+	is_charmed = false
+	is_confused = false
+	is_petrified = false
+
+	# Reset temporário das flags de proteção
+	set_meta("protect_active", false)
+	set_meta("shell_active", false)
+	set_meta("reflect_active", false)
+
 	for effect in active_status_effects:
 		match effect.attribute:
-			"regen":
-				heal(5 + SPI)
+			"poison":
+				take_damage(5)
 			"bleed":
 				take_damage(5)
-			"stun":
-				# Marcar jogador como incapacitado, ou ignorar o turno (em BattleManager)
+			"regen":
+				heal(5 + SPI)
+			"sleep", "paralysis", "stun", "stop", "knockout":
+				can_act = false
+			"confuse":
+				is_confused = true
+			"charm":
+				is_charmed = true
+			"petrify":
+				is_petrified = true
+				can_act = false
+				can_target = false
+			"doom":
+				if doom_counter == -1:
+					doom_counter = effect.duration
+				doom_counter -= 1
+				if doom_counter <= 0:
+					take_damage(current_hp)  # Morte instantânea
+			"haste":
 				pass
+			"protect":
+				set_meta("protect_active", true)
+			"shell":
+				set_meta("shell_active", true)
+			"reflect":
+				set_meta("reflect_active", true)
+
 		effect.duration -= 1
 		if effect.duration > 0:
 			remaining.append(effect)
+
 	active_status_effects = remaining
-	
+
+	if not has_status("doom"):
+		doom_counter = -1
+
+func has_blink_active() -> bool:
+	for effect in active_status_effects:
+		if effect.attribute == "blink" and effect.blink_charges > 0:
+			return true
+	return false
+
+func consume_blink_charge():
+	for effect in active_status_effects:
+		if effect.attribute == "blink" and effect.blink_charges > 0:
+			effect.blink_charges -= 1
+			return
+
+func has_reraise_active() -> bool:
+	return active_status_effects.any(func(e): return e.attribute == "reraise")
+
 func get_available_spells() -> Dictionary:
 	var result := {}
 	for spell in spells:
@@ -257,9 +318,20 @@ func get_global_position() -> Vector2:
 
 func check_if_dead():
 	if current_hp <= 0:
-		special_charge = 0
-		atb_value = 0
-		emit_signal("died")
+		if has_reraise_active():
+			current_hp = int(max_hp * 0.25)
+			# Remove o reraise
+			active_status_effects = active_status_effects.filter(func(e): return e.attribute != "reraise")
+		else:
+			# Marca como morto normalmente
+			special_charge = 0
+			atb_value = 0
+			emit_signal("died")
+			can_act = false
+			can_target = false
+
+func has_status(attr: String) -> bool:
+	return active_status_effects.any(func(e): return e.attribute == attr)
 
 func increase_special_charge(amount: float) -> bool:
 	if special_ready:
@@ -309,7 +381,7 @@ func gain_xp(amount: int):
 	while xp >= xp_to_next_level:
 		xp -= xp_to_next_level
 		level_up()
-		
+
 func level_up():
 	level += 1
 	var growth = class_growth_curves.get(classe_name, {})
@@ -352,9 +424,7 @@ func gain_ap(ability_name: String, amount: int, is_spell: bool = true) -> void:
 		ap_dict[ability_name] = {"current": 0, "level": 1}
 
 	ap_dict[ability_name]["current"] += amount
-	
 
-					
 func apply_mastery_bonus(ability_name: String, new_level: int, is_spell: bool):
 	
 	var ability_list
