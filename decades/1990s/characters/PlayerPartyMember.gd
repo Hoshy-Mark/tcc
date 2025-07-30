@@ -441,3 +441,9 @@ func apply_mastery_bonus(ability_name: String, new_level: int, is_spell: bool):
 			if new_level == 3:
 				ab.name += " ★"  # Marca como dominado
 			break
+
+func remove_status_effect(attribute: String) -> void:
+	for i in range(active_status_effects.size()):
+		if active_status_effects[i].attribute == attribute:
+			active_status_effects.remove_at(i)
+			return

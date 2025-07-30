@@ -46,6 +46,7 @@ var sprite_ref: Sprite2D = null
 var position_line: String = "front"  # ou "back"
 var alcance_estendido: bool = false 
 var obstruido := false
+var loot: Array[String] = []
 
 # Status
 var status_effects: Array = []
@@ -83,6 +84,7 @@ func set_type_resistances():
 				"dark": 0.5,
 				"poison": 1.0
 			}
+			loot = ["Potion"]
 			attack_type_resistances = {
 				"slash": 1.0,
 				"pierce": 1.0,
@@ -108,6 +110,7 @@ func set_type_resistances():
 				"ranged": 0.1,
 				"magic": 1.0
 			}
+			loot = ["Potion"]
 		"Ghost":
 			element_resistances = {
 				"fire": 1.0,
@@ -126,6 +129,7 @@ func set_type_resistances():
 				"ranged": 0.2,
 				"magic": 1.5
 			}
+			loot = ["Potion"]
 		"Flying":
 			element_resistances = {
 				"fire": 1.0,
@@ -144,6 +148,7 @@ func set_type_resistances():
 				"ranged": 1.3,
 				"magic": 1.0
 			}
+			loot = ["Potion"]
 		"Demon":
 			element_resistances = {
 				"fire": 0.5,
@@ -162,6 +167,7 @@ func set_type_resistances():
 				"ranged": 1.0,
 				"magic": 0.8
 			}
+			loot = ["Potion"]
 		"Dragon":
 			element_resistances = {
 				"fire": 0.7,
@@ -180,6 +186,7 @@ func set_type_resistances():
 				"ranged": 1.0,
 				"magic": 0.9
 			}
+			loot = ["Potion"]
 		_:
 			# Default, tudo normal
 			element_resistances = {
@@ -361,4 +368,23 @@ func has_reraise_active() -> bool:
 
 func has_status(attr: String) -> bool:
 	return active_status_effects.any(func(e): return e.attribute == attr)
+	
+func remove_status_effect(attribute: String) -> void:
+	for i in range(active_status_effects.size()):
+		if active_status_effects[i].attribute == attribute:
+			active_status_effects.remove_at(i)
+			return
+
+func get_element_weaknesses() -> Array:
+	var fraquezas := []
+	for element in element_resistances.keys():
+		if element_resistances[element] > 1.0:
+			fraquezas.append(element.capitalize())
+	return fraquezas
+
+func get_status_descriptions() -> Array:
+	var descricoes := []
+	for effect in active_status_effects:
+		descricoes.append(effect.attribute.capitalize())
+	return descricoes
 	

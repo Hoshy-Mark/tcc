@@ -12,6 +12,7 @@ class_name Skill
 @export var effect_type: String = "physical"  # physical, debuff, buff, etc.
 @export var duration: int = 3    # quantos turno dura o buff ou debuff
 @export var level: int = 1
+@export var effect: String = "" # Para efeitos especiais como "steal_item", "scan_info", etc.
 
 @export var status_inflicted: String = ""  # ex: "stun", "bleed", "" (nenhum)
 @export var status_chance: float = 0.2  # chance de aplicar o status

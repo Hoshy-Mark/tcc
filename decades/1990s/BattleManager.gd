@@ -19,11 +19,35 @@ var inventory := {
 	"Spirit Water": 2
 }
 
+var status_cure_map = {
+	"poison": {"items": ["Antídoto"], "spells": ["Esuna"]},
+	"sleep": {"items": ["Despertar"], "spells": ["Esuna"]},
+	"paralysis": {"items": ["Tônico Neural"], "spells": ["Esuna"]},
+	"blind": {"items": ["Colírio"], "spells": ["Esuna"]},
+	"confuse": {"items": ["Calmante"], "spells": ["Esuna"]},
+	"curse": {"items": ["Água Benta"], "spells": ["Esuna"]},
+	"petrify": {"items": ["Erva Suave"], "spells": ["Esuna"]},
+	"charm": {"items": [], "spells": ["Dispel"]},
+	"doom": {"items": [], "spells": ["Dispel"]},
+	"stop": {"items": [], "spells": ["Dispel"]},
+	"stun": {"items": [], "spells": ["Dispel"]},
+	"slow": {"items": [], "spells": ["Dispel"]},
+	"knockout": {"items": ["Spirit Water"], "spells": ["Revive"]}
+}
+
 var item_database = {
 	"Potion": {"type": "heal", "power": 50, "target": "ally"},
 	"Ether": {"type": "restore_mp", "power": 30, "target": "ally"},
 	"Spirit Water": {"type": "restore_sp", "power": 30, "target": "ally"},
 	"Elixir": {"type": "full_restore", "target": "ally"},
+	
+	"Antídoto": {"type": "cure_status", "status": "poison", "target": "ally"},
+	"Despertar": {"type": "cure_status", "status": "sleep", "target": "ally"},
+	"Tônico Neural": {"type": "cure_status", "status": "paralysis", "target": "ally"},
+	"Colírio": {"type": "cure_status", "status": "blind", "target": "ally"},
+	"Calmante": {"type": "cure_status", "status": "confuse", "target": "ally"},
+	"Água Benta": {"type": "cure_status", "status": "curse", "target": "ally"},
+	"Erva Suave": {"type": "cure_status", "status": "petrify", "target": "ally"},
 }
 
 const TEMPO_ESPERA_APOS_ACAO = 0.5
@@ -139,11 +163,16 @@ var spell_database = {
 	"Divine Blade": {"type": "damage", "attack_type": "holy", "power": 45, "cost": 10, "level": 4, "target_group": "single", "status_effects": [{"attribute": "blind", "amount": -1, "duration": 3, "chance": 30}]},
 	"Holy Smite": {"type": "damage", "attack_type": "holy", "power": 60, "cost": 15, "level": 4, "target_group": "single"},
 
-	# Cura
+	# Cura de Vida
 	"Cure": {"type": "heal", "attack_type": "magic", "power": 30, "cost": 5, "level": 1, "target_group": "single"},
 	"Cura": {"type": "heal", "attack_type": "magic", "power": 60, "cost": 10, "level": 2, "target_group": "single"},
 	"Heal All": {"type": "heal", "attack_type": "magic", "power": 40, "cost": 12, "level": 3, "target_group": "area"},
-
+	
+	# Cura de Status
+	"Esuna": { "type": "cure_status", "cost": 6, "level": 1, "target_group": "single", "status_effects": [ { "attribute": "poison" }, { "attribute": "sleep" }, { "attribute": "paralysis" }, { "attribute": "blind" }, { "attribute": "confuse" }, { "attribute": "curse" }, { "attribute": "petrify" } ] },
+	"Dispel": { "type": "cure_status", "cost": 8, "level": 1, "target_group": "single", "status_effects": [ { "attribute": "charm" }, { "attribute": "doom" }, { "attribute": "stop" }, { "attribute": "stun" }, { "attribute": "slow" } ] },
+	"Revive": { "type": "cure_status", "cost": 10, "level": 1, "target_group": "single", "status_effects": [ { "attribute": "knockout" } ] },
+	
 	# Buffs
 	"Haste": {"type": "buff", "attack_type": "magic", "attribute": "haste", "amount": 0, "duration": 3, "cost": 8, "level": 2, "target_group": "single"},
 	"Blink": {"type": "buff", "attack_type": "magic", "attribute": "blink", "amount": 2, "duration": 5, "cost": 10, "level": 3, "target_group": "single"},
@@ -166,10 +195,9 @@ var spell_database = {
 	"Stun Bolt": {"type": "debuff", "attack_type": "magic", "cost": 8, "level": 2, "target_group": "single", "status_effects": [{"attribute": "stun", "amount": -1, "duration": 1, "chance": 60}]},
 	"Knockout": {"type": "damage", "attack_type": "magic", "power": 9999, "cost": 5, "level": 1, "hit_chance": 100, "target_group": "single", "status_effects": [{"attribute": "knockout", "amount": -1, "duration": 0, "chance": 100}]},
 	"Slow": {"type": "debuff", "attack_type": "magic", "attribute": "speed", "amount": -4, "duration": 3, "cost": 8, "level": 2, "target_group": "single"},
-
+	
 	# Especiais
 	"Summon Ifrit": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 100, "power_max": 120, "cost": 25, "level": 4, "hit_chance": 100, "target_group": "area"},
-	"Dispel": {"type": "special", "attack_type": "magic", "effect": "remove_buffs", "cost": 10, "level": 2, "target_group": "single"},
 	"Eidolon Burst": {"type": "damage", "attack_type": "magic", "power": 50, "cost": 20, "level": 4, "target_group": "area"},
 	"Divine Light": {"type": "heal", "attack_type": "magic", "power": 75, "cost": 14, "level": 3, "target_group": "area"},
 	"Summon Phoenix": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 120, "power_max": 140, "cost": 30, "level": 5, "hit_chance": 100, "target_group": "area"},
@@ -183,7 +211,6 @@ var skill_database = {
 	"Heal Self": {"effect_type": "heal", "power": 25, "cost": 5, "target_type": "self", "level": 1},
 	"Shield Breaker": {"effect_type": "damage", "attack_type": "pierce", "power": 30, "cost": 6, "target_type": "enemy", "status_inflicted": "defense_down", "status_chance": 0.6, "duration": 3, "level": 2},
 	"Tracking Shot": {"effect_type": "damage", "attack_type": "pierce", "power": 35, "cost": 6, "target_type": "enemy", "status_inflicted": "accuracy_up", "status_chance": 0.7, "duration": 3, "level": 2},
-	"Steal": {"effect_type": "special", "attack_type": "None", "effect": "steal_item", "cost": 4, "target_type": "enemy", "level": 1},
 	"Evade Boost": {"effect_type": "buff", "attribute": "evasion", "amount": 7, "duration": 3, "cost": 5, "target_type": "self", "level": 1},
 	"Fury Punch": {"effect_type": "damage", "attack_type": "blunt", "power": 45, "cost": 8, "target_type": "enemy", "level": 2},
 	"Holy Smite": {"effect_type": "damage", "attack_type": "holy", "power": 60, "cost": 15, "target_type": "enemy", "level": 3},
@@ -191,6 +218,9 @@ var skill_database = {
 	"Arrow Barrage": {"effect_type": "damage", "attack_type": "pierce", "power": 28, "cost": 6, "target_type": "line", "level": 2},
 	"Shadow Jab": {"effect_type": "damage", "attack_type": "pierce", "power": 40, "cost": 5, "target_type": "enemy", "status_inflicted": "bleed", "status_chance": 0.35, "duration": 3, "level": 2},
 	"Chi Burst": {"effect_type": "hybrid", "attack_type": "magic", "power": 30, "heal": 30, "cost": 10, "target_type": "self", "level": 2},
+	"Steal": {"effect_type": "special", "attack_type": "None", "effect": "steal_item","cost": 4, "target_type": "enemy", "level": 1},
+	"Scan": {"effect_type": "special", "attack_type": "None", "effect": "scan_info","cost": 2, "target_type": "enemy", "level": 1},
+	"MP Drain": {"effect_type": "special", "attack_type": "None", "effect": "mp_drain","cost": 3, "target_type": "enemy", "level": 1}
 }
 
 var class_spell_trees = {
@@ -213,10 +243,9 @@ var class_spell_trees = {
 
 	"Cleric": {
 		"spells": {
-			"Cure": {"level": 1, "SPI": 6},
-			"Charm": {"level": 1, "SPI": 1},
-			"Stone Gaze": {"level": 1, "SPI": 1},
-			"Weaken": {"level": 1, "SPI": 1}
+			"Esuna": {"level": 1, "SPI": 6},
+			"Dispel": {"level": 1, "SPI": 1},
+			"Revive": {"level": 1, "SPI": 1},
 		},
 		"skills": {},
 		"specials": {
@@ -262,7 +291,8 @@ var class_spell_trees = {
 	"Thief": {
 		"spells": {},
 		"skills": {
-			"Quick Shot": {"level": 1, "STR": 7},
+			"Steal": {"level": 1, "STR": 1},
+			"Scan": {"level": 1, "STR": 1},
 		},
 		"specials": {
 			"Shadow Strike": {"level": 1, "AGI": 2}
@@ -600,6 +630,29 @@ func pode_atacar(alvo, atacante, is_ataque_fisico: bool) -> bool:
 
 	return atacante.alcance_estendido
 
+func attempt_steal(user, alvo):
+	var chance_base = 0.2 + (user.DEX + user.LCK) * 0.01
+	var roll = randf()
+	if roll <= chance_base and alvo.loot.size() > 0:
+		var item = alvo.loot.pick_random()
+		hud.show_top_message("%s roubou %s de %s!" % [user.nome, item, alvo.nome])
+		if inventory.has(item):
+			inventory[item] += 1
+		else:
+			inventory[item] = 1
+	else:
+		hud.show_top_message("%s tentou roubar, mas falhou!" % user.nome)
+
+func display_scan_info(alvo):
+	var fraquezas = alvo.get_element_weaknesses() if alvo.has_method("get_element_weaknesses") else []
+	var status = alvo.get_status_descriptions() if alvo.has_method("get_status_descriptions") else []
+	hud.show_top_message("Fraquezas: %s\nStatus: %s" % [", ".join(fraquezas), ", ".join(status)])
+
+func drain_mp(user, alvo):
+	var amount = min(10, alvo.current_mp)
+	alvo.current_mp -= amount
+	user.current_mp += amount
+	hud.show_top_message("%s drenou %d MP de %s!" % [user.nome, amount, alvo.nome])
 
 # CRIAÇÃO DE INIMIGOS E PLAYER
 
@@ -1086,6 +1139,7 @@ func create_skill(name: String, data: Dictionary) -> Skill:
 	s.name = name
 	s.cost = data.get("cost", 0)
 	s.power = data.get("power", 0)
+	s.amount = data.get("amount", 0)
 	s.scaling_stat = data.get("scaling_stat", "STR")
 	s.hit_chance = data.get("hit_chance", 0.95)
 	s.target_type = data.get("target_type", "enemy")
@@ -1094,7 +1148,9 @@ func create_skill(name: String, data: Dictionary) -> Skill:
 	s.status_chance = data.get("status_chance", 0.0)
 	s.element = data.get("element", "")
 	s.attack_type = data.get("attack_type", "")
+	s.duration = data.get("duration", 0)
 	s.level = data.get("level", 1)
+	s.effect = data.get("effect", "")
 	return s
 
 func create_special(name: String, data: Dictionary) -> Special:
@@ -1327,7 +1383,7 @@ func _execute_skill(user, skill, alvo):
 
 	elif skill.effect_type == "heal":
 		var cura = skill.power + user.SPI
-		var ap_gain = int(100)  # Ganha mais AP se causar mais dano
+		var ap_gain = int(10)  # Ganha mais AP se causar mais dano
 		user.gain_ap(skill.name, ap_gain, false)
 		alvo.current_hp = min(alvo.max_hp, alvo.current_hp + cura)
 		hud.show_top_message("%s usou %s e curou %d HP em %s!" % [user.nome, skill.name, cura, alvo.nome])
@@ -1335,7 +1391,7 @@ func _execute_skill(user, skill, alvo):
 
 	elif skill.effect_type == "buff":
 		var effect = StatusEffect.new()
-		var ap_gain = int(100)  # Ganha mais AP se causar mais dano
+		var ap_gain = int(10)  # Ganha mais AP se causar mais dano
 		user.gain_ap(skill.name, ap_gain, false)
 		effect.attribute = skill.scaling_stat
 		effect.amount = skill.amount
@@ -1343,6 +1399,25 @@ func _execute_skill(user, skill, alvo):
 		effect.type = StatusEffect.Type.BUFF
 		alvo.apply_status_effect(effect)
 		hud.show_top_message("%s aumentou %s de %s com %s!" % [user.nome, effect.attribute, alvo.nome, skill.name])
+	
+	elif skill.effect_type == "special":
+		var ap_gain = int(10)
+		user.gain_ap(skill.name, ap_gain, false)
+		
+		match skill.effect:
+			"steal_item":
+				attempt_steal(user, alvo)
+			"scan_info":
+				display_scan_info(alvo)
+			"mp_drain":
+				drain_mp(user, alvo)
+			_:
+				hud.show_top_message("Efeito especial desconhecido: %s" % skill.effect)
+
+		reset_atb(user)
+		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+		end_turn()
+		return
 
 	if skill.status_inflicted != "":
 		if randf() <= skill.status_chance:
@@ -1575,7 +1650,18 @@ func _execute_spell_area(caster, spell_name, alvos):
 					alvo.apply_status_effect(extra_effect)
 
 					hud.show_top_message("%s sofreu o efeito %s de %s!" % [alvo.nome, extra_effect.attribute, spell.name])
-
+		
+		elif tipo == "cure_status":
+			var cured = []
+			for entry in spell.status_effects:
+				var attribute = entry.get("attribute", "")
+				if alvo.has_status(attribute):
+					alvo.remove_status_effect(attribute)
+					cured.append(attribute)
+			if cured.size() > 0:
+				hud.show_top_message("%s foi curado de: %s!" % [alvo.nome, ", ".join(cured)])
+			else:
+				hud.show_top_message("%s não tinha status removíveis com %s." % [alvo.nome, spell.name])
 	reset_atb(caster)
 	hud.update_enemy_info(enemies)
 	hud.update_party_info(party)
@@ -1697,7 +1783,18 @@ func _execute_spell_single(caster, spell_name, alvo):
 				alvo.apply_status_effect(effect)
 				var desc = effect.status_type if effect.status_type != "" else effect.attribute
 				hud.show_top_message("%s sofreu o efeito %s de %s!" % [alvo.nome, desc, spell.name])
-	
+	elif tipo == "cure_status":
+		var cured = []
+		for entry in spell.status_effects:
+			var attribute = entry["attribute"]
+			if alvo.has_status(attribute):
+				alvo.remove_status_effect(attribute)
+				cured.append(attribute)
+		if cured.size() > 0:
+			hud.show_top_message("%s foi curado de: %s!" % [alvo.nome, ", ".join(cured)])
+		else:
+			hud.show_top_message("%s não tinha status removíveis com %s." % [alvo.nome, spell.name])
+
 	reset_atb(caster)
 	hud.update_enemy_info(enemies)
 	hud.update_party_info(party)
@@ -2211,7 +2308,7 @@ func _on_magic_selected(spell_name: String):
 	var alvos := []
 
 	match tipo:
-		"heal", "buff":
+		"heal", "buff", "cure_status":
 			alvos = party.filter(func(p): return p.current_hp > 0)
 		"debuff", "damage":
 			alvos = enemies.filter(func(e): return e.current_hp > 0)
