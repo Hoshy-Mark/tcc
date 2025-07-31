@@ -504,7 +504,7 @@ func update_party_info(party_members: Array) -> void:
 		hbox.custom_minimum_size = Vector2(0, 45)
 		
 		var name_label = Label.new()
-		name_label.text = member.nome
+		name_label.text = member.get_display_name()
 		name_label.set_position(Vector2(20, 10))
 		name_label.custom_minimum_size = Vector2(200, 40)
 		name_label.add_theme_font_size_override("font_size", 22)

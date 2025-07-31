@@ -63,6 +63,25 @@ var element_resistances = {
 	"poison": 1.0
 }
 
+var status_resistances = {
+	"poison": 1.0,
+	"sleep": 1.0,
+	"paralysis": 1.0,
+	"stun": 1.0,
+	"confuse": 1.0,
+	"charm": 1.0,
+	"petrify": 1.0,
+	"doom": 1.0,
+	"regen": 1.0,
+	"bleed": 1.0,
+	"haste": 1.0,
+	"protect": 1.0,
+	"shell": 1.0,
+	"reflect": 1.0,
+	"stop": 1.0,
+	"knockout": 1.0
+}
+
 var attack_type_resistances = {
 	"slash": 1.0,
 	"pierce": 1.0,
@@ -75,136 +94,114 @@ func set_type_resistances():
 	match enemy_type:
 		"Undead":
 			element_resistances = {
-				"fire": 1.5,
-				"ice": 1.0,
-				"lightning": 1.0,
-				"earth": 1.0,
-				"wind": 1.0,
-				"holy": 2.0,
-				"dark": 0.5,
-				"poison": 1.0
+				"fire": 1.5, "ice": 1.0, "lightning": 1.0,
+				"earth": 1.0, "wind": 1.0, "holy": 2.0,
+				"dark": 0.5, "poison": 1.0
+			}
+			attack_type_resistances = {
+				"slash": 1.0, "pierce": 1.0, "blunt": 1.2,
+				"ranged": 1.0, "magic": 1.0
+			}
+			status_resistances = {
+				"sleep": 0.5, "poison": 0.0, "confuse": 0.8,
+				"paralysis": 0.7, "doom": 0.5
 			}
 			loot = ["Potion"]
-			attack_type_resistances = {
-				"slash": 1.0,
-				"pierce": 1.0,
-				"blunt": 1.2,
-				"ranged": 1.0,
-				"magic": 1.0
-			}
+
 		"Beast":
 			element_resistances = {
-				"fire": 1.0,
-				"ice": 1.2,
-				"lightning": 1.0,
-				"earth": 1.0,
-				"wind": 0.8,
-				"holy": 1.0,
-				"dark": 1.0,
-				"poison": 1.5
+				"fire": 1.0, "ice": 1.2, "lightning": 1.0,
+				"earth": 1.0, "wind": 0.8, "holy": 1.0,
+				"dark": 1.0, "poison": 1.5
 			}
 			attack_type_resistances = {
-				"slash": 1.1,
-				"pierce": 0.9,
-				"blunt": 1.0,
-				"ranged": 0.1,
-				"magic": 1.0
+				"slash": 1.1, "pierce": 0.9, "blunt": 1.0,
+				"ranged": 0.1, "magic": 1.0
+			}
+			status_resistances = {
+				"sleep": 0.8, "poison": 1.2, "confuse": 1.0,
+				"paralysis": 1.0, "doom": 1.0
 			}
 			loot = ["Potion"]
+
 		"Ghost":
 			element_resistances = {
-				"fire": 1.0,
-				"ice": 0.8,
-				"lightning": 1.0,
-				"earth": 0.5,
-				"wind": 1.2,
-				"holy": 2.0,
-				"dark": 0.3,
-				"poison": 0.0
+				"fire": 1.0, "ice": 0.8, "lightning": 1.0,
+				"earth": 0.5, "wind": 1.2, "holy": 2.0,
+				"dark": 0.3, "poison": 0.0
 			}
 			attack_type_resistances = {
-				"slash": 0.5,
-				"pierce": 0.5,
-				"blunt": 0.8,
-				"ranged": 0.2,
-				"magic": 1.5
+				"slash": 0.5, "pierce": 0.5, "blunt": 0.8,
+				"ranged": 0.2, "magic": 1.5
+			}
+			status_resistances = {
+				"sleep": 0.0, "poison": 0.0, "confuse": 0.5,
+				"paralysis": 0.2, "doom": 0.0
 			}
 			loot = ["Potion"]
+
 		"Flying":
 			element_resistances = {
-				"fire": 1.0,
-				"ice": 1.0,
-				"lightning": 1.5,
-				"earth": 0.0,
-				"wind": 0.7,
-				"holy": 1.0,
-				"dark": 1.0,
-				"poison": 1.0
+				"fire": 1.0, "ice": 1.0, "lightning": 1.5,
+				"earth": 0.0, "wind": 0.7, "holy": 1.0,
+				"dark": 1.0, "poison": 1.0
 			}
 			attack_type_resistances = {
-				"slash": 1.0,
-				"pierce": 1.2,
-				"blunt": 0.9,
-				"ranged": 1.3,
-				"magic": 1.0
+				"slash": 1.0, "pierce": 1.2, "blunt": 0.9,
+				"ranged": 1.3, "magic": 1.0
+			}
+			status_resistances = {
+				"sleep": 1.0, "poison": 1.0, "confuse": 1.0,
+				"paralysis": 1.2, "doom": 1.0
 			}
 			loot = ["Potion"]
+
 		"Demon":
 			element_resistances = {
-				"fire": 0.5,
-				"ice": 1.2,
-				"lightning": 1.2,
-				"earth": 1.0,
-				"wind": 1.0,
-				"holy": 2.5,
-				"dark": 0.3,
-				"poison": 1.0
+				"fire": 0.5, "ice": 1.2, "lightning": 1.2,
+				"earth": 1.0, "wind": 1.0, "holy": 2.5,
+				"dark": 0.3, "poison": 1.0
 			}
 			attack_type_resistances = {
-				"slash": 1.1,
-				"pierce": 1.0,
-				"blunt": 1.1,
-				"ranged": 1.0,
-				"magic": 0.8
+				"slash": 1.1, "pierce": 1.0, "blunt": 1.1,
+				"ranged": 1.0, "magic": 0.8
+			}
+			status_resistances = {
+				"sleep": 0.4, "poison": 0.8, "confuse": 0.6,
+				"paralysis": 0.9, "doom": 0.3
 			}
 			loot = ["Potion"]
+
 		"Dragon":
 			element_resistances = {
-				"fire": 0.7,
-				"ice": 1.5,
-				"lightning": 1.3,
-				"earth": 1.0,
-				"wind": 1.0,
-				"holy": 1.5,
-				"dark": 1.0,
-				"poison": 0.5
+				"fire": 0.7, "ice": 1.5, "lightning": 1.3,
+				"earth": 1.0, "wind": 1.0, "holy": 1.5,
+				"dark": 1.0, "poison": 0.5
 			}
 			attack_type_resistances = {
-				"slash": 1.0,
-				"pierce": 1.2,
-				"blunt": 1.3,
-				"ranged": 1.0,
-				"magic": 0.9
+				"slash": 1.0, "pierce": 1.2, "blunt": 1.3,
+				"ranged": 1.0, "magic": 0.9
+			}
+			status_resistances = {
+				"sleep": 0.3, "poison": 0.5, "confuse": 0.7,
+				"paralysis": 0.6, "doom": 0.2
 			}
 			loot = ["Potion"]
+
 		_:
 			# Default, tudo normal
 			element_resistances = {
-				"fire": 1.0,
-				"ice": 1.0,
-				"lightning": 1.0,
-				"earth": 1.0,
-				"wind": 1.0,
-				"holy": 1.0,
-				"dark": 1.0,
-				"poison": 1.0
+				"fire": 1.0, "ice": 1.0, "lightning": 1.0,
+				"earth": 1.0, "wind": 1.0, "holy": 1.0,
+				"dark": 1.0, "poison": 1.0
 			}
 			attack_type_resistances = {
-				"slash": 1.0,
-				"pierce": 1.0,
-				"blunt": 1.0,
-				"ranged": 1.0,
-				"magic": 1.0
+				"slash": 1.0, "pierce": 1.0, "blunt": 1.0,
+				"ranged": 1.0, "magic": 1.0
+			}
+			status_resistances = {
+				"sleep": 1.0, "poison": 1.0, "confuse": 1.0,
+				"paralysis": 1.0, "doom": 1.0
 			}
 
 # === FUNÇÕES ===
@@ -248,15 +245,27 @@ func get_global_position() -> Vector2:
 		return sprite_ref.global_position
 	return Vector2.ZERO
 
-func apply_status_effect(effect: StatusEffect):
-	print("Esta senod aplicado o efeito: " + str(effect.type))
-	print(effect.attribute)
-	print(effect.amount)
+func apply_status_effect(effect: StatusEffect, chance: float = 100.0):
+	var resist: float = status_resistances.get(effect.attribute, 1.0)
+
+	if resist == 0.0:
+		# Imune ao status
+		return
+
+	var chance_percent: float = clamp(chance / 100.0, 0.0, 1.0)
+	var final_chance: float = chance_percent * resist
+
+	if randf() > final_chance:
+		# Resistido
+		return
+
+	# Aplica normalmente
 	for existing in active_status_effects:
 		if existing.attribute == effect.attribute and existing.type == effect.type:
 			existing.amount = effect.amount
 			existing.duration = effect.duration
 			return
+
 	active_status_effects.append(effect)
 
 func get_modified_stat(base: int, attribute: String) -> int:

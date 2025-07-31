@@ -19,6 +19,25 @@ var INT: int = 0
 var SPI: int = 0
 var LCK: int = 0
 
+const STATUS_EMOJIS = {
+	"poison": "🧪",
+	"bleed": "🩸",
+	"regen": "💚",
+	"sleep": "💤",
+	"paralysis": "🦴",
+	"stun": "💫",
+	"stop": "⏹️",
+	"knockout": "💀",
+	"confuse": "🔀",
+	"charm": "💘",
+	"petrify": "🪨",
+	"doom": "⏳",
+	"haste": "⚡",
+	"protect": "🛡️",
+	"shell": "🔵",
+	"reflect": "🔁"
+}
+
 # Atributos derivados
 var max_hp: int = 0
 var current_hp: int = 0
@@ -70,6 +89,7 @@ var is_invisible: bool = false
 var doom_counter: int = -1
 var status_effects: Array = []
 var active_status_effects: Array = []
+var is_summon = false
 
 var element_resistances = {
 	"fire": 1.0,
@@ -80,6 +100,25 @@ var element_resistances = {
 	"holy": 1.0,
 	"dark": 1.0,
 	"poison": 1.0
+}
+
+var status_resistances = {
+	"poison": 1.0,
+	"sleep": 1.0,
+	"paralysis": 1.0,
+	"stun": 1.0,
+	"confuse": 1.0,
+	"charm": 1.0,
+	"petrify": 1.0,
+	"doom": 1.0,
+	"regen": 1.0,
+	"bleed": 1.0,
+	"haste": 1.0,
+	"protect": 1.0,
+	"shell": 1.0,
+	"reflect": 1.0,
+	"stop": 1.0,
+	"knockout": 1.0
 }
 
 var attack_type_resistances = {
@@ -136,13 +175,37 @@ func take_damage(amount: int):
 func heal(amount: int):
 	current_hp = min(current_hp + amount, max_hp)
 
-func apply_status_effect(effect: StatusEffect):
+func apply_status_effect(effect: StatusEffect, chance: float = 100.0):
+	var resist: float = status_resistances.get(effect.attribute, 1.0)
+
+	if resist == 0.0:
+		# Imune ao status
+		return
+
+	var chance_percent: float = clamp(chance / 100.0, 0.0, 1.0)
+	var final_chance: float = chance_percent * resist
+
+	if randf() > final_chance:
+		# Resistido
+		return
+
+	# Aplica normalmente
 	for existing in active_status_effects:
 		if existing.attribute == effect.attribute and existing.type == effect.type:
 			existing.amount = effect.amount
 			existing.duration = effect.duration
 			return
+
 	active_status_effects.append(effect)
+
+func get_display_name() -> String:
+	var emojis := ""
+	for effect in active_status_effects:
+		if STATUS_EMOJIS.has(effect.attribute):
+			var emoji = STATUS_EMOJIS[effect.attribute]
+			if not emojis.contains(emoji):  # Evita duplicatas
+				emojis += emoji
+	return emojis + nome  # Ex: "🧪💤Carlos"
 
 func get_modified_stat(base: int, attribute: String) -> int:
 	var result = base
@@ -306,7 +369,7 @@ func get_available_spells() -> Dictionary:
 	return result
 
 func is_magic_user() -> bool:
-	return classe_name in ["Mage", "Cleric", "Paladin", "Summoner"]
+	return classe_name in ["Mage", "Cleric", "Paladin", "Summoner"] or is_summon
 
 func is_skill_user() -> bool:
 	return not is_magic_user()

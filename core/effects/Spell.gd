@@ -17,6 +17,7 @@ class_name Spell
 @export var status_effects = []
 @export var chance: int = 100  # default 100% de chance de aplicar
 @export var description: String = ""
+@export var summon_data := {}
 
 func is_buff() -> bool:
 	return type == "buff"

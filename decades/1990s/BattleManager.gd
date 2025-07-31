@@ -11,6 +11,9 @@ var enemy_sprites = {}  # id -> EnemySprite
 var current_actor = null
 var ready_queue := []
 var battle_active := false 
+var in_summon_mode := false
+var current_summon = null
+var saved_party := []
 
 var inventory := {
 	"Potion": 3,
@@ -136,7 +139,7 @@ var class_base_stats = {
 		"attack_type": "blunt"
 	},
 	"Summoner": {
-		"STR": 2, "DEX": 5, "AGI": 5, "CON": 4, "MAG": 14, "INT": 12, "SPI": 10, "LCK": 8,
+		"STR": 2, "DEX": 10, "AGI": 10, "CON": 4, "MAG": 14, "INT": 12, "SPI": 10, "LCK": 8,
 		"attack_type": "blunt"
 	},
 }
@@ -145,7 +148,7 @@ var class_spell_slots = {
 	"Mage": {1: 4, 2: 3, 3: 2},
 	"Cleric": {1: 5, 2: 5, 3: 5},
 	"Paladin":  {1: 3, 2: 2},
-	"Summoner": {1: 3, 2: 2},
+	"Summoner": {1: 3, 2: 2, 3:5, 4:2},
 	"Monk":  {1: 3, 2: 2},
 	"Hunter":  {1: 3, 2: 2},
 	"Thief":  {1: 3, 2: 2},
@@ -169,9 +172,9 @@ var spell_database = {
 	"Heal All": {"type": "heal", "attack_type": "magic", "power": 40, "cost": 12, "level": 3, "target_group": "area"},
 	
 	# Cura de Status
-	"Esuna": { "type": "cure_status", "cost": 6, "level": 1, "target_group": "single", "status_effects": [ { "attribute": "poison" }, { "attribute": "sleep" }, { "attribute": "paralysis" }, { "attribute": "blind" }, { "attribute": "confuse" }, { "attribute": "curse" }, { "attribute": "petrify" } ] },
-	"Dispel": { "type": "cure_status", "cost": 8, "level": 1, "target_group": "single", "status_effects": [ { "attribute": "charm" }, { "attribute": "doom" }, { "attribute": "stop" }, { "attribute": "stun" }, { "attribute": "slow" } ] },
-	"Revive": { "type": "cure_status", "cost": 10, "level": 1, "target_group": "single", "status_effects": [ { "attribute": "knockout" } ] },
+	"Esuna": { "type": "cure_status", "cost": 6, "level": 2, "target_group": "single", "status_effects": [ { "attribute": "poison" }, { "attribute": "sleep" }, { "attribute": "paralysis" }, { "attribute": "blind" }, { "attribute": "confuse" }, { "attribute": "curse" }, { "attribute": "petrify" } ] },
+	"Dispel": { "type": "cure_status", "cost": 8, "level": 2, "target_group": "single", "status_effects": [ { "attribute": "charm" }, { "attribute": "doom" }, { "attribute": "stop" }, { "attribute": "stun" }, { "attribute": "slow" } ] },
+	"Revive": { "type": "cure_status", "cost": 10, "level": 2, "target_group": "single", "status_effects": [ { "attribute": "knockout" } ] },
 	
 	# Buffs
 	"Haste": {"type": "buff", "attack_type": "magic", "attribute": "haste", "amount": 0, "duration": 3, "cost": 8, "level": 2, "target_group": "single"},
@@ -197,10 +200,7 @@ var spell_database = {
 	"Slow": {"type": "debuff", "attack_type": "magic", "attribute": "speed", "amount": -4, "duration": 3, "cost": 8, "level": 2, "target_group": "single"},
 	
 	# Especiais
-	"Summon Ifrit": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 100, "power_max": 120, "cost": 25, "level": 4, "hit_chance": 100, "target_group": "area"},
-	"Eidolon Burst": {"type": "damage", "attack_type": "magic", "power": 50, "cost": 20, "level": 4, "target_group": "area"},
-	"Divine Light": {"type": "heal", "attack_type": "magic", "power": 75, "cost": 14, "level": 3, "target_group": "area"},
-	"Summon Phoenix": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 120, "power_max": 140, "cost": 30, "level": 5, "hit_chance": 100, "target_group": "area"},
+	"Summon": {"type":"summon","cost":25,"level":4,"summon_data":{"nome":"Summon","STR":30,"DEX":15,"AGI":10,"CON":10,"MAG":35,"INT":30,"SPI":20,"LCK":10,"max_hp":100,"current_hp":100,"max_mp":100,"current_mp":100,"spells":["Fire Rain","Mega Flare"],"sprite_path":"res://assets/Invocação.png"}}
 }
 
 
@@ -246,6 +246,9 @@ var class_spell_trees = {
 			"Esuna": {"level": 1, "SPI": 6},
 			"Dispel": {"level": 1, "SPI": 1},
 			"Revive": {"level": 1, "SPI": 1},
+			"Cure": {"level": 1, "SPI": 1},
+			"Protect": {"level": 1, "SPI": 1},
+			"Shell": {"level": 1, "SPI": 1},
 		},
 		"skills": {},
 		"specials": {
@@ -335,17 +338,15 @@ var class_spell_trees = {
 
 	"Summoner": {
 		"spells": {
-			"Summon Ifrit": {"level": 3, "SPI": 6},
-			"Fire": {"level": 1, "SPI": 8},
-			"Dispel": {"level": 2, "SPI": 8},
+			"Summon": {"level": 1, "SPI": 2},
+			"Fire": {"level": 1, "SPI": 2},
+			"Dispel": {"level": 1, "SPI": 2},
 		},
 		"skills": {},
 		"specials": {
 			"Eidolon Burst": {"level": 1, "SPI": 2}
 		},
-		"spell_upgrades": {
-			"Summon Ifrit": "Summon Phoenix"
-		},
+		"spell_upgrades": {},
 		"skill_upgrades": {}
 	}
 }
@@ -379,8 +380,6 @@ func is_player(actor) -> bool:
 func perform_enemy_action(enemy_actor) -> void:
 	var rng = RandomNumberGenerator.new()
 	rng.randomize()
-
-	print("Inimigo agindo:", enemy_actor.name)
 
 	var target
 
@@ -448,8 +447,8 @@ func get_player_position(index: int, is_front: bool) -> Vector2:
 	return Vector2(100, 500)
 
 func get_enemy_position(index: int) -> Vector2:
-	var base_x = 400
-	var base_y = 400
+	var base_x = 250
+	var base_y = 380
 	var offset_y = 120  # distância vertical entre inimigos na mesma linha
 	var offset_x = 280  # distância horizontal entre as duas linhas
 
@@ -470,7 +469,6 @@ func check_battle_state() -> bool:
 		hud.show_top_message("Vitória! Todos os inimigos foram derrotados.")
 		end_battle(true)
 		return true
-
 	# Verifica se todos os jogadores estão mortos
 	var all_players_dead = party.all(func(p): return not p.is_alive())
 
@@ -478,7 +476,11 @@ func check_battle_state() -> bool:
 		hud.show_top_message("Derrota! Todos os heróis caíram.")
 		end_battle(false)
 		return true
-
+		# Checa se o summon morreu
+	if in_summon_mode and (not current_summon or not current_summon.is_alive()):
+		restore_saved_party()
+		return false  # A batalha continua
+		
 	return false  # A batalha continua
 
 func end_battle(victory: bool) -> void:
@@ -486,16 +488,29 @@ func end_battle(victory: bool) -> void:
 	hud.set_hud_buttons_enabled(false)
 
 	if victory:
-		print("Fim da batalha: Vitória")
-		var total_xp = 0
-		for enemy in enemies:
-			total_xp += enemy.xp_value
-		for member in party:
-			member.gain_xp(total_xp)
-			unlock_available_spells_and_skills(member)
-		_save_party_status()
-		await get_tree().create_timer(5.0).timeout
-		start_battle()
+		if in_summon_mode:
+			restore_saved_party()
+			print("Fim da batalha: Vitória")
+			var total_xp = 0
+			for enemy in enemies:
+				total_xp += enemy.xp_value
+			for member in party:
+				member.gain_xp(total_xp)
+				unlock_available_spells_and_skills(member)
+			_save_party_status()
+			await get_tree().create_timer(3.0).timeout
+			start_battle()
+		else:
+			print("Fim da batalha: Vitória")
+			var total_xp = 0
+			for enemy in enemies:
+				total_xp += enemy.xp_value
+			for member in party:
+				member.gain_xp(total_xp)
+				unlock_available_spells_and_skills(member)
+			_save_party_status()
+			await get_tree().create_timer(3.0).timeout
+			start_battle()
 	else:
 		print("Fim da batalha: Derrota")
 		await get_tree().create_timer(1.0).timeout
@@ -653,6 +668,51 @@ func drain_mp(user, alvo):
 	alvo.current_mp -= amount
 	user.current_mp += amount
 	hud.show_top_message("%s drenou %d MP de %s!" % [user.nome, amount, alvo.nome])
+
+func restore_saved_party():
+	in_summon_mode = false
+	party = saved_party.duplicate()
+	saved_party.clear()
+
+	# Remove sprite do summon
+	if current_summon and current_summon.sprite_ref:
+		current_summon.sprite_ref.queue_free()
+	current_summon = null
+
+	# Recria sprites dos membros salvos
+	var front_index = 0
+	var back_index = 0
+
+	for member in party:
+		member.restore_spell_slots()  # 🧠 Restaurar slots de magia
+
+		var is_front = member.position_line == "front"
+		var sprite_pos_index = 0
+		if is_front:
+			sprite_pos_index = front_index
+		else:
+			sprite_pos_index = back_index
+
+		var sprite = preload("res://decades/1990s/Battle/PlayerSprite.tscn").instantiate()
+		sprite.set_sprite(class_sprite_paths.get(member.classe_name, ""))
+		sprite.position = get_player_position(sprite_pos_index, is_front)
+		sprite.set_player(member)
+
+		if is_front:
+			front_index += 1
+		else:
+			back_index += 1
+
+		if member.classe_name == "Monk":
+			sprite.scale = Vector2(0.8, 0.8)
+
+		member.sprite_ref = sprite
+		characters_node.add_child(sprite)
+
+	# Atualiza turnos e HUD
+	turn_order = party + enemies
+	hud.update_party_info(party)
+	atualizar_obstrucao_party()  # Inclua se for necessário
 
 # CRIAÇÃO DE INIMIGOS E PLAYER
 
@@ -917,7 +977,7 @@ func start_battle(party_data: Array = []) -> void:
 	atualizar_obstrucao_inimigos()
 	
 	hud.update_party_info(party)
-	hud.update_enemy_info(enemies)
+	#hud.update_enemy_info(enemies)
 	
 	battle_active = true
 	turn_order = party + enemies
@@ -1074,13 +1134,12 @@ func create_spell(name: String, data: Dictionary) -> Spell:
 		effect.amount = data.get("amount", 0)
 		effect.duration = data.get("duration", 3)
 		effect.type = StatusEffect.Type.BUFF
-		effect.status_type = data["attribute"]  # Pode ser usado para identificar efeito por nome
+		effect.status_type = data["attribute"]
 		s.status_effects.append(effect)
 
 	# Caso tenha lista de status_effects (ex: debuffs como Poison Cloud, Sleep, etc.)
 	elif data.has("status_effects"):
 		for effect_dict in data["status_effects"]:
-			print("DEBUG: effect_dict =", effect_dict)  # debug
 			var effect = StatusEffect.new()
 			effect.attribute = effect_dict.get("attribute", "")
 			effect.amount = effect_dict.get("amount", -1)
@@ -1089,7 +1148,7 @@ func create_spell(name: String, data: Dictionary) -> Spell:
 			effect.status_type = effect_dict.get("attribute", "")
 			effect.type = StatusEffect.Type.DEBUFF
 			s.status_effects.append(effect)
-	
+
 	# Geração automática da descrição
 	var desc_parts = []
 
@@ -1111,6 +1170,11 @@ func create_spell(name: String, data: Dictionary) -> Spell:
 		"debuff":
 			desc_parts.append("Tenta aplicar debuff")
 
+		"summon":
+			if data.has("summon_data"):
+				s.summon_data = data["summon_data"]
+				desc_parts.append("Invoca %s para lutar temporariamente." % s.summon_data.get("nome", "???"))
+
 	# Adiciona efeitos de status, se houver
 	if not s.status_effects.is_empty():
 		for eff in s.status_effects:
@@ -1131,7 +1195,7 @@ func create_spell(name: String, data: Dictionary) -> Spell:
 
 	# Junta tudo na descrição final
 	s.description = ". ".join(desc_parts) + "."
-	
+
 	return s
 
 func create_skill(name: String, data: Dictionary) -> Skill:
@@ -1165,6 +1229,45 @@ func create_special(name: String, data: Dictionary) -> Special:
 	s.duration = data.get("duration", 0)
 	s.level = data.get("level", 1)
 	return s
+
+func summon_entity(spell: Spell, caster):
+	if in_summon_mode:
+		hud.show_top_message("Já há uma invocação ativa!")
+		return
+
+	in_summon_mode = true
+
+	saved_party = party.duplicate()
+	for member in saved_party:
+		if member.sprite_ref:
+			member.sprite_ref.queue_free()
+
+	var summon_data = spell.summon_data
+	var sprite_path = summon_data.get("sprite_path", "")
+	var summon = Summon.new()
+	summon.setup(summon_data["nome"], summon_data, sprite_path)
+	
+	# Agora você pode fazer:
+	for spell_name in summon_data.get("spells", []):
+		if spell_database.has(spell_name):
+			var new_spell = create_spell(spell_name, spell_database[spell_name])
+			summon.spells.append(new_spell)
+	
+	current_summon = summon
+	party = [summon]
+
+	# Criação da sprite
+	var summon_sprite = preload("res://decades/1990s/Battle/PlayerSprite.tscn").instantiate()
+	summon_sprite.set_sprite(sprite_path)
+	summon_sprite.position = get_player_position(0, true)
+	summon_sprite.set_player(summon)
+	summon_sprite.scale = Vector2(1.5, 1.5)
+	summon.sprite_ref = summon_sprite
+	characters_node.add_child(summon_sprite)
+
+	turn_order = [summon] + enemies
+	_create_menu()
+	hud.update_party_info(party)
 
 func get_spell_by_name(spells: Array, name: String) -> Spell:
 	for spell in spells:
@@ -1397,7 +1500,7 @@ func _execute_skill(user, skill, alvo):
 		effect.amount = skill.amount
 		effect.duration = skill.duration if skill.duration > 0 else 3
 		effect.type = StatusEffect.Type.BUFF
-		alvo.apply_status_effect(effect)
+		alvo.apply_status_effect(effect, (skill.hit_chance * 100))
 		hud.show_top_message("%s aumentou %s de %s com %s!" % [user.nome, effect.attribute, alvo.nome, skill.name])
 	
 	elif skill.effect_type == "special":
@@ -1426,11 +1529,11 @@ func _execute_skill(user, skill, alvo):
 			status_effect.amount = 0  # para status como "stun", "poison", etc.
 			status_effect.duration = skill.duration if skill.duration > 0 else 2
 			status_effect.type = StatusEffect.Type.DEBUFF
-			alvo.apply_status_effect(status_effect)
+			alvo.apply_status_effect(status_effect, (skill.hit_chance * 100))
 			hud.show_top_message("%s foi afetado por %s!" % [alvo.nome, skill.status_inflicted])
 
 	reset_atb(user)
-	hud.update_enemy_info(enemies)
+	#hud.update_enemy_info(enemies)
 	hud.update_party_info(party)
 	_create_menu()
 	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
@@ -1519,7 +1622,7 @@ func _execute_skill_area(user, skill, alvos):
 			effect.amount = skill.amount
 			effect.duration = skill.duration if skill.duration > 0 else 3
 			effect.type = StatusEffect.Type.BUFF
-			alvo.apply_status_effect(effect)
+			alvo.apply_status_effect(effect, (skill.hit_chance * 100))
 			hud.show_top_message("%s aumentou %s de %s com %s!" % [user.nome, effect.attribute, alvo.nome, skill.name])
 
 		# Aplica status secundário se existir
@@ -1530,11 +1633,11 @@ func _execute_skill_area(user, skill, alvos):
 				status_effect.amount = 0
 				status_effect.duration = skill.duration if skill.duration > 0 else 2
 				status_effect.type = StatusEffect.Type.DEBUFF
-				alvo.apply_status_effect(status_effect)
+				alvo.apply_status_effect(status_effect, (skill.hit_chance * 100))
 				hud.show_top_message("%s foi afetado por %s!" % [alvo.nome, skill.status_inflicted])
 
 	reset_atb(user)
-	hud.update_enemy_info(enemies)
+	#hud.update_enemy_info(enemies)
 	hud.update_party_info(party)
 	await get_tree().create_timer(0).timeout
 	_create_menu()
@@ -1634,7 +1737,7 @@ func _execute_spell_area(caster, spell_name, alvos):
 				effect.amount = spell.amount
 				effect.duration = spell.duration
 				effect.type = StatusEffect.Type.BUFF if spell.type == "buff" else StatusEffect.Type.DEBUFF
-				alvo.apply_status_effect(effect)
+				alvo.apply_status_effect(effect, spell.chance)
 
 				var acao = "aumentado" if spell.type == "buff" else "reduzido"
 				hud.show_top_message("%s teve %s %s por %s!" % [alvo.nome, spell.attribute, acao, spell.name])
@@ -1647,7 +1750,7 @@ func _execute_spell_area(caster, spell_name, alvos):
 					extra_effect.amount = entry.get("amount", 0)
 					extra_effect.duration = entry.get("duration", 3)
 					extra_effect.type = StatusEffect.Type.DEBUFF  # sempre debuff nos casos listados
-					alvo.apply_status_effect(extra_effect)
+					alvo.apply_status_effect(extra_effect, spell.chance)
 
 					hud.show_top_message("%s sofreu o efeito %s de %s!" % [alvo.nome, extra_effect.attribute, spell.name])
 		
@@ -1663,24 +1766,20 @@ func _execute_spell_area(caster, spell_name, alvos):
 			else:
 				hud.show_top_message("%s não tinha status removíveis com %s." % [alvo.nome, spell.name])
 	reset_atb(caster)
-	hud.update_enemy_info(enemies)
+	#hud.update_enemy_info(enemies)
 	hud.update_party_info(party)
-	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+	await get_tree().create_timer(0).timeout
+	_create_menu()
 	end_turn()
 
 func _execute_spell_single(caster, spell_name, alvo):
 	var spell = get_spell_by_name(caster.spells, spell_name)
-	print(spell)
 	if spell == null:
 		hud.show_top_message("Magia não encontrada.")
 		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 		end_turn()
 		return
 	
-	if alvo.has_status("float") and spell.element == "earth":
-		hud.show_top_message("%s flutuou e evitou o ataque!" % alvo.nome)
-		return
-
 	if caster.current_mp < spell.cost:
 		hud.show_top_message("%s não tem MP suficiente para usar %s!" % [caster.nome, spell.name])
 		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
@@ -1697,7 +1796,26 @@ func _execute_spell_single(caster, spell_name, alvo):
 	caster.spell_slots[spell.level] -= 1
 
 	var tipo = spell.type
-	var efeito = 0
+
+	# Se for uma invocação, não precisa de alvo
+	if tipo == "summon":
+		summon_entity(spell, caster)
+		reset_atb(caster)
+		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+		end_turn()  # <- Força próximo turno ao invés de end_turn()
+		return
+
+	# Verifica alvo só se necessário
+	if alvo == null:
+		hud.show_top_message("Nenhum alvo válido.")
+		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+		end_turn()
+		return
+
+	# Checa se o alvo evitou o ataque por estar flutuando
+	if alvo.has_status("float") and spell.element == "earth":
+		hud.show_top_message("%s flutuou e evitou o ataque!" % alvo.nome)
+		return
 
 	if tipo == "damage":
 		var base_dano = spell.power + caster.get_modified_stat(caster.INT, "INT")
@@ -1763,7 +1881,7 @@ func _execute_spell_single(caster, spell_name, alvo):
 			effect.duration = spell.duration
 			effect.type = StatusEffect.Type.BUFF if spell.type == "buff" else StatusEffect.Type.DEBUFF
 			effect.status_type = spell.attribute
-			alvo.apply_status_effect(effect)
+			alvo.apply_status_effect(effect, spell.chance)
 
 			var acao = "aumentado" if spell.type == "buff" else "reduzido"
 			hud.show_top_message("%s teve %s %s por %s!" % [alvo.nome, spell.attribute, acao, spell.name])
@@ -1771,7 +1889,6 @@ func _execute_spell_single(caster, spell_name, alvo):
 		# Agora aplica a lista de status_effects
 		for entry in spell.status_effects:
 			var effect = StatusEffect.new()
-			print(entry["attribute"])
 			effect.attribute = entry["attribute"]
 			effect.amount = entry["amount"]
 			effect.duration = entry["duration"]
@@ -1795,8 +1912,9 @@ func _execute_spell_single(caster, spell_name, alvo):
 		else:
 			hud.show_top_message("%s não tinha status removíveis com %s." % [alvo.nome, spell.name])
 
+
 	reset_atb(caster)
-	hud.update_enemy_info(enemies)
+	#hud.update_enemy_info(enemies)
 	hud.update_party_info(party)
 	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 	end_turn()
@@ -1870,7 +1988,7 @@ func perform_attack(attacker, target) -> void:
 
 	# Reset ATB
 	reset_atb(attacker)
-	hud.update_enemy_info(enemies)
+	#hud.update_enemy_info(enemies)
 	hud.update_party_info(party)
 
 func _execute_special_area(caster, special: Special, alvos):
@@ -1900,7 +2018,7 @@ func _execute_special_area(caster, special: Special, alvos):
 
 	hud.show_top_message("%s usou %s!" % [caster.nome, special.name])
 	reset_atb(caster)
-	hud.update_enemy_info(enemies)
+	#hud.update_enemy_info(enemies)
 	hud.update_party_info(party)
 	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 
@@ -1938,7 +2056,7 @@ func _execute_special_single(user, special, alvo):
 
 	# Pós-ação
 	reset_atb(user)
-	hud.update_enemy_info(enemies)
+	#hud.update_enemy_info(enemies)
 	hud.update_party_info(party)
 	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 
@@ -1965,7 +2083,7 @@ func apply_spell_effects(target, spell, caster):
 			effect.type = StatusEffect.Type.BUFF
 		else:
 			effect.type = StatusEffect.Type.DEBUFF
-		target.apply_status_effect(effect)
+		target.apply_status_effect(effect, spell.chance)
 
 		var acao = effect.type == StatusEffect.Type.BUFF and "aumentado" or "reduzido"
 		if effect.status_type != "":
@@ -2303,7 +2421,12 @@ func _on_magic_selected(spell_name: String):
 		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 		next_turn()
 		return
-
+	
+	# Se for uma magia de invocação, executa direto e pula o alvo
+	if spell_data.type == "summon":
+		await _execute_spell_single(caster, spell_name, null)
+		return
+	
 	var tipo = spell_data.type
 	var alvos := []
 
