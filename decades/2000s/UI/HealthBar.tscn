@@ -1,0 +1,20 @@
+[gd_scene load_steps=2 format=3 uid="uid://ctlglj0bt1h4m"]
+
+[ext_resource type="Script" uid="uid://ct0xw5nodf1vw" path="res://decades/2000s/UI/HealthBar.gd" id="1_xrimc"]
+
+[node name="HeathBar" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_xrimc")
+
+[node name="RedBar" type="ColorRect" parent="."]
+layout_mode = 0
+offset_right = 100.0
+offset_bottom = 15.0
+color = Color(1, 0, 0, 1)
+
+[node name="GreenBar" type="ColorRect" parent="."]
+layout_mode = 0
+offset_right = 100.0
+offset_bottom = 15.0
+color = Color(0, 1, 0, 1)

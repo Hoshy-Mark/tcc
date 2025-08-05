@@ -123,7 +123,7 @@ var class_base_stats = {
 		"attack_type": "pierce"
 	},
 	"Cleric": {
-		"STR": 3, "DEX": 50, "AGI": 50, "CON": 6, "MAG": 10, "INT": 8, "SPI": 15, "LCK": 7,
+		"STR": 3, "DEX": 4, "AGI": 7, "CON": 6, "MAG": 10, "INT": 8, "SPI": 15, "LCK": 7,
 		"attack_type": "blunt"
 	},
 	"Hunter": {
@@ -135,7 +135,7 @@ var class_base_stats = {
 		"attack_type": "slash"
 	},
 	"Monk": {
-		"STR": 50, "DEX": 8, "AGI": 8, "CON": 9, "MAG": 2, "INT": 3, "SPI": 4, "LCK": 12,
+		"STR": 11, "DEX": 8, "AGI": 8, "CON": 9, "MAG": 2, "INT": 3, "SPI": 4, "LCK": 12,
 		"attack_type": "blunt"
 	},
 	"Summoner": {
@@ -145,14 +145,14 @@ var class_base_stats = {
 }
 
 var class_spell_slots = {
-	"Mage": {1: 4, 2: 3, 3: 2},
-	"Cleric": {1: 5, 2: 5, 3: 5},
-	"Paladin":  {1: 3, 2: 2},
-	"Summoner": {1: 3, 2: 2, 3:5, 4:2},
-	"Monk":  {1: 3, 2: 2},
-	"Hunter":  {1: 3, 2: 2},
-	"Thief":  {1: 3, 2: 2},
-	"Knight":  {1: 3, 2: 2}
+	"Mage": {1: 3, 2: 2, 3:5, 4:2, 5:1},
+	"Cleric": {1: 3, 2: 2, 3:5, 4:2, 5:1},
+	"Paladin":  {1: 3, 2: 2, 3:5, 4:2, 5:1},
+	"Summoner": {1: 3, 2: 2, 3:5, 4:2, 5:1},
+	"Monk":  {1: 3, 2: 2, 3:5, 4:2, 5:1},
+	"Hunter":  {1: 3, 2: 2, 3:5, 4:2, 5:1},
+	"Thief": {1: 3, 2: 2, 3:5, 4:2, 5:1},
+	"Knight": {1: 3, 2: 2, 3:5, 4:2, 5:1},
 }
 
 var spell_database = {
@@ -160,11 +160,11 @@ var spell_database = {
 	"Fire": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 25, "power_max": 35, "cost": 5, "level": 1, "hit_chance": 95, "target_group": "single"},
 	"Ice": {"type": "damage", "element": "ice", "attack_type": "magic", "power": 22, "power_max": 32, "cost": 5, "level": 1, "hit_chance": 95, "target_group": "single"},
 	"Thunder": {"type": "damage", "element": "lightning", "attack_type": "magic", "power": 28, "power_max": 38, "cost": 6, "level": 1, "hit_chance": 90, "target_group": "single"},
-	"Flare": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 80, "power_max": 100, "cost": 20, "level": 3, "hit_chance": 85, "target_group": "single"},
-	"Fire Rain": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 30, "cost": 8, "level": 2, "target_group": "line"},
+	"Flare": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 80, "power_max": 100, "cost": 20, "level": 2, "hit_chance": 85, "target_group": "single"},
+	"Fire Rain": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 30, "cost": 8, "level": 3, "target_group": "line"},
 	"Mega Flare": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 60, "cost": 10, "level": 4, "target_group": "area"},
-	"Divine Blade": {"type": "damage", "attack_type": "holy", "power": 45, "cost": 10, "level": 4, "target_group": "single", "status_effects": [{"attribute": "blind", "amount": -1, "duration": 3, "chance": 30}]},
-	"Holy Smite": {"type": "damage", "attack_type": "holy", "power": 60, "cost": 15, "level": 4, "target_group": "single"},
+	"Divine Blade": {"type": "damage", "attack_type": "holy", "power": 45, "cost": 10, "level": 3, "target_group": "single", "status_effects": [{"attribute": "blind", "amount": -1, "duration": 3, "chance": 30}]},
+	"Holy Smite": {"type": "damage", "attack_type": "holy", "power": 60, "cost": 15, "level": 3, "target_group": "single"},
 
 	# Cura de Vida
 	"Cure": {"type": "heal", "attack_type": "magic", "power": 30, "cost": 5, "level": 1, "target_group": "single"},
@@ -174,12 +174,12 @@ var spell_database = {
 	# Cura de Status
 	"Esuna": { "type": "cure_status", "cost": 6, "level": 2, "target_group": "single", "status_effects": [ { "attribute": "poison" }, { "attribute": "sleep" }, { "attribute": "paralysis" }, { "attribute": "blind" }, { "attribute": "confuse" }, { "attribute": "curse" }, { "attribute": "petrify" } ] },
 	"Dispel": { "type": "cure_status", "cost": 8, "level": 2, "target_group": "single", "status_effects": [ { "attribute": "charm" }, { "attribute": "doom" }, { "attribute": "stop" }, { "attribute": "stun" }, { "attribute": "slow" } ] },
-	"Revive": { "type": "cure_status", "cost": 10, "level": 2, "target_group": "single", "status_effects": [ { "attribute": "knockout" } ] },
+	"Revive": { "type": "cure_status", "cost": 10, "level": 3, "target_group": "single", "status_effects": [ { "attribute": "knockout" } ] },
 	
 	# Buffs
-	"Haste": {"type": "buff", "attack_type": "magic", "attribute": "haste", "amount": 0, "duration": 3, "cost": 8, "level": 2, "target_group": "single"},
+	"Haste": {"type": "buff", "attack_type": "magic", "attribute": "haste", "amount": 0, "duration": 3, "cost": 8, "level": 3, "target_group": "single"},
 	"Blink": {"type": "buff", "attack_type": "magic", "attribute": "blink", "amount": 2, "duration": 5, "cost": 10, "level": 3, "target_group": "single"},
-	"Reflect": {"type": "buff", "attack_type": "magic", "attribute": "reflect", "amount": 1, "duration": 3, "cost": 10, "level": 3, "target_group": "single"},
+	"Reflect": {"type": "buff", "attack_type": "magic", "attribute": "reflect", "amount": 1, "duration": 3, "cost": 10, "level": 4, "target_group": "single"},
 	"Protect": {"type": "buff", "attack_type": "magic", "attribute": "protect", "amount": 5, "duration": 3, "cost": 6, "level": 1, "target_group": "single"},
 	"Shell": {"type": "buff", "attack_type": "magic", "attribute": "shell", "amount": 5, "duration": 3, "cost": 6, "level": 1, "target_group": "single"},
 

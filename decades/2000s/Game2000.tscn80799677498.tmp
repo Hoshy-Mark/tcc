@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3 uid="uid://cn88tp7c3upiu"]
+
+[ext_resource type="Script" uid="uid://cwrqx05t0qyo6" path="res://decades/2000s/Game2000.gd" id="1_3lq5v"]
+[ext_resource type="Script" uid="uid://cwemsjjru0fsr" path="res://decades/2000s/Battle/BattleManager.gd" id="2_qhyur"]
+
+[node name="Game2000" type="Node3D"]
+script = ExtResource("1_3lq5v")
+
+[node name="BattleManager" type="Node" parent="."]
+script = ExtResource("2_qhyur")

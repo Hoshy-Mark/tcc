@@ -1,0 +1,26 @@
+[gd_scene load_steps=5 format=3 uid="uid://qmyjjk6ow05s"]
+
+[ext_resource type="Script" uid="uid://cj0y8cwphjvq3" path="res://decades/2000s/UI/CombatHUD.gd" id="1_ax2pw"]
+[ext_resource type="Texture2D" uid="uid://civnfwmot8wxt" path="res://assets/Attack.png" id="2_d87pd"]
+[ext_resource type="Texture2D" uid="uid://ctqmkmvn4xc4r" path="res://assets/Defend.png" id="3_wqnai"]
+[ext_resource type="Texture2D" uid="uid://xq1whnuvjceo" path="res://assets/Inventory.png" id="4_er6tn"]
+
+[node name="GameUI" type="CanvasLayer"]
+script = ExtResource("1_ax2pw")
+
+[node name="ActionPanel" type="HBoxContainer" parent="."]
+offset_right = 1544.0
+offset_bottom = 512.0
+scale = Vector2(0.3, 0.3)
+
+[node name="AttackButton" type="TextureButton" parent="ActionPanel"]
+layout_mode = 2
+texture_normal = ExtResource("2_d87pd")
+
+[node name="DefendButton" type="TextureButton" parent="ActionPanel"]
+layout_mode = 2
+texture_normal = ExtResource("3_wqnai")
+
+[node name="ItemButton" type="TextureButton" parent="ActionPanel"]
+layout_mode = 2
+texture_normal = ExtResource("4_er6tn")
