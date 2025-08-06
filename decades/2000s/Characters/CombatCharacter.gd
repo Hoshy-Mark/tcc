@@ -127,7 +127,19 @@ func _handle_movement(delta: float) -> void:
 			move_and_slide()
 			anim.play("Idle")
 	else:
-		move_and_slide()
+		if is_moving:
+			var next_pos = nav_agent.get_next_path_position()
+			var direction = (next_pos - global_position).normalized()
+			velocity = direction * move_speed
+			rotation.y = lerp_angle(rotation.y, atan2(direction.x, direction.z), 0.1)
+			move_and_slide()
+			if anim and anim.current_animation != "Walking_A":
+				anim.play("Walking_A")
+		else:
+			velocity = Vector3.ZERO
+			move_and_slide()
+			if anim and anim.current_animation != "Idle":
+				anim.play("Idle")
 
 func _update_turn_charge(delta: float) -> void:
 	if is_turn_ready:

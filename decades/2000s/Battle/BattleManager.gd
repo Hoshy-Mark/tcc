@@ -87,38 +87,53 @@ func _set_active_character(character: CombatCharacter):
 		member.manual_control = (member == character and character == player_character)
 	
 func _process(delta):
+	# Atualiza e processa inimigos
 	for enemy in enemies:
 		enemy._update_turn_charge(delta)
 		enemy._update_vision_cone(player_character, 2.0)
 		if enemy.is_turn_ready and not enemy.is_performing_action:
-			enemy.is_performing_action = true  # <- Marca como ocupado
+			enemy.is_performing_action = true  # Marca como ocupado
 			await _handle_ai_turn(enemy)
 			enemy.turn_charge = 0.0
 			enemy.is_turn_ready = false
-			enemy.is_performing_action = false  # <- Libera depois da ação
+			enemy.is_performing_action = false  # Libera depois da ação
 
+	# Atualiza e processa membros da party
 	for member in party_members:
 		member._update_turn_charge(delta)
 
-		# Atualiza o cone do player com base na distância até os inimigos
+		if not member.manual_control and not member.is_performing_action:
+			await member.update_ai(delta)
+			var attack_range = 2.0
+			var closest_enemy: CombatCharacter = null
+			var min_dist = INF
+			for enemy in enemies:
+				var dist = member.global_position.distance_to(enemy.global_position)
+				if dist < min_dist:
+					min_dist = dist
+					closest_enemy = enemy
+			if closest_enemy:
+				member._update_vision_cone(closest_enemy, attack_range)
+
+		# Atualiza o cone de visão para o player controlado manualmente
 		if member == player_character:
 			var attack_range = 2.0
 			var closest_enemy: CombatCharacter = null
 			var min_dist = INF
-
 			for enemy in enemies:
 				var dist = player_character.global_position.distance_to(enemy.global_position)
 				if dist < min_dist:
 					min_dist = dist
 					closest_enemy = enemy
-
 			if closest_enemy:
 				player_character._update_vision_cone(closest_enemy, attack_range)
 
+		# Se for o player manual e pronto, mostra menu de ação
 		if member.is_turn_ready and member == player_character and not is_player_choosing_action:
 			is_player_choosing_action = true
 			if hud:
 				hud.show_action_menu(member)
+
 
 func _on_player_end_turn():
 	if not active_character:
@@ -241,3 +256,29 @@ func _auto_attack(character: CombatCharacter) -> void:
 		push_warning("Player não deve atacar automaticamente")
 		return
 	await _execute_attack(character)
+
+func _handle_party_member_ai_turn(member: CombatCharacter) -> void:
+	var attack_range = 2.0
+	var safe_distance = 5.0
+
+	var possible_targets = enemies.filter(func(e): return e.is_alive())
+	if possible_targets.size() == 0:
+		return
+
+	var target = possible_targets[randi() % possible_targets.size()]
+	var dist = member.global_position.distance_to(target.global_position)
+
+	if member.turn_charge < member.turn_threshold * 0.5:
+		var direction_away = (member.global_position - target.global_position).normalized()
+		var desired_pos = target.global_position + direction_away * safe_distance
+		member.nav_agent.target_position = desired_pos
+		member.is_moving = true
+	elif dist <= attack_range:
+		member.is_moving = false
+		member.velocity = Vector3.ZERO
+		var dir_to_target = (target.global_position - member.global_position).normalized()
+		member.rotation.y = atan2(dir_to_target.x, dir_to_target.z)
+		await member._attack_target(target)
+	else:
+		member.nav_agent.target_position = target.global_position
+		member.is_moving = true
