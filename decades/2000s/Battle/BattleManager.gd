@@ -89,11 +89,13 @@ func _set_active_character(character: CombatCharacter):
 func _process(delta):
 	for enemy in enemies:
 		enemy._update_turn_charge(delta)
-		enemy._update_vision_cone(player_character, 2.0) # <-- aqui
+		enemy._update_vision_cone(player_character, 2.0)
 		if enemy.is_turn_ready and not enemy.is_performing_action:
-			await _auto_attack(enemy)
+			enemy.is_performing_action = true  # <- Marca como ocupado
+			await _handle_ai_turn(enemy)
 			enemy.turn_charge = 0.0
 			enemy.is_turn_ready = false
+			enemy.is_performing_action = false  # <- Libera depois da ação
 
 	for member in party_members:
 		member._update_turn_charge(delta)
@@ -158,6 +160,7 @@ func _calculate_damage(attacker: CombatCharacter, target: CombatCharacter) -> in
 
 func _handle_ai_turn(character: CombatCharacter) -> void:
 	if character.has_method("update_ai"):
+		print("[AI TURN] Executando IA de ", character.name)
 		await character.update_ai(get_process_delta_time())
 	else:
 		push_error("Character " + character.name + " não tem método update_ai()")

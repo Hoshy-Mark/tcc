@@ -99,7 +99,6 @@ func _process(delta):
 		# Atualiza a barra de turno (turn_charge)
 		health_bar.set_turn_charge(turn_charge, turn_threshold)
 
-
 func _physics_process(delta: float) -> void:
 	_handle_movement(delta)
 
@@ -140,16 +139,18 @@ func _update_turn_charge(delta: float) -> void:
 		turn_charge = turn_threshold
 		is_turn_ready = true
 
-		# Notifica o BattleManager quando estiver pronto
-		var manager = get_tree().get_root().get_node("Main/BattleManager") # ajuste o caminho se necessário
+		var manager = get_tree().get_root().get_node("Game2000/BattleManager")  # corrigido o caminho
 		if manager and manager.has_method("on_character_ready"):
 			manager.on_character_ready(self)
 
-func receive_damage(amount: int):
+
+func receive_damage(amount: int) -> void:
 	print(name, " recebeu ", amount, " de dano! HP antes: ", hp)
 	hp -= amount
 	hp = max(hp, 0)
 	print(name, " HP depois do dano: ", hp)
+
+	is_performing_action = true  # BLOQUEIA movimento durante animação
 
 	if anim:
 		anim.play("Hit_B")
@@ -157,28 +158,36 @@ func receive_damage(amount: int):
 	if health_bar:
 		health_bar.set_health(hp, max_hp)
 
+	await get_tree().create_timer(1.0).timeout  # Espera 1 segundo
+
+	is_performing_action = false  # Libera o movimento, se ainda estiver vivo
+
 	if hp <= 0:
 		print(name, " está morrendo")
-		_die()
+		await _die()
 
-func _die():
+func _die() -> void:
 	print(name, " morreu!")
+
+	is_performing_action = true  # Evita se mover durante a morte
 
 	if anim:
 		anim.play("Death_A") 
 	
 	if health_bar:
 		health_bar.queue_free()
-	
-	await get_tree().create_timer(2.0).timeout
+
+	await get_tree().create_timer(1.0).timeout  # Espera 1 segundo antes de remover
 
 	# Remover da lista do BattleManager
-	var manager = get_tree().get_root().get_node("Game2000/BattleManager")  # Ajuste o caminho conforme a cena
+	var manager = get_tree().get_root().get_node("Game2000/BattleManager")
 	if manager:
 		if self in manager.enemies:
 			manager.enemies.erase(self)
 		elif self in manager.party_members:
 			manager.party_members.erase(self)
+
+	await get_tree().create_timer(1.0).timeout  # Espera mais 1 segundo para "sumir"
 
 	queue_free()
 
@@ -204,3 +213,6 @@ func _update_vision_cone(target: CombatCharacter, attack_range: float):
 	var local_direction = (to_local(target.global_position)).normalized()
 	var angle = atan2(local_direction.x, local_direction.z)
 	vision_cone.rotation.y = angle
+
+func is_alive() -> bool:
+	return hp > 0
