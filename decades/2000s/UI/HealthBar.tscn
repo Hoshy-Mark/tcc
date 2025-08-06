@@ -18,3 +18,18 @@ layout_mode = 0
 offset_right = 100.0
 offset_bottom = 15.0
 color = Color(0, 1, 0, 1)
+
+[node name="TurnChargeBar" type="Control" parent="."]
+anchors_preset = 0
+offset_right = 100.0
+offset_bottom = 15.0
+
+[node name="Background" type="ColorRect" parent="TurnChargeBar"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Fill" type="ColorRect" parent="TurnChargeBar"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0

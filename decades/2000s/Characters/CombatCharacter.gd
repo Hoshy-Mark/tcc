@@ -2,13 +2,13 @@ extends CharacterBody3D
 class_name CombatCharacter
 
 @onready var nav_agent: NavigationAgent3D = $NavigationAgent3D
-
+@onready var vision_cone: MeshInstance3D = $VisionCone
 var model: Node3D = null
 var anim: AnimationPlayer = null
 var health_bar_scene := preload("res://decades/2000s/UI/HealthBar.tscn")
 var health_bar: Control = null
 var progress_bar: ProgressBar = null
-
+var vision_cone_material: StandardMaterial3D = null
 # Atributos
 var move_speed := 4.0
 var hp := 100
@@ -29,7 +29,22 @@ var is_turn_ready := false
 func _ready():
 	
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	
+	if vision_cone:
+		# Fixar rotação local para frente do personagem
+		vision_cone.rotation_degrees = Vector3(90, 0, 0)  # apenas X
 
+		# Escala e posição relativa
+		vision_cone.scale = Vector3(0.3, 0.5, 0.3)
+		vision_cone.position = Vector3(0, 3.0, 0)  # na frente e acima
+
+		# Copiar material
+		var original_material = vision_cone.get_active_material(0)
+		if original_material:
+			vision_cone_material = original_material.duplicate()
+			vision_cone.set_surface_override_material(0, vision_cone_material)
+
+	
 	# Localizar modelo/anim
 	for child in get_children():
 		if child.has_node("AnimationPlayer"):
@@ -72,11 +87,18 @@ func _process(delta):
 		var dot = camera_forward.dot(to_char)
 		health_bar.visible = dot > 0.0
 
-		# Aqui aplica o deslocamento
+		# Aplica o deslocamento na posição da barra
 		var offset_x = -50  # ajustar para o lado que quiser
 		var offset_y = -25  # ajustar para cima/baixo
 
 		health_bar.position = screen_pos + Vector2(offset_x, offset_y)
+
+		# Atualiza a barra de vida
+		health_bar.set_health(hp, max_hp)
+
+		# Atualiza a barra de turno (turn_charge)
+		health_bar.set_turn_charge(turn_charge, turn_threshold)
+
 
 func _physics_process(delta: float) -> void:
 	_handle_movement(delta)
@@ -124,9 +146,10 @@ func _update_turn_charge(delta: float) -> void:
 			manager.on_character_ready(self)
 
 func receive_damage(amount: int):
+	print(name, " recebeu ", amount, " de dano! HP antes: ", hp)
 	hp -= amount
 	hp = max(hp, 0)
-	print(name, " sofreu ", amount, " de dano! HP restante: ", hp)
+	print(name, " HP depois do dano: ", hp)
 
 	if anim:
 		anim.play("Hit_B")
@@ -135,6 +158,7 @@ func receive_damage(amount: int):
 		health_bar.set_health(hp, max_hp)
 
 	if hp <= 0:
+		print(name, " está morrendo")
 		_die()
 
 func _die():
@@ -161,3 +185,22 @@ func _die():
 func set_camera(cam: Camera3D):
 	if cam:
 		camera = cam
+
+func update_ai(_delta: float) -> void:
+	# IA desativada, ataques automáticos serão tratados no BattleManager
+	pass
+	
+func _update_vision_cone(target: CombatCharacter, attack_range: float):
+	if not vision_cone_material or not target:
+		return
+
+	# Atualiza a cor do cone com base na distância
+	var distance := global_position.distance_to(target.global_position)
+	var is_in_range := distance <= attack_range
+	var color := Color(1, 0, 0, 0.4) if is_in_range else Color(0, 0, 1, 0.4)
+	vision_cone_material.albedo_color = color
+
+	# Faz o cone mirar no inimigo (rotaciona localmente em Y)
+	var local_direction = (to_local(target.global_position)).normalized()
+	var angle = atan2(local_direction.x, local_direction.z)
+	vision_cone.rotation.y = angle

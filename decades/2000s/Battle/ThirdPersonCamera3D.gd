@@ -9,12 +9,12 @@ var follow_target: Node3D = null
 var is_in_tactical_mode := false
 
 # Ângulos (em graus)
-var combat_rotation := Vector3(-30, 0, 0)
-var tactical_rotation := Vector3(-30, 0, 0)
+var combat_rotation := Vector3(-35, 0, 0)
+var tactical_rotation := Vector3(-35, 0, 0)
 
 # Comprimento do SpringArm (distância da câmera ao personagem)
-var combat_distance_z := 8
-var tactical_distance_z := 8
+var combat_distance_z := 9
+var tactical_distance_z := 9
 
 # Log
 var _time_accum := 0.0

@@ -18,6 +18,8 @@ var active_character: CombatCharacter = null
 var camera: ThirdPersonCamera3D = null
 var hud: CanvasLayer = null  # <-- nova variável para armazenar o HUD
 var player_character: CombatCharacter = null
+var is_processing_turn = false
+var is_player_choosing_action: bool = false
 
 func _ready():
 	_spawn_party()
@@ -52,7 +54,7 @@ func _spawn_party():
 		# Knight será o último no array (index 3)
 		if i == 3:
 			char.manual_control = true
-			player_character = char  # <-- armazenamos o Knight aqui
+			player_character = char
 		else:
 			char.manual_control = false  # serão IA no futuro
 
@@ -80,89 +82,140 @@ func set_camera(cam: ThirdPersonCamera3D):
 func _set_active_character(character: CombatCharacter):
 	active_character = character
 	camera.set_follow_target(character)
-	print("BattleManager: Personagem ativo agora é: ", character.name)
+
 	for member in party_members:
-		member.manual_control = false
-	character.manual_control = true
+		member.manual_control = (member == character and character == player_character)
 	
 func _process(delta):
 	for enemy in enemies:
-		if not enemy.manual_control and enemy.has_method("update_ai"):
-			enemy.update_ai(delta)
+		enemy._update_turn_charge(delta)
+		enemy._update_vision_cone(player_character, 2.0) # <-- aqui
+		if enemy.is_turn_ready and not enemy.is_performing_action:
+			await _auto_attack(enemy)
+			enemy.turn_charge = 0.0
+			enemy.is_turn_ready = false
 
 	for member in party_members:
 		member._update_turn_charge(delta)
 
-	_check_turns()
+		# Atualiza o cone do player com base na distância até os inimigos
+		if member == player_character:
+			var attack_range = 2.0
+			var closest_enemy: CombatCharacter = null
+			var min_dist = INF
 
-func _check_turns():
-	if get_tree().paused:
-		return  # já está pausado, esperando ação
+			for enemy in enemies:
+				var dist = player_character.global_position.distance_to(enemy.global_position)
+				if dist < min_dist:
+					min_dist = dist
+					closest_enemy = enemy
 
+			if closest_enemy:
+				player_character._update_vision_cone(closest_enemy, attack_range)
+
+		if member.is_turn_ready and member == player_character and not is_player_choosing_action:
+			is_player_choosing_action = true
+			if hud:
+				hud.show_action_menu(member)
+
+func _on_player_end_turn():
 	if not active_character:
-		for member in party_members:
-			if member.is_turn_ready:
-				_pause_game_for_action(member)
-				return
-	else:
-		print("DEBUG _check_turns: Já existe personagem ativo: ", active_character.name)
-				
-func _pause_game_for_action(character: CombatCharacter):
-	active_character = character
-	camera.set_follow_target(character)
+		return
 
-	# Modo de câmera depende se o personagem é controlado pelo jogador
-	if character.manual_control:
-		camera.set_camera_to_tactical()
-	else:
-		camera.set_camera_to_tactical()
-
-	get_tree().paused = true
-
-	if hud:
-		hud.show_action_menu(character)
-	else:
-		push_error("HUD não está definido no BattleManager ao tentar mostrar menu de ações!")
-
-
-func _on_player_action_selected(action_name: String):
-
-	match action_name:
-		"attack":
-			_execute_attack(active_character)
-		"defend":
-			_execute_defend(active_character)
-		"item":
-			_execute_item(active_character)
-
-	if hud:
-		hud.hide_action_menu()
-	get_tree().paused = false
-
+	# Finaliza o turno do personagem manual
 	active_character.turn_charge = 0.0
 	active_character.is_turn_ready = false
 	active_character = null
-	camera.set_follow_target(player_character)  # volta a seguir o Knight
+
+	get_tree().paused = false
+
+	camera.set_follow_target(player_character)
 	camera.set_camera_to_combat()
 
 	call_deferred("_check_turns")
 
+
+
+func on_character_ready(character: CombatCharacter):
+	# Se o jogo já está pausado (alguém no meio da ação), não faz nada
+	if get_tree().paused or active_character:
+		return
+
+func _calculate_damage(attacker: CombatCharacter, target: CombatCharacter) -> int:
+	var base_damage = 20
+	var attacker_dir = (target.global_position - attacker.global_position).normalized()
+	var target_forward = -target.global_transform.basis.z.normalized()
+	var dot = attacker_dir.dot(target_forward)
+
+	if dot > 0.75:
+		# ataque pelas costas
+		return base_damage * 2
+	elif dot > 0.3:
+		# ataque lateral
+		return base_damage * 1.5
+	else:
+		return base_damage
+
+func _handle_ai_turn(character: CombatCharacter) -> void:
+	if character.has_method("update_ai"):
+		await character.update_ai(get_process_delta_time())
+	else:
+		push_error("Character " + character.name + " não tem método update_ai()")
+
+
+# O jogador escolhe a ação, então no handler:
+func _on_player_action_selected(action_name: String):
+	match action_name:
+		"attack":
+			await _execute_attack(player_character)
+		"defend":
+			await _execute_defend(player_character)
+		"item":
+			await _execute_item(player_character)
+
+	if hud:
+		hud.hide_action_menu()
+
+	player_character.turn_charge = 0.0
+	player_character.is_turn_ready = false
+	is_player_choosing_action = false
+
 func _execute_attack(character: CombatCharacter):
+	if character == null:
+		return
+	
 	print(character.name + " atacou!")
 	character.is_performing_action = true
-	character.anim.play("1H_Melee_Attack_Slice_Diagonal")
-
-	await character.anim.animation_finished
+	
+	# Toca animação de ataque
+	if character.anim:
+		character.anim.play("1H_Melee_Attack_Slice_Diagonal")
+		await character.anim.animation_finished
+	
 	character.is_performing_action = false
 
 	var attack_range = 2.0
-
 	var possible_targets = enemies if character in party_members else party_members
+	
+	# Verifica o alvo mais próximo dentro do alcance
+	var closest_target: CombatCharacter = null
+	var min_distance := INF
 
 	for target in possible_targets:
-		if character.global_position.distance_to(target.global_position) <= attack_range:
-			target.receive_damage(20)  # ou outro valor
-		
+		var dist = character.global_position.distance_to(target.global_position)
+		if dist <= attack_range and dist < min_distance:
+			min_distance = dist
+			closest_target = target
+
+	# Se encontrou um alvo válido, aplica o dano
+	if closest_target:
+		var damage = _calculate_damage(character, closest_target)
+		print(closest_target.name, " recebeu ", damage, " de dano! HP antes: ", closest_target.hp)
+		closest_target.receive_damage(damage)
+		print(closest_target.name, " HP depois do dano: ", closest_target.hp)
+	else:
+		print("Nenhum alvo dentro do alcance para ", character.name)
+
 func _execute_defend(character: CombatCharacter):
 	print(character.name + " defendeu!")
 	character.is_performing_action = true
@@ -178,10 +231,10 @@ func _execute_item(character: CombatCharacter):
 	character.is_performing_action = false
 	character.hp = min(character.hp + 20, character.max_hp)
 
-func on_character_ready(character: CombatCharacter):
-	# Se o jogo já está pausado (alguém no meio da ação), não faz nada
-	if get_tree().paused or active_character:
+func _auto_attack(character: CombatCharacter) -> void:
+	if character.is_performing_action:
+		return  # já está atacando
+	if character.manual_control:
+		push_warning("Player não deve atacar automaticamente")
 		return
-
-	# Pausa o jogo e ativa o personagem imediatamente
-	_pause_game_for_action(character)
+	await _execute_attack(character)

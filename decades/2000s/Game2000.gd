@@ -5,7 +5,7 @@ var camera_scene := preload("res://decades/2000s/Battle/ThirdPersonCamera3D.tscn
 var hud_scene := preload("res://decades/2000s/UI/CombatHUD.tscn")
 
 @onready var battle_manager := $BattleManager
-@onready var ui_layer := $UI  
+@onready var ui_layer := $UI
 
 func _ready():
 	var arena = arena_scene.instantiate()
