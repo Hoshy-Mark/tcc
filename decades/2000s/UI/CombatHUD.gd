@@ -61,8 +61,6 @@ func show_action_menu(character: CombatCharacter):
 	current_character = character
 	panel.visible = true
 	_set_buttons_enabled(character.is_turn_ready)
-	if character.is_turn_ready:
-		attack_btn.grab_focus()
 
 func hide_action_menu():
 	_set_buttons_enabled(false)

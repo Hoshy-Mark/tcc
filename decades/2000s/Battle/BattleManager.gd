@@ -8,6 +8,9 @@ var party_paths := [
 ]
 
 var enemy_paths := [
+	preload("res://decades/2000s/Characters/Enemies/Skeleton_Minion.tscn"),
+	preload("res://decades/2000s/Characters/Enemies/Skeleton_Minion.tscn"),
+	preload("res://decades/2000s/Characters/Enemies/Skeleton_Minion.tscn"),
 	preload("res://decades/2000s/Characters/Enemies/Skeleton_Minion.tscn")
 ]
 
@@ -20,6 +23,7 @@ var hud: CanvasLayer = null  # <-- nova variável para armazenar o HUD
 var player_character: CombatCharacter = null
 var is_processing_turn = false
 var is_player_choosing_action: bool = false
+var is_tactical_pause_active := false
 
 func _ready():
 	_spawn_party()
@@ -61,7 +65,12 @@ func _spawn_party():
 		print("BattleManager: Personagem da party instanciado: ", char.name)
 		
 func _spawn_enemies():
-	var positions = [ Vector3(8, 0, 8) ]
+	var positions = [
+		Vector3(8, 0, 8),
+		Vector3(4, 0, 8),
+		Vector3(2, 0, 8),
+		Vector3(6, 0, 8)
+	]
 
 	for i in enemy_paths.size():
 		var enemy: CombatCharacter = enemy_paths[i].instantiate()
@@ -87,6 +96,14 @@ func _set_active_character(character: CombatCharacter):
 		member.manual_control = (member == character and character == player_character)
 	
 func _process(delta):
+	if Input.is_action_just_pressed("strategic_pause"):
+		_toggle_tactical_pause()
+		return  # Para evitar qualquer outro processamento no mesmo frame
+		
+	if is_tactical_pause_active:
+		_handle_tactical_camera_movement(delta)
+		return
+	
 	# Atualiza e processa inimigos
 	for enemy in enemies:
 		enemy._update_turn_charge(delta)
@@ -183,6 +200,9 @@ func _handle_ai_turn(character: CombatCharacter) -> void:
 
 # O jogador escolhe a ação, então no handler:
 func _on_player_action_selected(action_name: String):
+	if is_tactical_pause_active:
+		return
+
 	match action_name:
 		"attack":
 			await _execute_attack(player_character)
@@ -250,6 +270,8 @@ func _execute_item(character: CombatCharacter):
 	character.hp = min(character.hp + 20, character.max_hp)
 
 func _auto_attack(character: CombatCharacter) -> void:
+	if is_tactical_pause_active:
+		return  # bloqueia ataque automático durante pausa tática
 	if character.is_performing_action:
 		return  # já está atacando
 	if character.manual_control:
@@ -282,3 +304,126 @@ func _handle_party_member_ai_turn(member: CombatCharacter) -> void:
 	else:
 		member.nav_agent.target_position = target.global_position
 		member.is_moving = true
+
+func _toggle_tactical_pause():
+	is_tactical_pause_active = !is_tactical_pause_active
+
+	if is_tactical_pause_active:
+		print("Modo estratégico ativado")
+		if camera:
+			camera.set_follow_target(null)
+			camera.set_camera_to_tactical()
+
+		for char in party_members + enemies:
+			char.manual_control = false
+			char.is_performing_action = true
+			char.velocity = Vector3.ZERO  # <- para qualquer movimento
+			if char.anim:
+				char.anim.pause()
+	else:
+		print("Modo estratégico desativado")
+		if camera:
+			camera.set_follow_target(player_character)
+			camera.set_camera_to_combat()
+
+		for char in party_members:
+			if char == player_character:
+				char.manual_control = true
+			char.is_performing_action = false
+			if char.anim:
+				char.anim.play("Idle")  # volta a tocar animação
+
+		for enemy in enemies:
+			enemy.is_performing_action = false
+			if enemy.anim:
+				enemy.anim.play("Idle")
+
+func _handle_tactical_camera_movement(delta):
+	if not camera:
+		return
+
+	var speed := 10.0
+	var dir := Vector3.ZERO
+
+	if Input.is_action_pressed("move_forward"):
+		dir.z -= 1
+	if Input.is_action_pressed("move_backward"):
+		dir.z += 1
+	if Input.is_action_pressed("move_left"):
+		dir.x -= 1
+	if Input.is_action_pressed("move_right"):
+		dir.x += 1
+
+	if dir != Vector3.ZERO:
+		dir = dir.normalized()
+		camera.translate(dir * speed * delta)
+
+func _anyone_is_acting() -> bool:
+	for char in party_members + enemies:
+		if char.is_performing_action:
+			return true
+	return false
+
+func _unhandled_input(event):
+	if not is_tactical_pause_active:
+		return
+
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_handle_tactical_click(event.position)
+		
+func _handle_tactical_click(mouse_pos: Vector2):
+	var viewport = get_viewport()
+	var camera = viewport.get_camera_3d()
+	if not camera:
+		return
+
+	var from = camera.project_ray_origin(mouse_pos)
+	var to = from + camera.project_ray_normal(mouse_pos) * 1000.0
+
+	var space_state = camera.get_world_3d().direct_space_state
+	var query = PhysicsRayQueryParameters3D.create(from, to)
+	query.collide_with_areas = false
+	query.collide_with_bodies = true
+
+	var result = space_state.intersect_ray(query)
+
+	if result:
+		var clicked_node = result["collider"]
+		if clicked_node and clicked_node is CombatCharacter:
+			if clicked_node in party_members:
+				_set_new_player_character(clicked_node)
+				
+func _set_new_player_character(new_char: CombatCharacter):
+	if new_char == player_character:
+		return  # Já é o personagem ativo
+
+	print("Novo personagem ativo:", new_char.name)
+
+	# Desativa o anterior
+	if player_character:
+		player_character.manual_control = false
+
+	# Ativa o novo personagem
+	player_character = new_char
+	player_character.manual_control = true
+
+	# Atualiza a câmera
+	if camera:
+		camera.set_follow_target(player_character)
+		camera.set_camera_to_combat()
+
+	# Se estava em modo tático, desativa
+	if is_tactical_pause_active:
+		is_tactical_pause_active = false
+		print("Saindo do modo tático por seleção de personagem")
+
+		# Restaura animações e estados dos personagens
+		for char in party_members:
+			char.is_performing_action = false
+			if char.anim:
+				char.anim.play("Idle")
+		
+		for enemy in enemies:
+			enemy.is_performing_action = false
+			if enemy.anim:
+				enemy.anim.play("Idle")

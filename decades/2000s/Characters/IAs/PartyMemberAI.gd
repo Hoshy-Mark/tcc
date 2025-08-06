@@ -1,30 +1,34 @@
 extends CombatCharacter
 
 var attack_range := 2.0
-var safe_distance := 5.0
+var safe_distance := 1.5
 var target_enemy: CombatCharacter = null
 
 var wait_after_enemy_move := 0.5
 var wait_timer := 0.0
-
+var party: Array = []
 var random = RandomNumberGenerator.new()
 var last_enemy_pos := Vector3.ZERO
 
 func _ready():
 	super._ready()
 	random.randomize()
-	move_speed = 1
+	move_speed = 2
 
 func update_ai(_delta: float) -> void:
 	if is_performing_action:
 		return
 
-	# Escolhe alvo aleatório se não tiver ou alvo morreu
 	if target_enemy == null or not target_enemy.is_alive():
 		target_enemy = _choose_random_enemy()
 		if target_enemy == null:
-			_stop_moving()
-			return
+			var avoid_pos = _avoid_allies(global_position)
+			if avoid_pos != global_position:
+				_move_towards(avoid_pos)
+			else:
+				_stop_moving()
+			return  # importante sair para evitar usar target_enemy nulo
+
 
 	var distance = global_position.distance_to(target_enemy.global_position)
 	var turn_ratio = turn_charge / turn_threshold
@@ -40,16 +44,20 @@ func update_ai(_delta: float) -> void:
 		# Fica fora do alcance, tentando se afastar se muito perto
 		if distance < attack_range * 1.5:
 			var away_dir = (global_position - target_enemy.global_position).normalized()
-			var safe_pos = target_enemy.global_position + away_dir * (attack_range * 1.5)
+			var safe_pos = _avoid_allies(target_enemy.global_position + away_dir * (attack_range * 1.5))
 			nav_agent.target_position = safe_pos
-			_move_towards(nav_agent.get_next_path_position())
+			var next_pos = nav_agent.get_next_path_position()
+			var avoid_pos = _avoid_allies(next_pos)
+			_move_towards(avoid_pos)
 		else:
 			_stop_moving()
 	else:
 		# Turno carregado > 50%, parte para o ataque
 		if distance > attack_range:
 			nav_agent.target_position = target_enemy.global_position
-			_move_towards(nav_agent.get_next_path_position())
+			var next_pos = nav_agent.get_next_path_position()
+			var avoid_pos = _avoid_allies(next_pos)
+			_move_towards(avoid_pos)
 		else:
 			# Está no alcance, para de andar e ataca
 			_stop_moving()
@@ -67,7 +75,14 @@ func update_ai(_delta: float) -> void:
 		is_performing_action = false
 
 func _move_towards(position: Vector3) -> void:
-	var direction = (position - global_position).normalized()
+	position = _avoid_allies(position)
+	var direction = (position - global_position)
+	direction.y = 0  # Garantir que movimento fique no plano XZ
+	if direction.length() == 0:
+		_stop_moving()
+		return
+
+	direction = direction.normalized()
 	velocity = direction * move_speed
 	is_moving = true
 	
@@ -75,6 +90,7 @@ func _move_towards(position: Vector3) -> void:
 	rotation.y = lerp_angle(rotation.y, target_yaw, 0.2)
 	
 	move_and_slide()
+
 	if anim and not anim.is_playing():
 		anim.play("Walking_A")
 
@@ -124,3 +140,42 @@ func _attack_target(target: CombatCharacter) -> void:
 		if manager:
 			var damage = manager._calculate_damage(self, target)
 			target.receive_damage(damage)
+
+func _avoid_allies(position: Vector3) -> Vector3:
+	var separation_force := Vector3.ZERO
+	var manager = get_tree().get_root().get_node("Game2000/BattleManager")
+	if manager == null:
+		return position
+		
+	var party = manager.party_members
+	if typeof(party) != TYPE_ARRAY:
+		return position
+		
+	for ally in party:
+		if ally != self and ally.is_alive():
+			var dist = global_position.distance_to(ally.global_position)
+			
+			# Vetor direção só no plano XZ
+			var push_dir = (global_position - ally.global_position)
+			push_dir.y = 0
+			push_dir = push_dir.normalized()
+
+			if dist < 1.0:
+				# Evita colisão muito próxima com força alta
+				var strength = (2.0 - dist) * 3.0  # Força extra para separação urgente
+				separation_force += push_dir * strength
+			elif dist < safe_distance:
+				# Aplicar separação suave normal
+				var strength = (safe_distance - dist) / safe_distance
+				separation_force += push_dir * strength
+
+	if separation_force == Vector3.ZERO:
+		print("[Desvio] Nenhum desvio necessário.")
+		return position
+	else:
+		# Aplique força normalizada e também zere Y para não subir
+		separation_force.y = 0
+		var adjusted = position + separation_force.normalized()
+		print("[Desvio] Posição original: ", position)
+		print("[Desvio] Ajustada para: ", adjusted)
+		return adjusted

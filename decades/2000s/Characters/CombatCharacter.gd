@@ -104,8 +104,9 @@ func _physics_process(delta: float) -> void:
 
 func _handle_movement(delta: float) -> void:
 	if is_performing_action:
+		velocity = Vector3.ZERO
 		move_and_slide()
-		return  # <- Evita processar input ou mudar animação
+		return
 
 	if manual_control:
 		var input_dir = Vector2(

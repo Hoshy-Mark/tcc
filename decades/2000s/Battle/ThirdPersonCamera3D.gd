@@ -34,7 +34,7 @@ func _ready():
 	set_camera_to_combat(true)
 
 func _process(delta):
-	if follow_target:
+	if follow_target and not is_in_tactical_mode:
 		global_position = follow_target.global_position
 
 	_time_accum += delta
