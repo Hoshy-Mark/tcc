@@ -1,10 +1,12 @@
 extends CombatCharacter
 
-var target_player: CombatCharacter = null
+
 var random = RandomNumberGenerator.new()
 var attack_range := 2.0
 var reached_player_time := 0.0
 var wait_after_reaching := 0.5 # 1 segundo de delay antes de perseguir de novo
+var aggro_target: CombatCharacter = null
+
 
 func _process(delta):
 	
@@ -35,17 +37,17 @@ func _process(delta):
 		# Atualiza a barra de turno (turn_charge)
 		health_bar.set_turn_charge(turn_charge, turn_threshold)
 		
-	if target_player == null or not target_player.is_alive():
-		target_player = _choose_random_player()
+	if aggro_target == null or not aggro_target.is_alive():
+		_update_aggro()
+	
+	if aggro_target != null:
+		_follow_aggro_target(delta)
 
-	if target_player:
-		_follow_player(delta)
-
-func _follow_player(delta):
-	if is_performing_action:
+func _follow_aggro_target(delta):
+	if is_performing_action or aggro_target == null:
 		return
-
-	var distance = global_position.distance_to(target_player.global_position)
+	
+	var distance = global_position.distance_to(aggro_target.global_position)
 
 	if distance > attack_range:
 		# Checa se o tempo de espera passou
@@ -56,16 +58,13 @@ func _follow_player(delta):
 			anim.play("Idle")
 			return
 
-		nav_agent.target_position = target_player.global_position
+		nav_agent.target_position = aggro_target.global_position
 		is_moving = true
-
 		var next_pos = nav_agent.get_next_path_position()
 		var direction = (next_pos - global_position).normalized()
 		velocity = direction * move_speed
-
 		var target_yaw = atan2(direction.x, direction.z)
 		rotation.y = lerp_angle(rotation.y, target_yaw, 0.2)
-
 		move_and_slide()
 		anim.play("Walking_A")
 	else:
@@ -77,20 +76,20 @@ func _follow_player(delta):
 
 # update_ai é chamado APENAS no turno do inimigo, para atacar
 func update_ai(_delta: float) -> void:
-	if target_player == null:
+	if aggro_target == null:
 		return
 
-	var distance_to_target = global_position.distance_to(target_player.global_position)
+	var distance_to_target = global_position.distance_to(aggro_target.global_position)
 
 	velocity = Vector3.ZERO
 	is_moving = false
 
-	var direction = (target_player.global_position - global_position).normalized()
+	var direction = (aggro_target.global_position - global_position).normalized()
 	var target_yaw = atan2(direction.x, direction.z)
 	rotation.y = target_yaw
 
 	# Sempre toca a animação de ataque, mesmo sem atingir
-	await _attack_target(target_player)
+	await _attack_target(aggro_target)
 
 func _attack_target(target: CombatCharacter) -> void:
 	is_performing_action = true
@@ -128,3 +127,54 @@ func _choose_random_player() -> CombatCharacter:
 		return null
 	
 	return alive_party_members[random.randi_range(0, alive_party_members.size() - 1)]
+
+
+func _update_aggro():
+	# Se não tem alvo ou alvo está morto, escolhe um novo
+	if aggro_target == null or not aggro_target.is_alive():
+		aggro_target = _choose_closest_player()
+
+func _choose_closest_player() -> CombatCharacter:
+	var manager = get_tree().get_root().get_node("Game2000/BattleManager")
+	if manager == null:
+		return null
+
+	var alive_players = []
+	for player in manager.party_members:
+		if player.is_alive():
+			alive_players.append(player)
+	if alive_players.size() == 0:
+		return null
+	
+	# Pega o mais próximo
+	var closest = alive_players[0]
+	var min_dist = global_position.distance_to(closest.global_position)
+	for p in alive_players:
+		var dist = global_position.distance_to(p.global_position)
+		if dist < min_dist:
+			min_dist = dist
+			closest = p
+	return closest
+
+func receive_damage(amount: int, attacker: CombatCharacter) -> void:
+	hp -= amount
+	hp = max(hp, 0)
+	if attacker != null and attacker.is_alive():
+		aggro_target = attacker
+		print(name, " recebeu ", amount, " de dano! HP antes: ", hp)
+
+	is_performing_action = true  # BLOQUEIA movimento durante animação
+
+	if anim:
+		anim.play("Hit_B")
+
+	if health_bar:
+		health_bar.set_health(hp, max_hp)
+
+	await get_tree().create_timer(1.0).timeout  # Espera 1 segundo
+
+	is_performing_action = false  # Libera o movimento, se ainda estiver vivo
+
+	if hp <= 0:
+		print(name, " está morrendo")
+		await _die()

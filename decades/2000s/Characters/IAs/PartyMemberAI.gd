@@ -148,7 +148,7 @@ func _attack_target(target: CombatCharacter) -> void:
 		var manager = get_tree().get_root().get_node("Game2000/BattleManager")
 		if manager:
 			var damage = manager._calculate_damage(self, target)
-			target.receive_damage(damage)
+			target.receive_damage(damage, self)
 
 func _avoid_allies(position: Vector3) -> Vector3:
 	var separation_force := Vector3.ZERO
@@ -185,3 +185,25 @@ func _avoid_allies(position: Vector3) -> Vector3:
 		separation_force.y = 0
 		var adjusted = position + separation_force.normalized()
 		return adjusted
+
+func receive_damage(amount: int) -> void:
+	print(name, " recebeu ", amount, " de dano! HP antes: ", hp)
+	hp -= amount
+	hp = max(hp, 0)
+	print(name, " HP depois do dano: ", hp)
+
+	is_performing_action = true  # BLOQUEIA movimento durante animação
+
+	if anim:
+		anim.play("Hit_B")
+
+	if health_bar:
+		health_bar.set_health(hp, max_hp)
+
+	await get_tree().create_timer(1.0).timeout  # Espera 1 segundo
+
+	is_performing_action = false  # Libera o movimento, se ainda estiver vivo
+
+	if hp <= 0:
+		print(name, " está morrendo")
+		await _die()

@@ -259,7 +259,7 @@ func _execute_attack(character: CombatCharacter):
 	if closest_target:
 		var damage = _calculate_damage(character, closest_target)
 		print(closest_target.name, " recebeu ", damage, " de dano! HP antes: ", closest_target.hp)
-		closest_target.receive_damage(damage)
+		closest_target.receive_damage(damage, character)
 		print(closest_target.name, " HP depois do dano: ", closest_target.hp)
 	else:
 		print("Nenhum alvo dentro do alcance para ", character.name)

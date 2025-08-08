@@ -157,29 +157,6 @@ func _update_turn_charge(delta: float) -> void:
 		if manager and manager.has_method("on_character_ready"):
 			manager.on_character_ready(self)
 
-
-func receive_damage(amount: int) -> void:
-	print(name, " recebeu ", amount, " de dano! HP antes: ", hp)
-	hp -= amount
-	hp = max(hp, 0)
-	print(name, " HP depois do dano: ", hp)
-
-	is_performing_action = true  # BLOQUEIA movimento durante animação
-
-	if anim:
-		anim.play("Hit_B")
-
-	if health_bar:
-		health_bar.set_health(hp, max_hp)
-
-	await get_tree().create_timer(1.0).timeout  # Espera 1 segundo
-
-	is_performing_action = false  # Libera o movimento, se ainda estiver vivo
-
-	if hp <= 0:
-		print(name, " está morrendo")
-		await _die()
-
 func _die() -> void:
 	print(name, " morreu!")
 
