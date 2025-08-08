@@ -96,14 +96,24 @@ func _set_active_character(character: CombatCharacter):
 		member.manual_control = (member == character and character == player_character)
 	
 func _process(delta):
+
 	if Input.is_action_just_pressed("strategic_pause"):
+		# Não permite sair se o editor estiver aberto
+		var editor = get_tree().get_root().find_child("GambitEditor", true, false)
+		if editor and editor.visible:
+			return
 		_toggle_tactical_pause()
-		return  # Para evitar qualquer outro processamento no mesmo frame
-		
+		return
+
+
 	if is_tactical_pause_active:
+		# Verifica se o editor está aberto
+		var editor = get_tree().get_root().find_child("GambitEditor", true, false)
+		if editor and editor.visible:
+			return  # Não permite sair do modo tático com tecla enquanto editor estiver visível
 		_handle_tactical_camera_movement(delta)
 		return
-	
+
 	# Atualiza e processa inimigos
 	for enemy in enemies:
 		enemy._update_turn_charge(delta)
@@ -315,11 +325,18 @@ func _toggle_tactical_pause():
 			camera.set_camera_to_tactical()
 
 		for char in party_members + enemies:
+			if char == player_character:
+				char.active = true
 			char.manual_control = false
 			char.is_performing_action = true
-			char.velocity = Vector3.ZERO  # <- para qualquer movimento
+			char.velocity = Vector3.ZERO
 			if char.anim:
 				char.anim.pause()
+
+		# Desativa botão Gambit
+		if hud:
+			hud.set_gambit_button_enabled(false)
+
 	else:
 		print("Modo estratégico desativado")
 		if camera:
@@ -329,34 +346,55 @@ func _toggle_tactical_pause():
 		for char in party_members:
 			if char == player_character:
 				char.manual_control = true
+			char.active = false
 			char.is_performing_action = false
 			if char.anim:
-				char.anim.play("Idle")  # volta a tocar animação
+				char.anim.play("Idle")
 
 		for enemy in enemies:
 			enemy.is_performing_action = false
 			if enemy.anim:
 				enemy.anim.play("Idle")
 
+		# Reativa botão Gambit
+		if hud:
+			hud.set_gambit_button_enabled(true)
+
 func _handle_tactical_camera_movement(delta):
 	if not camera:
 		return
 
 	var speed := 10.0
-	var dir := Vector3.ZERO
+	var input_dir := Vector3.ZERO
 
 	if Input.is_action_pressed("move_forward"):
-		dir.z -= 1
+		input_dir.z -= 1
 	if Input.is_action_pressed("move_backward"):
-		dir.z += 1
+		input_dir.z += 1
 	if Input.is_action_pressed("move_left"):
-		dir.x -= 1
+		input_dir.x += 1
 	if Input.is_action_pressed("move_right"):
-		dir.x += 1
+		input_dir.x -= 1
 
-	if dir != Vector3.ZERO:
-		dir = dir.normalized()
-		camera.translate(dir * speed * delta)
+	if input_dir != Vector3.ZERO:
+		input_dir = input_dir.normalized()
+
+		# Obtém a rotação atual da câmera (spring arm)
+		var basis := camera.spring_arm.global_transform.basis
+
+		# Pega apenas os vetores horizontalmente (ignora Y)
+		var forward := -basis.z
+		forward.y = 0
+		forward = forward.normalized()
+
+		var right := basis.x
+		right.y = 0
+		right = right.normalized()
+
+		# Move baseado na direção da câmera
+		var move_vector = (forward * input_dir.z + right * input_dir.x).normalized()
+
+		camera.translate(move_vector * speed * delta)
 
 func _anyone_is_acting() -> bool:
 	for char in party_members + enemies:
@@ -402,10 +440,12 @@ func _set_new_player_character(new_char: CombatCharacter):
 	# Desativa o anterior
 	if player_character:
 		player_character.manual_control = false
+		player_character.active = false
 
 	# Ativa o novo personagem
 	player_character = new_char
 	player_character.manual_control = true
+	player_character.active = true
 
 	# Atualiza a câmera
 	if camera:
@@ -427,3 +467,10 @@ func _set_new_player_character(new_char: CombatCharacter):
 			enemy.is_performing_action = false
 			if enemy.anim:
 				enemy.anim.play("Idle")
+
+		# <<< Aqui reativa o botão de Gambit
+		if hud:
+			hud.set_gambit_button_enabled(true)
+
+func get_party_members() -> Array:
+	return party_members

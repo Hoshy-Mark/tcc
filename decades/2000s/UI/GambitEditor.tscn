@@ -1,0 +1,86 @@
+[gd_scene load_steps=2 format=3 uid="uid://ckjfelxwa2010"]
+
+[ext_resource type="Script" uid="uid://dhwd1nj6y10re" path="res://decades/2000s/UI/GambitEditor.gd" id="1_myge3"]
+
+[node name="GambitEditor" type="CanvasLayer"]
+layer = 2
+script = ExtResource("1_myge3")
+
+[node name="BackgroundPanel" type="Panel" parent="."]
+offset_left = 300.0
+offset_top = 300.0
+offset_right = 800.0
+offset_bottom = 600.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="BackgroundPanel"]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 60.0
+offset_bottom = 60.0
+
+[node name="PartyList" type="VBoxContainer" parent="BackgroundPanel/HBoxContainer"]
+layout_mode = 2
+
+[node name="Panel" type="Panel" parent="BackgroundPanel/HBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="BackgroundPanel/HBoxContainer/Panel"]
+layout_mode = 0
+offset_left = 10.0
+offset_right = 272.0
+offset_bottom = 23.0
+text = "Editar Gambits de: <Personagem>"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="BackgroundPanel/HBoxContainer/Panel"]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 50.0
+offset_right = 89.0
+offset_bottom = 127.0
+
+[node name="Slot1" type="HBoxContainer" parent="BackgroundPanel/HBoxContainer/Panel/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="BackgroundPanel/HBoxContainer/Panel/VBoxContainer/Slot1"]
+layout_mode = 2
+text = "Slot 1"
+
+[node name="OptionButton" type="OptionButton" parent="BackgroundPanel/HBoxContainer/Panel/VBoxContainer/Slot1"]
+layout_mode = 2
+
+[node name="Slot2" type="HBoxContainer" parent="BackgroundPanel/HBoxContainer/Panel/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="BackgroundPanel/HBoxContainer/Panel/VBoxContainer/Slot2"]
+layout_mode = 2
+text = "Slot 2"
+
+[node name="OptionButton" type="OptionButton" parent="BackgroundPanel/HBoxContainer/Panel/VBoxContainer/Slot2"]
+layout_mode = 2
+
+[node name="Slot3" type="HBoxContainer" parent="BackgroundPanel/HBoxContainer/Panel/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="BackgroundPanel/HBoxContainer/Panel/VBoxContainer/Slot3"]
+layout_mode = 2
+text = "Slot 3"
+
+[node name="OptionButton" type="OptionButton" parent="BackgroundPanel/HBoxContainer/Panel/VBoxContainer/Slot3"]
+layout_mode = 2
+
+[node name="ConfirmButton" type="Button" parent="BackgroundPanel/HBoxContainer/Panel"]
+layout_mode = 0
+offset_left = 50.0
+offset_top = 200.0
+offset_right = 137.0
+offset_bottom = 231.0
+text = "Confirmar"
+
+[node name="CancelButton" type="Button" parent="BackgroundPanel/HBoxContainer/Panel"]
+layout_mode = 0
+offset_left = 150.0
+offset_top = 200.0
+offset_right = 226.0
+offset_bottom = 231.0
+text = "Cancelar"

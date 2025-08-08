@@ -9,11 +9,13 @@ var wait_timer := 0.0
 var party: Array = []
 var random = RandomNumberGenerator.new()
 var last_enemy_pos := Vector3.ZERO
+var gambits: Array = []
 
 func _ready():
 	super._ready()
 	random.randomize()
 	move_speed = 2
+	gambits = [null, null, null]
 
 func update_ai(_delta: float) -> void:
 	if is_performing_action:
@@ -27,21 +29,18 @@ func update_ai(_delta: float) -> void:
 				_move_towards(avoid_pos)
 			else:
 				_stop_moving()
-			return  # importante sair para evitar usar target_enemy nulo
-
+			return
 
 	var distance = global_position.distance_to(target_enemy.global_position)
 	var turn_ratio = turn_charge / turn_threshold
 
-	# Se está esperando antes de perseguir o inimigo, decrementa timer
 	if wait_timer > 0:
 		wait_timer -= _delta
 		_stop_moving()
 		return
 
-	# Decide comportamento baseado no turno carregado
+	# Movimento padrão da IA
 	if turn_ratio < 0.5:
-		# Fica fora do alcance, tentando se afastar se muito perto
 		if distance < attack_range * 1.5:
 			var away_dir = (global_position - target_enemy.global_position).normalized()
 			var safe_pos = _avoid_allies(target_enemy.global_position + away_dir * (attack_range * 1.5))
@@ -52,24 +51,34 @@ func update_ai(_delta: float) -> void:
 		else:
 			_stop_moving()
 	else:
-		# Turno carregado > 50%, parte para o ataque
 		if distance > attack_range:
 			nav_agent.target_position = target_enemy.global_position
 			var next_pos = nav_agent.get_next_path_position()
 			var avoid_pos = _avoid_allies(next_pos)
 			_move_towards(avoid_pos)
 		else:
-			# Está no alcance, para de andar e ataca
 			_stop_moving()
-
-			# Se inimigo se moveu, espera 0.5s antes de perseguir de novo
 			if _enemy_moved():
 				wait_timer = wait_after_enemy_move
 
-	# Se o turno está cheio e não está atacando, inicia ataque automático
+	# Executa ação apenas quando o turno estiver pronto
 	if is_turn_ready and not is_performing_action:
 		is_performing_action = true
-		await _attack_target(target_enemy)
+
+		# Gambits ganham chance de substituir o ataque
+		var acted := false
+		for gambit in gambits:
+			if gambit != null and gambit.is_condition_met(self):
+				print("usando gambit")
+				await gambit.execute_action(self)
+				acted = true
+				break
+
+		# Se nenhum gambit agiu, faz ataque padrão
+		if not acted:
+			print("nenhum gambit agiu")
+			await _attack_target(target_enemy)
+
 		turn_charge = 0.0
 		is_turn_ready = false
 		is_performing_action = false
@@ -170,12 +179,9 @@ func _avoid_allies(position: Vector3) -> Vector3:
 				separation_force += push_dir * strength
 
 	if separation_force == Vector3.ZERO:
-		print("[Desvio] Nenhum desvio necessário.")
 		return position
 	else:
 		# Aplique força normalizada e também zere Y para não subir
 		separation_force.y = 0
 		var adjusted = position + separation_force.normalized()
-		print("[Desvio] Posição original: ", position)
-		print("[Desvio] Ajustada para: ", adjusted)
 		return adjusted

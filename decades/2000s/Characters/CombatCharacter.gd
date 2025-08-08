@@ -20,11 +20,12 @@ var is_moving := false
 var manual_control := false
 var target_position := Vector3.ZERO
 var is_performing_action := false
-
+var active := false
 var turn_charge := 0.0
 var turn_threshold := 100.0
 var charge_speed := 20.0
 var is_turn_ready := false
+var current_target: CombatCharacter = null
 
 func _ready():
 	

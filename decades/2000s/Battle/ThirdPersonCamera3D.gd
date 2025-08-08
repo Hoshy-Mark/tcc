@@ -7,7 +7,9 @@ class_name ThirdPersonCamera3D
 
 var follow_target: Node3D = null
 var is_in_tactical_mode := false
-
+var is_rotating := false
+var rotation_speed := 0.3  # ajuste conforme necessário
+var yaw := 0.0  # rotação horizontal acumulada
 # Ângulos (em graus)
 var combat_rotation := Vector3(-35, 0, 0)
 var tactical_rotation := Vector3(-35, 0, 0)
@@ -30,7 +32,7 @@ func _ready():
 	
 	# Ajuste a altura do SpringArm, não da câmera
 	spring_arm.position.y = 3.5  # altura desejada da câmera em relação ao personagem
-	
+	set_process_unhandled_input(true)
 	set_camera_to_combat(true)
 
 func _process(delta):
@@ -50,6 +52,7 @@ func set_camera_to_combat(immediate: bool = false):
 
 func set_camera_to_tactical(immediate: bool = false):
 	is_in_tactical_mode = true
+	yaw = spring_arm.rotation_degrees.y  # captura a rotação atual
 	_transition_camera(tactical_distance_z, tactical_rotation, immediate)
 
 func _transition_camera(distance_z: float, target_rot: Vector3, immediate: bool):
@@ -62,3 +65,21 @@ func _transition_camera(distance_z: float, target_rot: Vector3, immediate: bool)
 		var tween := get_tree().create_tween()
 		tween.tween_property(spring_arm, "spring_length", distance, 0.8).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 		tween.tween_property(spring_arm, "rotation_degrees", target_rot, 0.8).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+func _unhandled_input(event):
+	if not is_in_tactical_mode:
+		return
+
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_RIGHT:
+			is_rotating = event.pressed  # true ao pressionar, false ao soltar
+
+	elif event is InputEventMouseMotion and is_rotating:
+		yaw -= event.relative.x * rotation_speed
+		_update_tactical_rotation()
+		
+func _update_tactical_rotation():
+	# Usa o valor de yaw para atualizar apenas o eixo Y
+	var target_rot = tactical_rotation
+	target_rot.y = yaw
+	spring_arm.rotation_degrees = target_rot

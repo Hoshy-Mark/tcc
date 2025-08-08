@@ -19,6 +19,7 @@ config/features=PackedStringArray("4.4", "Mobile")
 DecadeManager="*res://core/DecadeManager.gd"
 GameManager="*res://core/GameManager.gd"
 Global="*res://decades/1990s/Global.gd"
+GambitDefinitions="*res://decades/2000s/Characters/IAs/GambitDefinitions.gd"
 
 [input]
 
