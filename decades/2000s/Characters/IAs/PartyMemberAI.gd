@@ -194,9 +194,6 @@ func receive_damage(amount: int) -> void:
 
 	is_performing_action = true  # BLOQUEIA movimento durante animação
 
-	if anim:
-		anim.play("Hit_B")
-
 	if health_bar:
 		health_bar.set_health(hp, max_hp)
 

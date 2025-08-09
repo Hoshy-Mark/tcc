@@ -12,11 +12,11 @@ var rotation_speed := 0.3  # ajuste conforme necessário
 var yaw := 0.0  # rotação horizontal acumulada
 # Ângulos (em graus)
 var combat_rotation := Vector3(-35, 0, 0)
-var tactical_rotation := Vector3(-35, 0, 0)
+var tactical_rotation := Vector3(-35, 30, 0)
 
 # Comprimento do SpringArm (distância da câmera ao personagem)
 var combat_distance_z := 9
-var tactical_distance_z := 9
+var tactical_distance_z := 11
 
 # Log
 var _time_accum := 0.0
@@ -52,6 +52,7 @@ func set_camera_to_combat(immediate: bool = false):
 
 func set_camera_to_tactical(immediate: bool = false):
 	is_in_tactical_mode = true
+	spring_arm.position.y = 4
 	yaw = spring_arm.rotation_degrees.y  # captura a rotação atual
 	_transition_camera(tactical_distance_z, tactical_rotation, immediate)
 

@@ -30,7 +30,6 @@ var current_target: CombatCharacter = null
 func _ready():
 	
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	
 	if vision_cone:
 		# Fixar rotação local para frente do personagem
 		vision_cone.rotation_degrees = Vector3(90, 0, 0)  # apenas X
@@ -76,6 +75,9 @@ func _process(delta):
 	if not health_bar or not model:
 		return
 
+	# Atualizar a carga do turno
+	_update_turn_charge(delta)
+
 	var head_pos = model.global_transform.origin + Vector3(0, 2.5, 0)
 
 	if not camera:
@@ -103,7 +105,13 @@ func _process(delta):
 func _physics_process(delta: float) -> void:
 	_handle_movement(delta)
 
-func _handle_movement(delta: float) -> void:
+func _handle_movement(delta):
+	
+	if manual_control and Input.is_action_pressed("move_forward") or Input.is_action_pressed("move_backward") or Input.is_action_pressed("move_left") or Input.is_action_pressed("move_right"):
+		var bm = get_tree().get_root().get_node("Game2000/BattleManager")
+		if bm:
+			bm.player_auto_attacking = false
+	
 	if is_performing_action:
 		velocity = Vector3.ZERO
 		move_and_slide()
@@ -158,6 +166,7 @@ func _update_turn_charge(delta: float) -> void:
 			manager.on_character_ready(self)
 
 func _die() -> void:
+
 	print(name, " morreu!")
 
 	is_performing_action = true  # Evita se mover durante a morte
@@ -178,6 +187,8 @@ func _die() -> void:
 		elif self in manager.party_members:
 			manager.party_members.erase(self)
 
+	if manager and self == manager.player_character:
+		manager.player_auto_attacking = false
 	await get_tree().create_timer(1.0).timeout  # Espera mais 1 segundo para "sumir"
 
 	queue_free()

@@ -14,16 +14,22 @@ var enemy_paths := [
 	preload("res://decades/2000s/Characters/Enemies/Skeleton_Minion.tscn")
 ]
 
-var party_members: Array[CombatCharacter] = []
-var enemies: Array[CombatCharacter] = []
 var base_height = 0.5
 var active_character: CombatCharacter = null
 var camera: ThirdPersonCamera3D = null
 var hud: CanvasLayer = null  # <-- nova variável para armazenar o HUD
-var player_character: CombatCharacter = null
 var is_processing_turn = false
-var is_player_choosing_action: bool = false
+var enemies: Array[CombatCharacter] = []
+var party_members: Array[CombatCharacter] = []
+var player_character: CombatCharacter = null
+
+# Controle do combate
 var is_tactical_pause_active := false
+var is_player_choosing_action := false
+var player_auto_attacking := false
+
+# Constantes
+const ATTACK_RANGE := 2.0
 
 func _ready():
 	_spawn_party()
@@ -129,7 +135,7 @@ func _process(delta):
 	for member in party_members:
 		member._update_turn_charge(delta)
 
-		if not member.manual_control and not member.is_performing_action:
+		if not member.manual_control and not member.is_performing_action and member != player_character:
 			await member.update_ai(delta)
 			var attack_range = 2.0
 			var closest_enemy: CombatCharacter = null
@@ -160,6 +166,45 @@ func _process(delta):
 			is_player_choosing_action = true
 			if hud:
 				hud.show_action_menu(member)
+		
+	# Atualizar turn charge de todo mundo
+	for char in party_members + enemies:
+		if char.is_alive():
+			char._update_turn_charge(delta)
+
+	# Loop de ataque automático do player
+	if player_auto_attacking and player_character and player_character.current_target:
+		
+		var tgt = player_character.current_target
+
+		if not tgt.is_alive():
+			print("Alvo morto, parando auto ataque.")
+			player_auto_attacking = false
+			player_character.is_moving = false
+			player_character.manual_control = true
+			return
+
+		if player_character.hp <= 0:
+			player_auto_attacking = false
+			player_character.is_moving = false
+			return
+
+		if player_character.is_performing_action:
+			return # espera terminar ação
+
+		var dist = player_character.global_position.distance_to(tgt.global_position)
+		
+		if dist > ATTACK_RANGE:
+			player_character.manual_control = false  # garante movimento automático
+			player_character.nav_agent.target_position = tgt.global_position
+			player_character.is_moving = true
+		else:
+			player_character.is_moving = false
+			player_character.manual_control = true
+			if player_character.is_turn_ready:
+				await _execute_attack(player_character)
+				player_character.turn_charge = 50
+				player_character.is_turn_ready = false
 
 
 func _on_player_end_turn():
@@ -186,7 +231,7 @@ func on_character_ready(character: CombatCharacter):
 		return
 
 func _calculate_damage(attacker: CombatCharacter, target: CombatCharacter) -> int:
-	var base_damage = 20
+	var base_damage = 5
 	var attacker_dir = (target.global_position - attacker.global_position).normalized()
 	var target_forward = -target.global_transform.basis.z.normalized()
 	var dot = attacker_dir.dot(target_forward)
@@ -215,76 +260,60 @@ func _on_player_action_selected(action_name: String):
 
 	match action_name:
 		"attack":
-			await _execute_attack(player_character)
-		"defend":
-			await _execute_defend(player_character)
+			if player_character.current_target and player_character.current_target.is_alive():
+				player_auto_attacking = true
+				print("Auto ataque iniciado contra", player_character.current_target.name)
+			else:
+				print("Nenhum alvo válido.")
 		"item":
+			player_auto_attacking = false
 			await _execute_item(player_character)
+		"defend":
+			player_auto_attacking = false
+			await _execute_defend(player_character)
 
 	if hud:
 		hud.hide_action_menu()
 
-	player_character.turn_charge = 0.0
-	player_character.is_turn_ready = false
 	is_player_choosing_action = false
 
-func _execute_attack(character: CombatCharacter):
-	if character == null:
+func _execute_attack(attacker: CombatCharacter) -> void:
+	if not attacker.current_target or not attacker.current_target.is_alive():
 		return
-	
-	print(character.name + " atacou!")
-	character.is_performing_action = true
-	
-	# Toca animação de ataque
-	if character.anim:
-		character.anim.play("1H_Melee_Attack_Slice_Diagonal")
-		await character.anim.animation_finished
-	
-	character.is_performing_action = false
 
-	var attack_range = 2.0
-	var possible_targets = enemies if character in party_members else party_members
-	
-	# Verifica o alvo mais próximo dentro do alcance
-	var closest_target: CombatCharacter = null
-	var min_distance := INF
-
-	for target in possible_targets:
-		var dist = character.global_position.distance_to(target.global_position)
-		if dist <= attack_range and dist < min_distance:
-			min_distance = dist
-			closest_target = target
-
-	# Se encontrou um alvo válido, aplica o dano
-	if closest_target:
-		var damage = _calculate_damage(character, closest_target)
-		print(closest_target.name, " recebeu ", damage, " de dano! HP antes: ", closest_target.hp)
-		closest_target.receive_damage(damage, character)
-		print(closest_target.name, " HP depois do dano: ", closest_target.hp)
+	attacker.is_performing_action = true
+	# Rolagem de acerto simples
+	var attack_roll = randi_range(1, 20)
+	var target_roll = randi_range(1, 20)
+	if attack_roll >= target_roll:
+		print(attacker.name, "acertou", attacker.current_target.name)
+		attacker.anim.play("1H_Melee_Attack_Slice_Diagonal", -1, 2.0)
+		await get_tree().create_timer(1.0).timeout
+		attacker.current_target.hp -= 10
 	else:
-		print("Nenhum alvo dentro do alcance para ", character.name)
+		attacker.anim.play("1H_Melee_Attack_Chop", -1, 2.0)
+		await get_tree().create_timer(1.0).timeout
+		print(attacker.name, "errou o ataque")
 
-func _execute_defend(character: CombatCharacter):
-	print(character.name + " defendeu!")
-	character.is_performing_action = true
-	character.anim.play("Block")
-	await character.anim.animation_finished
-	character.is_performing_action = false
+	if attacker.current_target.hp <= 0:
+		attacker.current_target._die()
 
-func _execute_item(character: CombatCharacter):
-	print(character.name + " usou um item!")
-	character.is_performing_action = true
-	character.anim.play("Use_Item")
-	await character.anim.animation_finished
-	character.is_performing_action = false
-	character.hp = min(character.hp + 20, character.max_hp)
+	attacker.is_performing_action = false
+
+func _execute_item(user: CombatCharacter) -> void:
+	print(user.name, "usou um item")
+	await get_tree().create_timer(0.5).timeout
+
+func _execute_defend(user: CombatCharacter) -> void:
+	print(user.name, "defendeu")
+	await get_tree().create_timer(0.5).timeout
 
 func _auto_attack(character: CombatCharacter) -> void:
 	if is_tactical_pause_active:
 		return  # bloqueia ataque automático durante pausa tática
 	if character.is_performing_action:
 		return  # já está atacando
-	if character.manual_control:
+	if character.manual_control and character == player_character:
 		push_warning("Player não deve atacar automaticamente")
 		return
 	await _execute_attack(character)
@@ -403,12 +432,34 @@ func _anyone_is_acting() -> bool:
 	return false
 
 func _unhandled_input(event):
-	if not is_tactical_pause_active:
+	if is_tactical_pause_active:
+		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			_handle_tactical_click(event.position)
+	else:
+		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			_handle_combat_click(event.position)
+
+
+func _handle_combat_click(mouse_pos: Vector2):
+	var camera = get_viewport().get_camera_3d()
+	if not camera:
 		return
 
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		_handle_tactical_click(event.position)
-		
+	var from = camera.project_ray_origin(mouse_pos)
+	var to = from + camera.project_ray_normal(mouse_pos) * 1000.0
+
+	var space_state = camera.get_world_3d().direct_space_state
+	var query = PhysicsRayQueryParameters3D.create(from, to)
+	query.collide_with_areas = false
+	query.collide_with_bodies = true
+
+	var result = space_state.intersect_ray(query)
+	if result:
+		var clicked_node = result["collider"]
+		if clicked_node and clicked_node in enemies and clicked_node.is_alive():
+			player_character.current_target = clicked_node
+			print("Novo alvo:", clicked_node.name)
+
 func _handle_tactical_click(mouse_pos: Vector2):
 	var viewport = get_viewport()
 	var camera = viewport.get_camera_3d()
