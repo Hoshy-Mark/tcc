@@ -10,6 +10,7 @@ var party: Array = []
 var random = RandomNumberGenerator.new()
 var last_enemy_pos := Vector3.ZERO
 var gambits: Array = []
+var level: int = 1
 
 func _ready():
 	super._ready()

@@ -268,6 +268,8 @@ func _die() -> void:
 	if manager:
 		if self in manager.enemies:
 			manager.enemies.erase(self)
+			manager.add_group_xp(manager.xp_per_enemy)
+			manager._check_enemies_defeated()
 		elif self in manager.party_members:
 			manager.party_members.erase(self)
 

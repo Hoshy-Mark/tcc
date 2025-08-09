@@ -7,9 +7,12 @@ signal action_selected(action_name)
 @onready var defend_btn := $ActionPanel/DefendButton
 @onready var item_btn := $ActionPanel/ItemButton
 @onready var gambit_btn := $ActionPanel/GambitButton
+@onready var attrubutes_btn := $ActionPanel/AttributesButton
 var GambitEditorScene: PackedScene = preload("res://decades/2000s/UI/GambitEditor.tscn")
 var gambit_editor: Node = null
 @onready var tween := create_tween()
+var AttributeEditorScene: PackedScene = preload("res://decades/2000s/UI/AttributeEditor.tscn")
+var attribute_editor: Node = null
 
 var current_character: CombatCharacter = null
 
@@ -22,7 +25,8 @@ func _ready():
 	defend_btn.pressed.connect(_on_DefendButton_pressed)
 	item_btn.pressed.connect(_on_ItemButton_pressed)
 	gambit_btn.pressed.connect(_on_GambitButton_pressed)
-
+	attrubutes_btn.pressed.connect(_on_AttributesButton_pressed)
+	
 	gambit_btn.disabled = false
 	gambit_btn.visible = true
 
@@ -113,3 +117,22 @@ func _on_gambit_editor_closed():
 func set_gambit_button_enabled(enabled: bool):
 	gambit_btn.disabled = not enabled
 	gambit_btn.modulate.a = 1.0 if enabled else 0.3
+
+func _on_AttributesButton_pressed():
+	var battle_manager = get_tree().get_root().find_child("BattleManager", true, false)
+	if battle_manager:
+		var party = battle_manager.get_party_members()
+
+		# Pausar o jogo para edição de atributos
+		battle_manager._toggle_tactical_pause()
+
+		if attribute_editor == null:
+			attribute_editor = AttributeEditorScene.instantiate()
+			get_tree().get_root().add_child(attribute_editor)
+			attribute_editor.connect("editor_closed", Callable(self, "_on_attribute_editor_closed"))
+
+		attribute_editor.open_for_party(party, battle_manager)
+		attrubutes_btn.disabled = true  # desativa botão enquanto estiver aberto
+
+func _on_attribute_editor_closed():
+	attrubutes_btn.disabled = false

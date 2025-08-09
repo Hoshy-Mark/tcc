@@ -9,9 +9,6 @@ var party_paths := [
 
 var enemy_paths := [
 	preload("res://decades/2000s/Characters/Enemies/Skeleton_Minion.tscn"),
-	preload("res://decades/2000s/Characters/Enemies/Skeleton_Minion.tscn"),
-	preload("res://decades/2000s/Characters/Enemies/Skeleton_Minion.tscn"),
-	preload("res://decades/2000s/Characters/Enemies/Skeleton_Minion.tscn")
 ]
 
 var base_height = 0.5
@@ -23,6 +20,14 @@ var enemies: Array[CombatCharacter] = []
 var party_members: Array[CombatCharacter] = []
 var player_character: CombatCharacter = null
 
+# Sistema de XP e Nível do Grupo
+var group_level: int = 1
+var group_xp: int = 0
+var xp_per_enemy: int = 20  # XP que cada inimigo derrotado dá
+var hordes_defeated: int = 0
+var max_hordes: int = 3
+var enemies_per_horde: int = 6
+
 # Controle do combate
 var is_tactical_pause_active := false
 var is_player_choosing_action := false
@@ -33,7 +38,7 @@ const ATTACK_RANGE := 2.0
 
 func _ready():
 	_spawn_party()
-	_spawn_enemies()
+	_spawn_new_horde()
 
 	var cam = get_node("Camera3D") # Ajuste o caminho real da câmera
 	for char in party_members + enemies:
@@ -69,22 +74,6 @@ func _spawn_party():
 			char.manual_control = false  # serão IA no futuro
 
 		print("BattleManager: Personagem da party instanciado: ", char.name)
-		
-func _spawn_enemies():
-	var positions = [
-		Vector3(8, 0, 8),
-		Vector3(4, 0, 8),
-		Vector3(2, 0, 8),
-		Vector3(6, 0, 8)
-	]
-
-	for i in enemy_paths.size():
-		var enemy: CombatCharacter = enemy_paths[i].instantiate()
-		add_child(enemy)
-		enemy.global_position = Vector3(positions[i % positions.size()].x, base_height, positions[i % positions.size()].z)
-		enemy.manual_control = false
-		enemies.append(enemy)
-		print("BattleManager: Inimigo instanciado: ", enemy.name)
 
 func set_camera(cam: ThirdPersonCamera3D):
 	camera = cam
@@ -305,6 +294,7 @@ func _execute_attack(attacker: CombatCharacter) -> void:
 		print(attacker.name, "errou o ataque")
 
 	attacker.is_performing_action = false
+
 func _execute_item(user: CombatCharacter) -> void:
 	print(user.name, "usou um item")
 	await get_tree().create_timer(0.5).timeout
@@ -444,7 +434,6 @@ func _unhandled_input(event):
 		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 			_handle_combat_click(event.position)
 
-
 func _handle_combat_click(mouse_pos: Vector2):
 	var camera = get_viewport().get_camera_3d()
 	if not camera:
@@ -534,3 +523,43 @@ func get_party_members() -> Array:
 func _apply_hit(attacker: CombatCharacter, target: CombatCharacter):
 	var damage = _calculate_damage(attacker, target)
 	target.apply_damage(damage, attacker) # Aqui entra defesa/esquiva
+
+func add_group_xp(amount: int) -> void:
+	group_xp += amount
+	print("Grupo ganhou %d XP (Total: %d)" % [amount, group_xp])
+
+	var xp_to_next_level = 100 * group_level
+	if group_xp >= xp_to_next_level:
+		group_xp -= xp_to_next_level
+		group_level += 1
+		print("🎉 Grupo subiu para o nível %d!" % group_level)
+		
+		for member in party_members:
+			if not member.has_meta("points_to_spend"):
+				member.level += 1
+				member.set_meta("points_to_spend", 0)
+			member.set_meta("points_to_spend", member.get_meta("points_to_spend") + 5)
+		
+func _check_enemies_defeated():
+	if enemies.is_empty():
+		hordes_defeated += 1
+		print("Horda %d derrotada!" % hordes_defeated)
+
+		if hordes_defeated >= max_hordes:
+			print("🏆 Todas as hordas derrotadas! Vitória!")
+			return
+
+		print("Preparando próxima horda...")
+		await get_tree().create_timer(2.0).timeout
+		_spawn_new_horde()
+		
+func _spawn_new_horde():
+	enemies.clear()
+	for i in range(enemies_per_horde):
+		var enemy_scene = enemy_paths[randi() % enemy_paths.size()]
+		var enemy: CombatCharacter = enemy_scene.instantiate()
+		add_child(enemy)
+		enemy.global_position = Vector3(randf_range(2, 8), base_height, randf_range(6, 10))
+		enemy.manual_control = false
+		enemies.append(enemy)
+		print("Novo inimigo spawnado:", enemy.name)

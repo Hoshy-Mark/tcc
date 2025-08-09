@@ -1,0 +1,118 @@
+[gd_scene load_steps=2 format=3 uid="uid://bxy3746h5sjdl"]
+
+[ext_resource type="Script" uid="uid://hhus3dlqc7o3" path="res://decades/2000s/UI/AttributeEditor.gd" id="1_xvbrs"]
+
+[node name="AttributeEditor" type="CanvasLayer"]
+script = ExtResource("1_xvbrs")
+
+[node name="BackgroundPanel" type="Panel" parent="."]
+offset_left = 200.0
+offset_top = 200.0
+offset_right = 600.0
+offset_bottom = 550.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="BackgroundPanel"]
+layout_mode = 0
+offset_left = 15.0
+offset_top = 15.0
+offset_right = 160.0
+offset_bottom = 310.0
+
+[node name="PartyList" type="VBoxContainer" parent="BackgroundPanel/HBoxContainer"]
+layout_mode = 2
+
+[node name="Panel" type="VBoxContainer" parent="BackgroundPanel/HBoxContainer"]
+layout_mode = 2
+
+[node name="LabelTitle" type="Label" parent="BackgroundPanel/HBoxContainer/Panel"]
+layout_mode = 2
+
+[node name="PointsLabel" type="Label" parent="BackgroundPanel/HBoxContainer/Panel"]
+layout_mode = 2
+
+[node name="AttributesContainer" type="GridContainer" parent="BackgroundPanel/HBoxContainer/Panel"]
+layout_mode = 2
+columns = 4
+
+[node name="StrengthLabel" type="Label" parent="BackgroundPanel/HBoxContainer/Panel/AttributesContainer"]
+layout_mode = 2
+text = "Strength"
+
+[node name="StrengthMinus" type="Button" parent="BackgroundPanel/HBoxContainer/Panel/AttributesContainer"]
+layout_mode = 2
+text = "-"
+
+[node name="StrengthValue" type="Label" parent="BackgroundPanel/HBoxContainer/Panel/AttributesContainer"]
+layout_mode = 2
+
+[node name="StrengthPlus" type="Button" parent="BackgroundPanel/HBoxContainer/Panel/AttributesContainer"]
+layout_mode = 2
+text = "+"
+
+[node name="DexterityLabel" type="Label" parent="BackgroundPanel/HBoxContainer/Panel/AttributesContainer"]
+layout_mode = 2
+text = "Dexterity"
+
+[node name="DexterityMinus" type="Button" parent="BackgroundPanel/HBoxContainer/Panel/AttributesContainer"]
+layout_mode = 2
+text = "-"
+
+[node name="DexterityValue" type="Label" parent="BackgroundPanel/HBoxContainer/Panel/AttributesContainer"]
+layout_mode = 2
+
+[node name="DexterityPlus" type="Button" parent="BackgroundPanel/HBoxContainer/Panel/AttributesContainer"]
+layout_mode = 2
+text = "+"
+
+[node name="ConstitutionLabel" type="Label" parent="BackgroundPanel/HBoxContainer/Panel/AttributesContainer"]
+layout_mode = 2
+text = "Constitution"
+
+[node name="ConstitutionMinus" type="Button" parent="BackgroundPanel/HBoxContainer/Panel/AttributesContainer"]
+layout_mode = 2
+text = "-"
+
+[node name="ConstitutionValue" type="Label" parent="BackgroundPanel/HBoxContainer/Panel/AttributesContainer"]
+layout_mode = 2
+
+[node name="ConstitutionPlus" type="Button" parent="BackgroundPanel/HBoxContainer/Panel/AttributesContainer"]
+layout_mode = 2
+text = "+"
+
+[node name="IntelligenceLabel" type="Label" parent="BackgroundPanel/HBoxContainer/Panel/AttributesContainer"]
+layout_mode = 2
+text = "Intelligence"
+
+[node name="IntelligenceMinus" type="Button" parent="BackgroundPanel/HBoxContainer/Panel/AttributesContainer"]
+layout_mode = 2
+text = "-"
+
+[node name="IntelligenceValue" type="Label" parent="BackgroundPanel/HBoxContainer/Panel/AttributesContainer"]
+layout_mode = 2
+
+[node name="IntelligencePlus" type="Button" parent="BackgroundPanel/HBoxContainer/Panel/AttributesContainer"]
+layout_mode = 2
+text = "+"
+
+[node name="WisdomLabel" type="Label" parent="BackgroundPanel/HBoxContainer/Panel/AttributesContainer"]
+layout_mode = 2
+text = "Wisdom"
+
+[node name="WisdomMinus" type="Button" parent="BackgroundPanel/HBoxContainer/Panel/AttributesContainer"]
+layout_mode = 2
+text = "-"
+
+[node name="WisdomValue" type="Label" parent="BackgroundPanel/HBoxContainer/Panel/AttributesContainer"]
+layout_mode = 2
+
+[node name="WisdomPlus" type="Button" parent="BackgroundPanel/HBoxContainer/Panel/AttributesContainer"]
+layout_mode = 2
+text = "+"
+
+[node name="ConfirmButton" type="Button" parent="BackgroundPanel/HBoxContainer/Panel"]
+layout_mode = 2
+text = "Confirmar"
+
+[node name="CancelButton" type="Button" parent="BackgroundPanel/HBoxContainer/Panel"]
+layout_mode = 2
+text = "Cancelar"
