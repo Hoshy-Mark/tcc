@@ -40,26 +40,16 @@ func update_ai(_delta: float) -> void:
 		return
 
 	# Movimento padrão da IA
-	if turn_ratio < 0.5:
-		if distance < attack_range * 1.5:
-			var away_dir = (global_position - target_enemy.global_position).normalized()
-			var safe_pos = _avoid_allies(target_enemy.global_position + away_dir * (attack_range * 1.5))
-			nav_agent.target_position = safe_pos
-			var next_pos = nav_agent.get_next_path_position()
-			var avoid_pos = _avoid_allies(next_pos)
-			_move_towards(avoid_pos)
-		else:
-			_stop_moving()
+
+	if distance > attack_range:
+		nav_agent.target_position = target_enemy.global_position
+		var next_pos = nav_agent.get_next_path_position()
+		var avoid_pos = _avoid_allies(next_pos)
+		_move_towards(avoid_pos)
 	else:
-		if distance > attack_range:
-			nav_agent.target_position = target_enemy.global_position
-			var next_pos = nav_agent.get_next_path_position()
-			var avoid_pos = _avoid_allies(next_pos)
-			_move_towards(avoid_pos)
-		else:
-			_stop_moving()
-			if _enemy_moved():
-				wait_timer = wait_after_enemy_move
+		_stop_moving()
+		if _enemy_moved():
+			wait_timer = wait_after_enemy_move
 
 	# Executa ação apenas quando o turno estiver pronto
 	if is_turn_ready and not is_performing_action:
@@ -138,7 +128,7 @@ func _attack_target(target: CombatCharacter) -> void:
 		if global_position.distance_to(target.global_position) <= attack_range:
 			anim.play("1H_Melee_Attack_Slice_Diagonal")
 		else:
-			anim.play("1H_Melee_Attack_Slice_Diagonal") # Animação mesmo que não acerte
+			anim.play("1H_Melee_Attack_Chop") # Animação mesmo que não acerte
 		
 		await get_tree().create_timer(1.0).timeout
 	else:
@@ -147,8 +137,7 @@ func _attack_target(target: CombatCharacter) -> void:
 	if target and target.is_alive() and global_position.distance_to(target.global_position) <= attack_range:
 		var manager = get_tree().get_root().get_node("Game2000/BattleManager")
 		if manager:
-			var damage = manager._calculate_damage(self, target)
-			target.receive_damage(damage, self)
+			manager._apply_hit(self, target)
 
 func _avoid_allies(position: Vector3) -> Vector3:
 	var separation_force := Vector3.ZERO

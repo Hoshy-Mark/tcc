@@ -26,6 +26,29 @@ var turn_threshold := 100.0
 var charge_speed := 20.0
 var is_turn_ready := false
 var current_target: CombatCharacter = null
+var has_shield: bool = false
+var is_attacking: bool = false
+var is_defending: bool = false
+
+var dodge_chance: float = 5.0  # %
+var block_chance: float = 20.0 # %
+
+
+var strength := 10        # Força
+var dexterity := 10       # Destreza
+var constitution := 10    # Constituição
+var intelligence := 10    # Inteligência
+var wisdom := 10          # Sabedoria
+
+# Stats derivados que serão recalculados:
+var attack_power := 0
+var defense := 0
+var current_hp := 100
+var attack_speed := 1.0
+var mana := 0
+var crit_chance := 0
+var magic_resist := 0
+var physical_resist := 0
 
 func _ready():
 	
@@ -70,6 +93,43 @@ func _ready():
 
 	if health_bar:
 		health_bar.set_health(hp, max_hp)
+
+func _recalculate_stats():
+	# Dano físico base
+	attack_power = (strength * 2) + (dexterity * 0.5)
+
+	# Defesa física
+	defense = (constitution * 2) + (dexterity * 0.5)
+
+	# Pontos de vida
+	max_hp = 50 + (constitution * 10)
+	hp = clamp(hp, 0, max_hp)
+
+	# Mana / recurso mágico
+	mana = 20 + (intelligence * 5) + (wisdom * 3)
+
+	# Velocidade de ataque (turn charge)
+	charge_speed = 15 + (dexterity * 0.5) + (wisdom * 0.2)
+
+	# Velocidade de movimento
+	move_speed = 1.5 + (dexterity * 0.1) + (strength * 0.05)
+
+	# Chance de crítico físico
+	crit_chance = min(25, dexterity * 0.5) # Máx 25%
+
+	# Resistência mágica
+	magic_resist = wisdom * 1.5
+
+	# Resistência física
+	physical_resist = constitution * 1.0
+	
+	# Chances baseadas nos atributos
+	dodge_chance = dexterity * 0.5  # Ex: DEX 10 = 5% esquiva
+	block_chance = 10.0  # Base
+
+	if has_shield:
+		print("tenho escudo")
+		block_chance += 80.0  # Escudo aumenta chance de defesa
 
 func _process(delta):
 	if not health_bar or not model:
@@ -151,6 +211,30 @@ func _handle_movement(delta):
 			if anim and anim.current_animation != "Idle":
 				anim.play("Idle")
 
+func apply_damage(amount: int, attacker: CombatCharacter):
+	# Se tentar esquivar
+	if randi_range(1, 100) <= dodge_chance:
+		print("%s esquivou do ataque!" % name)
+		return
+	
+	# Se tiver escudo e não estiver atacando → tentar defender
+	if has_shield and not is_attacking:
+		print("pode defender")
+		if randi_range(1, 100) <= block_chance:
+			print("%s bloqueou o ataque!" % name)
+			amount = int(amount * 0.5)  # Reduz dano pela metade
+			is_defending = true
+			_play_block_animation()
+			await get_tree().create_timer(0.5).timeout
+			is_defending = false
+
+	# Aplica o dano final
+	hp -= amount
+	print("%s recebeu %d de dano (HP: %d/%d)" % [name, amount, hp, max_hp])
+
+	if hp <= 0:
+		_die()
+
 func _update_turn_charge(delta: float) -> void:
 	if is_turn_ready:
 		return
@@ -218,3 +302,6 @@ func _update_vision_cone(target: CombatCharacter, attack_range: float):
 
 func is_alive() -> bool:
 	return hp > 0
+
+func _play_block_animation():
+	anim.play("Block_Hit", -1, 2)

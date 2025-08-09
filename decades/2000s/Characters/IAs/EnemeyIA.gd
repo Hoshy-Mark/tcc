@@ -107,8 +107,7 @@ func _attack_target(target: CombatCharacter) -> void:
 	if target and target.is_alive() and global_position.distance_to(target.global_position) <= attack_range:
 		var manager = get_tree().get_root().get_node("Game2000/BattleManager")
 		if manager:
-			var damage = manager._calculate_damage(self, target)
-			target.receive_damage(damage)
+			manager._apply_hit(self, target)
 
 	is_performing_action = false
 

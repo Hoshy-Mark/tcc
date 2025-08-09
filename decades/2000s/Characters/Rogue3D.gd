@@ -5,3 +5,9 @@ func _ready():
 	model = $Rogue
 	anim = model.get_node("AnimationPlayer")
 	name = "Ladrão"
+	strength = 8
+	dexterity = 14
+	constitution = 8
+	intelligence = 6
+	wisdom = 4
+	_recalculate_stats()

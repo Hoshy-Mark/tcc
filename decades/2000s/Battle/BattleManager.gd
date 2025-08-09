@@ -231,19 +231,24 @@ func on_character_ready(character: CombatCharacter):
 		return
 
 func _calculate_damage(attacker: CombatCharacter, target: CombatCharacter) -> int:
-	var base_damage = 5
+	var base_damage = attacker.attack_power
+	var defense_factor = max(0.5, 1.0 - (target.defense / 200.0)) # Defesa reduz dano
+	var damage = base_damage * defense_factor
+
+	# Crítico
+	if randi_range(1, 100) <= attacker.crit_chance:
+		damage *= 1.5
+		print("CRÍTICO!")
+
+	# Ataque pelas costas bônus
 	var attacker_dir = (target.global_position - attacker.global_position).normalized()
 	var target_forward = -target.global_transform.basis.z.normalized()
 	var dot = attacker_dir.dot(target_forward)
 
 	if dot > 0.75:
-		# ataque pelas costas
-		return base_damage * 2
-	elif dot > 0.3:
-		# ataque lateral
-		return base_damage * 1.5
-	else:
-		return base_damage
+		damage *= 1.5
+
+	return int(max(1, damage))
 
 func _handle_ai_turn(character: CombatCharacter) -> void:
 	if character.has_method("update_ai"):
@@ -282,24 +287,24 @@ func _execute_attack(attacker: CombatCharacter) -> void:
 		return
 
 	attacker.is_performing_action = true
+
 	# Rolagem de acerto simples
 	var attack_roll = randi_range(1, 20)
 	var target_roll = randi_range(1, 20)
+
 	if attack_roll >= target_roll:
 		print(attacker.name, "acertou", attacker.current_target.name)
 		attacker.anim.play("1H_Melee_Attack_Slice_Diagonal", -1, 2.0)
 		await get_tree().create_timer(1.0).timeout
-		attacker.current_target.hp -= 10
+
+		# Aplica o hit usando o sistema novo
+		_apply_hit(attacker, attacker.current_target)
 	else:
 		attacker.anim.play("1H_Melee_Attack_Chop", -1, 2.0)
 		await get_tree().create_timer(1.0).timeout
 		print(attacker.name, "errou o ataque")
 
-	if attacker.current_target.hp <= 0:
-		attacker.current_target._die()
-
 	attacker.is_performing_action = false
-
 func _execute_item(user: CombatCharacter) -> void:
 	print(user.name, "usou um item")
 	await get_tree().create_timer(0.5).timeout
@@ -525,3 +530,7 @@ func _set_new_player_character(new_char: CombatCharacter):
 
 func get_party_members() -> Array:
 	return party_members
+
+func _apply_hit(attacker: CombatCharacter, target: CombatCharacter):
+	var damage = _calculate_damage(attacker, target)
+	target.apply_damage(damage, attacker) # Aqui entra defesa/esquiva
