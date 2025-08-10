@@ -8,12 +8,14 @@ signal action_selected(action_name)
 @onready var item_btn := $ActionPanel/ItemButton
 @onready var gambit_btn := $ActionPanel/GambitButton
 @onready var attrubutes_btn := $ActionPanel/AttributesButton
+@onready var target_selector = $TargetSelector
 var GambitEditorScene: PackedScene = preload("res://decades/2000s/UI/GambitEditor.tscn")
 var gambit_editor: Node = null
 @onready var tween := create_tween()
 var AttributeEditorScene: PackedScene = preload("res://decades/2000s/UI/AttributeEditor.tscn")
 var attribute_editor: Node = null
-
+var InventoryMenuScene: PackedScene = preload("res://decades/2000s/UI/InventoryMenu.tscn")
+var inventory_menu: Node = null
 var current_character: CombatCharacter = null
 
 func _ready():
@@ -89,7 +91,29 @@ func _on_DefendButton_pressed():
 	emit_signal("action_selected", "defend")
 
 func _on_ItemButton_pressed():
-	emit_signal("action_selected", "item")
+	var battle_manager = get_tree().get_root().find_child("BattleManager", true, false)
+	if not battle_manager:
+		return
+
+	var inventory = [
+		{ "name": "Poção de Cura", "heal": 20, "type": "healing" }
+	]
+	var alive_targets = battle_manager.party_members.filter(func(m): return m.is_alive())
+
+	# Instancia se ainda não existe
+	if inventory_menu == null:
+		inventory_menu = InventoryMenuScene.instantiate()
+		get_tree().get_root().add_child(inventory_menu)
+
+	# Conecta o sinal (CONNECT_ONE_SHOT evita múltiplas conexões)
+	inventory_menu.item_selected.connect(func(item, target):
+		battle_manager.execute_item_use(current_character, target, item)
+		inventory_menu.close()
+		hide_action_menu()
+	, CONNECT_ONE_SHOT)
+
+	# Abre o menu
+	inventory_menu.open(inventory, alive_targets)
 
 func _on_GambitButton_pressed():
 	var battle_manager = get_tree().get_root().find_child("BattleManager", true, false)
@@ -136,3 +160,14 @@ func _on_AttributesButton_pressed():
 
 func _on_attribute_editor_closed():
 	attrubutes_btn.disabled = false
+
+func show_target_selector(targets: Array, callback: Callable):
+	target_selector.clear()
+	for t in targets:
+		target_selector.add_item(t.name)
+	target_selector.show()
+
+	target_selector.item_selected.connect(func(index):
+		target_selector.hide()
+		callback.call(targets[index])
+	, CONNECT_ONE_SHOT)

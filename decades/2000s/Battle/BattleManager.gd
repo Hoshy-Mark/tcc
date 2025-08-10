@@ -12,7 +12,6 @@ var enemy_paths := [
 ]
 var ability_hud: AbilityHUD = null
 var base_height = 0.5
-var active_character: CombatCharacter = null
 var camera: ThirdPersonCamera3D = null
 var hud: CanvasLayer = null  # <-- nova variável para armazenar o HUD
 var is_processing_turn = false
@@ -83,13 +82,6 @@ func set_camera(cam: ThirdPersonCamera3D):
 		camera.set_follow_target(player_character)
 		camera.set_camera_to_combat(true)
 		print("BattleManager: Câmera setada para seguir o Knight.")
-
-func _set_active_character(character: CombatCharacter):
-	active_character = character
-	camera.set_follow_target(character)
-
-	for member in party_members:
-		member.manual_control = (member == character and character == player_character)
 	
 func _process(delta):
 
@@ -193,32 +185,9 @@ func _process(delta):
 			player_character.manual_control = true
 			if player_character.is_turn_ready:
 				await _execute_attack(player_character)
-				player_character.turn_charge = 50
+				player_character.turn_charge = 0
 				player_character.is_turn_ready = false
 
-
-func _on_player_end_turn():
-	if not active_character:
-		return
-
-	# Finaliza o turno do personagem manual
-	active_character.turn_charge = 0.0
-	active_character.is_turn_ready = false
-	active_character = null
-
-	get_tree().paused = false
-
-	camera.set_follow_target(player_character)
-	camera.set_camera_to_combat()
-
-	call_deferred("_check_turns")
-
-
-
-func on_character_ready(character: CombatCharacter):
-	# Se o jogo já está pausado (alguém no meio da ação), não faz nada
-	if get_tree().paused or active_character:
-		return
 
 func _calculate_damage(attacker: CombatCharacter, target: CombatCharacter) -> int:
 	var base_damage = attacker.attack_power
@@ -262,7 +231,6 @@ func _on_player_action_selected(action_name: String):
 				print("Nenhum alvo válido.")
 		"item":
 			player_auto_attacking = false
-			await _execute_item(player_character)
 		"defend":
 			player_auto_attacking = false
 			await _execute_defend(player_character)
@@ -295,10 +263,6 @@ func _execute_attack(attacker: CombatCharacter) -> void:
 		print(attacker.name, "errou o ataque")
 
 	attacker.is_performing_action = false
-
-func _execute_item(user: CombatCharacter) -> void:
-	print(user.name, "usou um item")
-	await get_tree().create_timer(0.5).timeout
 
 func _execute_defend(user: CombatCharacter) -> void:
 	print(user.name, "defendeu")
@@ -575,7 +539,24 @@ func _on_ability_selected(index: int):
 	else:
 		print("Cooldown ainda ativo!")
 
-
 func set_ability_hud(hud: AbilityHUD):
 	ability_hud = hud
 	ability_hud.ability_selected.connect(_on_ability_selected)
+
+func execute_item_use(user: CombatCharacter, target: CombatCharacter, item: Dictionary):
+	user.is_performing_action = true
+	if target == user:
+		user.anim.play("Use_Item")
+	else:
+		user.look_at(target.global_position)
+		user.anim.play("Throw")
+
+	await get_tree().create_timer(1.0).timeout
+
+	if item.type == "healing":
+		target.hp = clamp(target.hp + item.heal, 0, target.max_hp)
+	
+	user.turn_charge = 0
+	user.is_turn_ready = false
+	user.is_performing_action = false
+	is_player_choosing_action = false
