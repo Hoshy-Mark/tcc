@@ -10,7 +10,7 @@ var party_paths := [
 var enemy_paths := [
 	preload("res://decades/2000s/Characters/Enemies/Skeleton_Minion.tscn"),
 ]
-
+var ability_hud: AbilityHUD = null
 var base_height = 0.5
 var active_character: CombatCharacter = null
 var camera: ThirdPersonCamera3D = null
@@ -37,9 +37,9 @@ var player_auto_attacking := false
 const ATTACK_RANGE := 2.0
 
 func _ready():
-	_spawn_party()
 	_spawn_new_horde()
-
+	_spawn_party()
+	
 	var cam = get_node("Camera3D") # Ajuste o caminho real da câmera
 	for char in party_members + enemies:
 		char.set_camera(cam)
@@ -70,6 +70,7 @@ func _spawn_party():
 		if i == 3:
 			char.manual_control = true
 			player_character = char
+
 		else:
 			char.manual_control = false  # serão IA no futuro
 
@@ -491,7 +492,8 @@ func _set_new_player_character(new_char: CombatCharacter):
 	player_character = new_char
 	player_character.manual_control = true
 	player_character.active = true
-
+	if ability_hud:
+		ability_hud.show_abilities_for(player_character)
 	# Atualiza a câmera
 	if camera:
 		camera.set_follow_target(player_character)
@@ -563,3 +565,17 @@ func _spawn_new_horde():
 		enemy.manual_control = false
 		enemies.append(enemy)
 		print("Novo inimigo spawnado:", enemy.name)
+
+func _on_ability_selected(index: int):
+	if not player_character:
+		return
+	
+	if player_character.can_use_ability(index):
+		player_character.use_ability(index)
+	else:
+		print("Cooldown ainda ativo!")
+
+
+func set_ability_hud(hud: AbilityHUD):
+	ability_hud = hud
+	ability_hud.ability_selected.connect(_on_ability_selected)

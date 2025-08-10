@@ -32,7 +32,10 @@ var is_defending: bool = false
 
 var dodge_chance: float = 5.0  # %
 var block_chance: float = 20.0 # %
-
+# Cooldowns das habilidades (valores atuais)
+var ability_cooldowns := [0.0, 0.0, 0.0, 0.0]
+# Tempo total de cooldown para cada habilidade (em segundos)
+var ability_cooldown_times := [5.0, 8.0, 12.0, 15.0]
 
 var strength := 10        # Força
 var dexterity := 10       # Destreza
@@ -129,7 +132,7 @@ func _recalculate_stats():
 
 	if has_shield:
 		print("tenho escudo")
-		block_chance += 80.0  # Escudo aumenta chance de defesa
+		block_chance += 15.0  # Escudo aumenta chance de defesa
 
 func _process(delta):
 	if not health_bar or not model:
@@ -137,6 +140,11 @@ func _process(delta):
 
 	# Atualizar a carga do turno
 	_update_turn_charge(delta)
+	
+	# Atualiza cooldowns das habilidades
+	for i in range(ability_cooldowns.size()):
+		if ability_cooldowns[i] > 0:
+			ability_cooldowns[i] = max(ability_cooldowns[i] - delta, 0)
 
 	var head_pos = model.global_transform.origin + Vector3(0, 2.5, 0)
 
@@ -215,7 +223,10 @@ func apply_damage(amount: int, attacker: CombatCharacter):
 	# Se tentar esquivar
 	if randi_range(1, 100) <= dodge_chance:
 		print("%s esquivou do ataque!" % name)
-		return
+		is_defending = true
+		_play_dodge_animation()
+		await get_tree().create_timer(1.0).timeout
+		is_defending = false
 	
 	# Se tiver escudo e não estiver atacando → tentar defender
 	if has_shield and not is_attacking:
@@ -307,3 +318,45 @@ func is_alive() -> bool:
 
 func _play_block_animation():
 	anim.play("Block_Hit", -1, 2)
+	
+func _play_dodge_animation():
+	anim.play("Dodge_Backward")
+
+func can_use_ability(index: int) -> bool:
+	if index < 0 or index >= ability_cooldowns.size():
+		return false
+	return ability_cooldowns[index] <= 0
+
+func use_ability(index: int):
+	if can_use_ability(index):
+		ability_cooldowns[index] = ability_cooldown_times[index]
+		# Aqui você chama a função que executa a habilidade específica
+		match index:
+			0:
+				_cast_ability_0()
+			1:
+				_cast_ability_1()
+			2:
+				_cast_ability_2()
+			3:
+				_cast_ability_3()
+		print("%s usou a habilidade %d" % [name, index])
+	else:
+		print("Habilidade %d em cooldown (%.2f segundos restantes)" % [index, ability_cooldowns[index]])
+
+# Funções placeholders para as habilidades
+func _cast_ability_0():
+	# Código da habilidade 0 aqui
+	pass
+
+func _cast_ability_1():
+	# Código da habilidade 1 aqui
+	pass
+
+func _cast_ability_2():
+	# Código da habilidade 2 aqui
+	pass
+
+func _cast_ability_3():
+	# Código da habilidade 3 aqui
+	pass

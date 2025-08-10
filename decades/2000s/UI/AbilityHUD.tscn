@@ -1,0 +1,40 @@
+[gd_scene load_steps=2 format=3 uid="uid://blc00vqwm5lbt"]
+
+[ext_resource type="Script" uid="uid://du3n1qw1ee53v" path="res://decades/2000s/UI/AbilityHUD.gd" id="1_50j46"]
+
+[node name="AbilityHud" type="CanvasLayer"]
+script = ExtResource("1_50j46")
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+offset_left = 1500.0
+offset_top = 800.0
+offset_right = 1750.0
+offset_bottom = 920.0
+scale = Vector2(1.2, 1.2)
+
+[node name="MarginContainer" type="MarginContainer" parent="PanelContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 25
+
+[node name="GrldContainer" type="GridContainer" parent="PanelContainer/MarginContainer"]
+layout_mode = 2
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
+columns = 2
+
+[node name="Ability1Button" type="Button" parent="PanelContainer/MarginContainer/GrldContainer"]
+layout_mode = 2
+text = "Bola de Fogo"
+
+[node name="Ability2Button" type="Button" parent="PanelContainer/MarginContainer/GrldContainer"]
+layout_mode = 2
+text = "Habilidade 2"
+
+[node name="Ability3Button" type="Button" parent="PanelContainer/MarginContainer/GrldContainer"]
+layout_mode = 2
+text = "Habilidade 3"
+
+[node name="Ability4Button" type="Button" parent="PanelContainer/MarginContainer/GrldContainer"]
+layout_mode = 2
+text = "Habilidade 4"

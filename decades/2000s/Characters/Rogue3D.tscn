@@ -31453,7 +31453,7 @@ bones/46/rotation = Quaternion(-0.758253, -1.82539e-07, 0.651961, -1.11759e-08)
 bones/46/scale = Vector3(1, 1, 1)
 
 [node name="Knife_Offhand" type="BoneAttachment3D" parent="Rogue/Rig/Skeleton3D"]
-transform = Transform3D(3.30151e-07, 0.262865, 0.964832, 0.999999, -3.09948e-07, 7.72876e-07, 9.2789e-07, 0.964832, -0.262864, 0.507764, 0.636706, -0.0185362)
+transform = Transform3D(3.59954e-07, 0.262865, 0.964832, 0.999999, -3.99355e-07, 7.43074e-07, 9.12989e-07, 0.964832, -0.262864, 0.507764, 0.636706, -0.0185362)
 bone_name = "Knife_Offhand"
 bone_idx = 9
 
@@ -31462,7 +31462,7 @@ mesh = SubResource("ArrayMesh_3g75d")
 skeleton = NodePath("")
 
 [node name="1H_Crossbow" type="BoneAttachment3D" parent="Rogue/Rig/Skeleton3D"]
-transform = Transform3D(0.988702, -0.149894, 2.99008e-08, -1.10724e-06, -1.08398e-06, -0.999999, 0.149894, 0.988701, -1.67587e-06, -0.489505, 0.745658, 0.0963391)
+transform = Transform3D(0.988701, -0.149894, 2.99009e-08, -1.13704e-06, -1.11379e-06, -0.999999, 0.149894, 0.988701, -1.58647e-06, -0.489505, 0.745658, 0.0963392)
 bone_name = "1H_Crossbow"
 bone_idx = 15
 
@@ -31471,7 +31471,7 @@ mesh = SubResource("ArrayMesh_6suyv")
 skeleton = NodePath("")
 
 [node name="2H_Crossbow" type="BoneAttachment3D" parent="Rogue/Rig/Skeleton3D"]
-transform = Transform3D(0.988702, -0.149894, 2.99008e-08, -1.10724e-06, -1.08398e-06, -0.999999, 0.149894, 0.988701, -1.67587e-06, -0.489505, 0.745658, 0.0963391)
+transform = Transform3D(0.988701, -0.149894, 2.99009e-08, -1.13704e-06, -1.11379e-06, -0.999999, 0.149894, 0.988701, -1.58647e-06, -0.489505, 0.745658, 0.0963392)
 bone_name = "2H_Crossbow"
 bone_idx = 16
 

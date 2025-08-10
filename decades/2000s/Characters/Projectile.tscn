@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://dn0x0x82vvu7s"]
+
+[ext_resource type="Script" uid="uid://drrwofwbcqcbu" path="res://decades/2000s/Characters/Projectile.gd" id="1_xig8v"]
+
+[node name="Projectile" type="RigidBody3D"]
+script = ExtResource("1_xig8v")
