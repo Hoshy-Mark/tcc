@@ -5,12 +5,25 @@ var safe_distance := 1.5
 var target_enemy: CombatCharacter = null
 
 var wait_after_enemy_move := 0.5
-var wait_timer := 0.0
+var wait_timer := 1.0
 var party: Array = []
 var random = RandomNumberGenerator.new()
 var last_enemy_pos := Vector3.ZERO
 var gambits: Array = []
 var level: int = 1
+
+# Avoidance tuning
+var avoid_min_distance := 1.0
+var avoid_max_distance := 2.2
+var avoid_force := 1.2
+var prediction_time := 0.35
+
+var threat_radius := 10.0   # começar observando a 10 units
+var danger_radius := 7.5    # reagir imediatamente dentro de 7.5 units
+var threat_tolerance := 0.6 # secs de tolerância antes de reagir dentro da threat zone
+var threat_timer := 0.0
+var reposition_cooldown := 0.6 # evita reentradas rápidas
+var reposition_timer := 0.0
 
 func _ready():
 	super._ready()
@@ -43,10 +56,18 @@ func update_ai(_delta: float) -> void:
 	# Movimento padrão da IA
 
 	if distance > attack_range:
-		nav_agent.target_position = target_enemy.global_position
-		var next_pos = nav_agent.get_next_path_position()
-		var avoid_pos = _avoid_allies(next_pos)
-		_move_towards(avoid_pos)
+		var manager = get_tree().get_root().get_node("Game2000/BattleManager")
+		if manager:
+			# Usa slotting para evitar empilhamento
+			var slot_pos = get_slot_position_around_target(self, target_enemy, manager.party_members, attack_range)
+			nav_agent.target_position = slot_pos
+			var next_pos = nav_agent.get_next_path_position()
+			var avoid_pos = _avoid_allies(next_pos)
+			_move_towards(avoid_pos)
+		else:
+			# Fallback: mover diretamente
+			nav_agent.target_position = target_enemy.global_position
+			_move_towards(target_enemy.global_position)
 	else:
 		_stop_moving()
 		if _enemy_moved():
@@ -60,14 +81,20 @@ func update_ai(_delta: float) -> void:
 		var acted := false
 		for gambit in gambits:
 			if gambit != null and gambit.is_condition_met(self):
-				print("usando gambit")
 				await gambit.execute_action(self)
 				acted = true
 				break
 
 		# Se nenhum gambit agiu, faz ataque padrão
 		if not acted:
-			print("nenhum gambit agiu")
+			if current_target != null:
+				var target_pos = current_target.global_position
+				target_pos.y = global_position.y  # mantem na mesma altura
+				
+				look_at(target_pos, Vector3.UP)
+				
+				# Ajusta para olhar de frente se o modelo estiver de costas
+				rotation.y += PI  # gira 180 graus no eixo Y
 			await _attack_target(target_enemy)
 
 		turn_charge = 0.0
@@ -75,7 +102,7 @@ func update_ai(_delta: float) -> void:
 		is_performing_action = false
 
 func _move_towards(position: Vector3) -> void:
-	position = _avoid_allies(position)
+	# posição já foi ajustada por _avoid_allies antes de entrar aqui
 	var direction = (position - global_position)
 	direction.y = 0  # Garantir que movimento fique no plano XZ
 	if direction.length() == 0:
@@ -85,10 +112,10 @@ func _move_towards(position: Vector3) -> void:
 	direction = direction.normalized()
 	velocity = direction * move_speed
 	is_moving = true
-	
+
 	var target_yaw = atan2(direction.x, direction.z)
 	rotation.y = lerp_angle(rotation.y, target_yaw, 0.2)
-	
+
 	move_and_slide()
 
 	if anim and not anim.is_playing():
@@ -104,7 +131,6 @@ func _stop_moving() -> void:
 func _enemy_moved() -> bool:
 	if target_enemy == null:
 		return false
-	
 	var moved = target_enemy.global_position.distance_to(last_enemy_pos) > 0.1
 	if moved:
 		last_enemy_pos = target_enemy.global_position
@@ -125,22 +151,30 @@ func _choose_random_enemy() -> CombatCharacter:
 	return alive_enemies[random.randi_range(0, alive_enemies.size() - 1)]
 
 func _attack_target(target: CombatCharacter) -> void:
+	is_performing_action = true
+
 	if anim:
 		if global_position.distance_to(target.global_position) <= attack_range:
 			anim.play("1H_Melee_Attack_Slice_Diagonal")
 		else:
-			anim.play("1H_Melee_Attack_Chop") # Animação mesmo que não acerte
-		
+			anim.play("1H_Melee_Attack_Chop")  # Animação mesmo que não acerte
 		await get_tree().create_timer(1.0).timeout
 	else:
 		await get_tree().create_timer(1.0).timeout
-	
+
+	# Aplica dano via BattleManager e adiciona threat
 	if target and target.is_alive() and global_position.distance_to(target.global_position) <= attack_range:
 		var manager = get_tree().get_root().get_node("Game2000/BattleManager")
 		if manager:
 			manager._apply_hit(self, target)
+			# Aumenta threat no alvo para este atacante
+			if target.has_method("add_threat"):
+				target.add_threat(self, attack_power)
+
+	is_performing_action = false
 
 func _avoid_allies(position: Vector3) -> Vector3:
+	# Versão melhorada: previsão de colisão, força proporcional à velocidade, e prioridade
 	var separation_force := Vector3.ZERO
 	var manager = get_tree().get_root().get_node("Game2000/BattleManager")
 	if manager == null:
@@ -149,31 +183,56 @@ func _avoid_allies(position: Vector3) -> Vector3:
 	var party = manager.party_members
 	if typeof(party) != TYPE_ARRAY:
 		return position
-		
+	
 	for ally in party:
 		if ally != self and ally.is_alive():
-			var dist = global_position.distance_to(ally.global_position)
-			
-			# Vetor direção só no plano XZ
-			var push_dir = (global_position - ally.global_position)
-			push_dir.y = 0
-			push_dir = push_dir.normalized()
+			# Pega velocidade do aliado (se existir)
+			var ally_vel = Vector3.ZERO
+			if "velocity" in ally:
+				ally_vel = ally.velocity
 
-			if dist < 1.0:
-				# Evita colisão muito próxima com força alta
-				var strength = (2.0 - dist) * 3.0  # Força extra para separação urgente
-				separation_force += push_dir * strength
-			elif dist < safe_distance:
-				# Aplicar separação suave normal
-				var strength = (safe_distance - dist) / safe_distance
-				separation_force += push_dir * strength
+			# Prever posição futura do aliado
+			var future_pos = ally.global_position + ally_vel * prediction_time
+			var my_future = global_position + velocity * prediction_time
+			
+			var dist = my_future.distance_to(future_pos)
+			
+			# Direção de empurrão no plano XZ
+			var push_dir = (my_future - future_pos)
+			push_dir.y = 0
+			if push_dir.length() > 0:
+				push_dir = push_dir.normalized()
+			else:
+				push_dir = Vector3.ZERO
+
+			# prioridade simples (ex.: player > melee > ranged)
+			var my_priority = 1
+			var ally_priority = 1
+			if "priority" in self:
+				my_priority = self.priority
+			if "priority" in ally:
+				ally_priority = ally.priority
+
+			var priority_factor = 1.0
+			if my_priority < ally_priority:
+				priority_factor = 1.6
+			elif my_priority > ally_priority:
+				priority_factor = 0.6
+
+			if dist < avoid_min_distance:
+				# Força alta para evitar colisão grave, proporcional à velocidade relativa
+				var rel_speed = (velocity - ally_vel).length()
+				var strength = clamp((avoid_min_distance - dist) / avoid_min_distance, 0.0, 1.0) * (1.0 + rel_speed)
+				separation_force += push_dir * strength * avoid_force * priority_factor
+			elif dist < avoid_max_distance:
+				var strength = clamp((avoid_max_distance - dist) / (avoid_max_distance - avoid_min_distance), 0.0, 1.0)
+				separation_force += push_dir * strength * (avoid_force * 0.6) * priority_factor
 
 	if separation_force == Vector3.ZERO:
 		return position
 	else:
-		# Aplique força normalizada e também zere Y para não subir
 		separation_force.y = 0
-		var adjusted = position + separation_force.normalized()
+		var adjusted = position + separation_force.normalized() * min(separation_force.length(), 1.8)
 		return adjusted
 
 func receive_damage(amount: int) -> void:

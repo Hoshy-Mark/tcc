@@ -53,8 +53,12 @@ var crit_chance := 0
 var magic_resist := 0
 var physical_resist := 0
 
+# Threat table (aggro)
+var threat_table := {} # {CombatCharacter -> float}
+var threat_decay_rate := 5.0 # pontos de threat por segundo
+const DEFAULT_SLOTS_PER_TARGET := 12
+
 func _ready():
-	
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	if vision_cone:
 		# Fixar rotação local para frente do personagem
@@ -70,7 +74,6 @@ func _ready():
 			vision_cone_material = original_material.duplicate()
 			vision_cone.set_surface_override_material(0, vision_cone_material)
 
-	
 	# Localizar modelo/anim
 	for child in get_children():
 		if child.has_node("AnimationPlayer"):
@@ -79,12 +82,12 @@ func _ready():
 			break
 
 	if anim:
-		anim.process_mode = Node.PROCESS_MODE_ALWAYS
+		anim.process_mode = Node.PROCESS_MODE_ALWAYS if Engine.has_singleton("Engine") == false else Node.PROCESS_MODE_ALWAYS
 		anim.play("Idle")
 	else:
 		push_error("AnimationPlayer não encontrado no personagem: " + str(self))
 
-	# Instanciar barra de vidaawwa
+	# Instanciar barra de vida
 	health_bar = health_bar_scene.instantiate()
 
 	# Corrigir local de adição — buscar CanvasLayer "UI" no topo
@@ -125,7 +128,7 @@ func _recalculate_stats():
 
 	# Resistência física
 	physical_resist = constitution * 1.0
-	
+
 	# Chances baseadas nos atributos
 	dodge_chance = dexterity * 0.5  # Ex: DEX 10 = 5% esquiva
 	block_chance = 10.0  # Base
@@ -134,7 +137,97 @@ func _recalculate_stats():
 		print("tenho escudo")
 		block_chance += 15.0  # Escudo aumenta chance de defesa
 
+# ------------------ Threat / Aggro helpers ------------------
+func add_threat(by: CombatCharacter, amount: float) -> void:
+	if by == null:
+		return
+	if not threat_table.has(by):
+		threat_table[by] = 0.0
+	threat_table[by] += amount
+func get_top_threat() -> CombatCharacter:
+
+	if threat_table.size() == 0:
+		return null
+
+	var best: CombatCharacter = null
+	var best_val := -INF
+	for attacker in threat_table.keys():
+		var v = threat_table[attacker]
+		if v > best_val and attacker and attacker.is_alive():
+			best_val = v
+			best = attacker
+	return best
+
+func decay_threat(delta: float) -> void:
+	var to_remove = []
+	for attacker in threat_table.keys():
+		threat_table[attacker] -= threat_decay_rate * delta
+		if threat_table[attacker] <= 0:
+			to_remove.append(attacker)
+	for k in to_remove:
+		threat_table.erase(k)
+
+func clear_threats():
+	threat_table.clear()
+
+# ------------------ Slotting / engagement point ------------------
+# Calcula uma posição (slot) ao redor do target para evitar empilhamento
+func get_slot_position_around_target(self_char: CombatCharacter, target: CombatCharacter, allies: Array, slot_distance: float = 1.8) -> Vector3:
+	if target == null:
+		return global_position
+
+	# tenta usar o BattleManager para reservar um slot (se estiver disponível)
+	var manager = get_tree().get_root().get_node("Game2000/BattleManager")
+	var slots_count := DEFAULT_SLOTS_PER_TARGET
+	var slot_idx := -1
+	if manager and manager.has_method("reserve_slot_for"):
+		# passa slots_count; o manager pode sobrescrever o padrão internamente
+		slot_idx = manager.reserve_slot_for(target, self_char, slots_count)
+
+	# fallback: se não conseguiu reservar, distribui com base nos aliados locais
+	if slot_idx == -1:
+		var same_target_allies := []
+		for ally in allies:
+			if ally != null and ally.is_alive() and ally.current_target == target:
+				same_target_allies.append(ally)
+		if not same_target_allies.has(self_char):
+			same_target_allies.append(self_char)
+
+		same_target_allies.sort_custom(func(a,b):
+			if a == null or b == null:
+				return 0
+			return int(a.get_instance_id()) - int(b.get_instance_id())
+		)
+
+		var slot_index = same_target_allies.find(self_char)
+		if slot_index == -1:
+			slot_index = 0
+
+		var count = same_target_allies.size()
+		var angle = (float(slot_index) / max(1, float(count))) * TAU
+		var offset = Vector3(sin(angle), 0, cos(angle)) * slot_distance
+		return target.global_position + offset
+	else:
+		# slot reservado: calcule posição circular com base em slot_idx
+		var count = slots_count
+		var radius = slot_distance + int(slot_idx / 6) * 0.6
+		var angle = (float(slot_idx) / float(count)) * TAU
+		var offset = Vector3(sin(angle), 0, cos(angle)) * radius
+		return target.global_position + offset
+
+func release_slot_of_target(target: CombatCharacter) -> void:
+	if target == null:
+		return
+	var manager = get_tree().get_root().get_node("Game2000/BattleManager")
+	if manager and manager.has_method("release_slot_for"):
+		manager.release_slot_for(target, self)
+
+# ------------------ Process / movement helpers ------------------
+
 func _process(delta):
+	
+	decay_threat(delta)
+	
 	if not health_bar or not model:
 		return
 

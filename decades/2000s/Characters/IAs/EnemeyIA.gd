@@ -7,11 +7,15 @@ var reached_player_time := 0.0
 var wait_after_reaching := 0.5 # 1 segundo de delay antes de perseguir de novo
 var aggro_target: CombatCharacter = null
 
+# prioridade para AI (maior valor = mais "importante")
+var priority := 1
 
 func _process(delta):
-	
 	if not health_bar or not model:
 		return
+
+	# Atualiza aggro SEMPRE para permitir troca dinâmica
+	_update_aggro()
 
 	var head_pos = model.global_transform.origin + Vector3(0, 2.5, 0)
 
@@ -36,7 +40,8 @@ func _process(delta):
 
 		# Atualiza a barra de turno (turn_charge)
 		health_bar.set_turn_charge(turn_charge, turn_threshold)
-		
+	
+	# Atualiza aggro se necessário
 	if aggro_target == null or not aggro_target.is_alive():
 		_update_aggro()
 	
@@ -58,15 +63,30 @@ func _follow_aggro_target(delta):
 			anim.play("Idle")
 			return
 
-		nav_agent.target_position = aggro_target.global_position
-		is_moving = true
-		var next_pos = nav_agent.get_next_path_position()
-		var direction = (next_pos - global_position).normalized()
-		velocity = direction * move_speed
-		var target_yaw = atan2(direction.x, direction.z)
-		rotation.y = lerp_angle(rotation.y, target_yaw, 0.2)
-		move_and_slide()
-		anim.play("Walking_A")
+		var manager = get_tree().get_root().get_node("Game2000/BattleManager")
+		if manager:
+			# Usa slotting para perseguir de forma não empilhada
+			var slot_pos = get_slot_position_around_target(self, aggro_target, manager.enemies, attack_range)
+			nav_agent.target_position = slot_pos
+			is_moving = true
+			var next_pos = nav_agent.get_next_path_position()
+			var direction = (next_pos - global_position).normalized()
+			velocity = direction * move_speed
+			var target_yaw = atan2(direction.x, direction.z)
+			rotation.y = lerp_angle(rotation.y, target_yaw, 0.2)
+			move_and_slide()
+			anim.play("Walking_A")
+		else:
+			# fallback
+			nav_agent.target_position = aggro_target.global_position
+			is_moving = true
+			var next_pos = nav_agent.get_next_path_position()
+			var direction = (next_pos - global_position).normalized()
+			velocity = direction * move_speed
+			var target_yaw = atan2(direction.x, direction.z)
+			rotation.y = lerp_angle(rotation.y, target_yaw, 0.2)
+			move_and_slide()
+			anim.play("Walking_A")
 	else:
 		# Quando alcança o player, começa o delay
 		reached_player_time = wait_after_reaching
@@ -88,7 +108,7 @@ func update_ai(_delta: float) -> void:
 	var target_yaw = atan2(direction.x, direction.z)
 	rotation.y = target_yaw
 
-	# Sempre toca a animação de ataque, mesmo sem atingir
+	# Aguarda animação/ataque
 	await _attack_target(aggro_target)
 
 func _attack_target(target: CombatCharacter) -> void:
@@ -108,9 +128,11 @@ func _attack_target(target: CombatCharacter) -> void:
 		var manager = get_tree().get_root().get_node("Game2000/BattleManager")
 		if manager:
 			manager._apply_hit(self, target)
+			# Adiciona threat no alvo (target) feito por este inimigo
+			if target.has_method("add_threat"):
+				target.add_threat(self, attack_power)
 
 	is_performing_action = false
-
 
 func _choose_random_player() -> CombatCharacter:
 	var manager = get_tree().get_root().get_node("Game2000/BattleManager")
@@ -127,11 +149,47 @@ func _choose_random_player() -> CombatCharacter:
 	
 	return alive_party_members[random.randi_range(0, alive_party_members.size() - 1)]
 
-
 func _update_aggro():
-	# Se não tem alvo ou alvo está morto, escolhe um novo
-	if aggro_target == null or not aggro_target.is_alive():
-		aggro_target = _choose_closest_player()
+	var manager = get_tree().get_root().get_node("Game2000/BattleManager")
+	if manager == null:
+		if aggro_target != null:
+			release_slot_of_target(aggro_target)
+		aggro_target = _choose_random_player()
+		return
+
+	var top = get_top_threat()
+	if top and top.is_alive():
+		if aggro_target != top:
+			release_slot_of_target(aggro_target)
+			aggro_target = top
+		return
+
+	# fallback: escolhe o mais próximo
+	if aggro_target != null:
+		release_slot_of_target(aggro_target)
+	aggro_target = _choose_closest_player()
+
+func receive_damage(amount: int, attacker: CombatCharacter) -> void:
+	hp -= amount
+	hp = max(hp, 0)
+	print(name, " recebeu ", amount, " de dano! HP atual: ", hp)
+
+	if attacker != null and attacker.is_alive():
+		if has_method("add_threat"):
+			add_threat(attacker, amount)
+
+	is_performing_action = true
+
+	if health_bar:
+		health_bar.set_health(hp, max_hp)
+
+	await get_tree().create_timer(1.0).timeout
+
+	is_performing_action = false
+
+	if hp <= 0:
+		print(name, " está morrendo")
+		await _die()
 
 func _choose_closest_player() -> CombatCharacter:
 	var manager = get_tree().get_root().get_node("Game2000/BattleManager")
@@ -154,23 +212,3 @@ func _choose_closest_player() -> CombatCharacter:
 			min_dist = dist
 			closest = p
 	return closest
-
-func receive_damage(amount: int, attacker: CombatCharacter) -> void:
-	hp -= amount
-	hp = max(hp, 0)
-	if attacker != null and attacker.is_alive():
-		aggro_target = attacker
-		print(name, " recebeu ", amount, " de dano! HP antes: ", hp)
-
-	is_performing_action = true  # BLOQUEIA movimento durante animação
-
-	if health_bar:
-		health_bar.set_health(hp, max_hp)
-
-	await get_tree().create_timer(1.0).timeout  # Espera 1 segundo
-
-	is_performing_action = false  # Libera o movimento, se ainda estiver vivo
-
-	if hp <= 0:
-		print(name, " está morrendo")
-		await _die()
