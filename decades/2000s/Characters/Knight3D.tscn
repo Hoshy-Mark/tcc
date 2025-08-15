@@ -31270,7 +31270,7 @@ bones/1/parent = 0
 bones/1/rest = Transform3D(1, 0, -2.38419e-07, 0, 1, 0, 2.38419e-07, 0, 1, 0, 0.405663, 0)
 bones/1/enabled = true
 bones/1/position = Vector3(0, 0.392064, 0)
-bones/1/rotation = Quaternion(-1.11123e-10, 0.0431578, 2.57241e-09, 0.999068)
+bones/1/rotation = Quaternion(-1.11123e-10, 0.0431577, 2.57241e-09, 0.999068)
 bones/1/scale = Vector3(1, 1, 1)
 bones/2/name = "spine"
 bones/2/parent = 1
@@ -31431,7 +31431,7 @@ bones/24/parent = 1
 bones/24/rest = Transform3D(1, -1.42215e-07, -2.65602e-08, -1.43052e-07, -0.999396, -0.0347412, -2.16035e-08, 0.0347411, -0.999398, 0.170945, 0.113587, 1.39233e-08)
 bones/24/enabled = true
 bones/24/position = Vector3(0.170945, 0.113587, 1.59941e-08)
-bones/24/rotation = Quaternion(0.996185, 0.0479136, 0.0566427, -0.045939)
+bones/24/rotation = Quaternion(0.996186, 0.0479136, 0.0566427, -0.045939)
 bones/24/scale = Vector3(1, 1, 1)
 bones/25/name = "lowerleg.l"
 bones/25/parent = 24
@@ -31610,7 +31610,7 @@ bones/49/rotation = Quaternion(-0.758253, -1.82539e-07, 0.651961, -1.11759e-08)
 bones/49/scale = Vector3(1, 1, 1)
 
 [node name="Badge_Shield" type="BoneAttachment3D" parent="Knight/Rig/Skeleton3D"]
-transform = Transform3D(3.17165e-07, 0.262865, 0.964832, 0.999999, -2.91981e-06, 1.47411e-06, 3.53697e-06, 0.964832, -0.262864, 0.662642, 0.636706, -0.0430842)
+transform = Transform3D(3.17165e-07, 0.262865, 0.964832, 0.999999, -2.8304e-06, 1.50391e-06, 3.53697e-06, 0.964832, -0.262864, 0.662642, 0.636706, -0.0430841)
 bone_name = "Badge_Shield"
 bone_idx = 10
 
@@ -31619,7 +31619,7 @@ mesh = SubResource("ArrayMesh_7pqan")
 skeleton = NodePath("")
 
 [node name="Rectangle_Shield" type="BoneAttachment3D" parent="Knight/Rig/Skeleton3D"]
-transform = Transform3D(3.17165e-07, 0.262865, 0.964832, 0.999999, -2.91981e-06, 1.47411e-06, 3.53697e-06, 0.964832, -0.262864, 0.662642, 0.636706, -0.0430842)
+transform = Transform3D(3.17165e-07, 0.262865, 0.964832, 0.999999, -2.8304e-06, 1.50391e-06, 3.53697e-06, 0.964832, -0.262864, 0.662642, 0.636706, -0.0430841)
 bone_name = "Rectangle_Shield"
 bone_idx = 11
 
@@ -31628,7 +31628,7 @@ mesh = SubResource("ArrayMesh_ddiiu")
 skeleton = NodePath("")
 
 [node name="Round_Shield" type="BoneAttachment3D" parent="Knight/Rig/Skeleton3D"]
-transform = Transform3D(3.17165e-07, 0.262865, 0.964832, 0.999999, -2.91981e-06, 1.47411e-06, 3.53697e-06, 0.964832, -0.262864, 0.662642, 0.636706, -0.0430842)
+transform = Transform3D(3.17165e-07, 0.262865, 0.964832, 0.999999, -2.8304e-06, 1.50391e-06, 3.53697e-06, 0.964832, -0.262864, 0.662642, 0.636706, -0.0430841)
 bone_name = "Round_Shield"
 bone_idx = 12
 
@@ -31637,7 +31637,7 @@ mesh = SubResource("ArrayMesh_6bsfp")
 skeleton = NodePath("")
 
 [node name="Spike_Shield" type="BoneAttachment3D" parent="Knight/Rig/Skeleton3D"]
-transform = Transform3D(3.17165e-07, 0.262865, 0.964832, 0.999999, -2.91981e-06, 1.47411e-06, 3.53697e-06, 0.964832, -0.262864, 0.662642, 0.636706, -0.0430842)
+transform = Transform3D(3.17165e-07, 0.262865, 0.964832, 0.999999, -2.8304e-06, 1.50391e-06, 3.53697e-06, 0.964832, -0.262864, 0.662642, 0.636706, -0.0430841)
 bone_name = "Spike_Shield"
 bone_idx = 13
 
@@ -31646,7 +31646,7 @@ mesh = SubResource("ArrayMesh_v4ytr")
 skeleton = NodePath("")
 
 [node name="1H_Sword" type="BoneAttachment3D" parent="Knight/Rig/Skeleton3D"]
-transform = Transform3D(-9.98165e-09, -0.149894, 0.988702, 0.999999, -9.50868e-07, -1.13249e-06, 1.42471e-06, 0.988701, 0.149893, -0.496053, 0.64103, 0.139528)
+transform = Transform3D(1.98206e-08, -0.149894, 0.988702, 0.999999, -9.21065e-07, -1.10269e-06, 1.51411e-06, 0.988701, 0.149894, -0.496053, 0.64103, 0.139528)
 bone_name = "1H_Sword"
 bone_idx = 19
 
@@ -31655,7 +31655,7 @@ mesh = SubResource("ArrayMesh_1bvew")
 skeleton = NodePath("")
 
 [node name="2H_Sword" type="BoneAttachment3D" parent="Knight/Rig/Skeleton3D"]
-transform = Transform3D(-2.57213e-08, -0.149894, 0.988702, 0.999999, -9.65599e-07, -1.1188e-06, 1.43722e-06, 0.988701, 0.149893, -0.496053, 0.64103, 0.139528)
+transform = Transform3D(4.08101e-09, -0.149894, 0.988702, 0.999999, -9.35797e-07, -1.089e-06, 1.52663e-06, 0.988701, 0.149894, -0.496053, 0.64103, 0.139528)
 bone_name = "2H_Sword"
 bone_idx = 20
 
@@ -31664,7 +31664,7 @@ mesh = SubResource("ArrayMesh_wfttk")
 skeleton = NodePath("")
 
 [node name="Knight_Helmet" type="BoneAttachment3D" parent="Knight/Rig/Skeleton3D"]
-transform = Transform3D(0.99972, -1.40145e-09, 0.0236468, 1.39343e-09, 1, 3.55687e-10, -0.0236468, -3.22638e-10, 0.99972, 4.69869e-07, 1.20229, -1.19779e-07)
+transform = Transform3D(0.99972, -1.40145e-09, 0.0236466, 1.39343e-09, 1, 3.55687e-10, -0.0236466, -3.22638e-10, 0.99972, 4.69869e-07, 1.20229, -1.19779e-07)
 bone_name = "Knight_Helmet"
 bone_idx = 22
 
@@ -31673,7 +31673,7 @@ mesh = SubResource("ArrayMesh_2cmjy")
 skeleton = NodePath("")
 
 [node name="Knight_Cape" type="BoneAttachment3D" parent="Knight/Rig/Skeleton3D"]
-transform = Transform3D(0.996275, -5.14962e-09, 0.0862354, 5.13044e-09, 1, 4.44078e-10, -0.0862354, 1.46374e-15, 0.996275, -1.63022e-08, 1.20229, -1.40136e-07)
+transform = Transform3D(0.996275, -5.14962e-09, 0.0862352, 5.13044e-09, 1, 4.44078e-10, -0.0862352, 9.50258e-16, 0.996275, -1.63022e-08, 1.20229, -1.40136e-07)
 bone_name = "Knight_Cape"
 bone_idx = 23
 

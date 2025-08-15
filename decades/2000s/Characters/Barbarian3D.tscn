@@ -31494,7 +31494,7 @@ bones/47/rotation = Quaternion(-0.758253, -1.82539e-07, 0.651961, -1.11759e-08)
 bones/47/scale = Vector3(1, 1, 1)
 
 [node name="Barbarian_Round_Shield" type="BoneAttachment3D" parent="Barbarian/Rig/Skeleton3D"]
-transform = Transform3D(2.87363e-07, 0.262865, 0.964832, 0.999999, -2.8304e-06, 1.50391e-06, 3.55187e-06, 0.964832, -0.262864, 0.662642, 0.636706, -0.0430842)
+transform = Transform3D(3.17165e-07, 0.262865, 0.964832, 0.999999, -2.91981e-06, 1.47411e-06, 3.53697e-06, 0.964832, -0.262864, 0.662642, 0.636706, -0.0430842)
 bone_name = "Barbarian_Round_Shield"
 bone_idx = 10
 
@@ -31503,7 +31503,7 @@ mesh = SubResource("ArrayMesh_3tpg0")
 skeleton = NodePath("")
 
 [node name="1H_Axe" type="BoneAttachment3D" parent="Barbarian/Rig/Skeleton3D"]
-transform = Transform3D(-2.57212e-08, -0.149894, 0.988702, 0.999999, -9.35797e-07, -1.089e-06, 1.52663e-06, 0.988701, 0.149893, -0.496053, 0.64103, 0.139528)
+transform = Transform3D(-2.57213e-08, -0.149894, 0.988702, 0.999999, -9.65599e-07, -1.1188e-06, 1.43722e-06, 0.988701, 0.149893, -0.496053, 0.64103, 0.139528)
 bone_name = "1H_Axe"
 bone_idx = 16
 
@@ -31512,7 +31512,7 @@ mesh = SubResource("ArrayMesh_0m0do")
 skeleton = NodePath("")
 
 [node name="2H_Axe" type="BoneAttachment3D" parent="Barbarian/Rig/Skeleton3D"]
-transform = Transform3D(-2.57212e-08, -0.149894, 0.988702, 0.999999, -9.35797e-07, -1.089e-06, 1.52663e-06, 0.988701, 0.149893, -0.496053, 0.64103, 0.139528)
+transform = Transform3D(-2.57213e-08, -0.149894, 0.988702, 0.999999, -9.65599e-07, -1.1188e-06, 1.43722e-06, 0.988701, 0.149893, -0.496053, 0.64103, 0.139528)
 bone_name = "2H_Axe"
 bone_idx = 17
 

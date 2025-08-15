@@ -52,11 +52,17 @@ var mana := 0
 var crit_chance := 0
 var magic_resist := 0
 var physical_resist := 0
+var min_damage: int = 5
+var max_damage: int = 10
 
 # Threat table (aggro)
 var threat_table := {} # {CombatCharacter -> float}
 var threat_decay_rate := 5.0 # pontos de threat por segundo
 const DEFAULT_SLOTS_PER_TARGET := 12
+var reserved_slot_idx := -1
+var reserved_target_id := 0
+var slot_renew_timer := 0.0
+const SLOT_RENEW_INTERVAL := 0.4
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -103,7 +109,9 @@ func _ready():
 func _recalculate_stats():
 	# Dano físico base
 	attack_power = (strength * 2) + (dexterity * 0.5)
-
+	# Dano mínimo e máximo baseado no attack_power
+	min_damage = int(attack_power * 0.8)  # 80% do attack_power
+	max_damage = int(attack_power * 1.2)  # 120% do attack_power
 	# Defesa física
 	defense = (constitution * 2) + (dexterity * 0.5)
 
@@ -144,6 +152,7 @@ func add_threat(by: CombatCharacter, amount: float) -> void:
 	if not threat_table.has(by):
 		threat_table[by] = 0.0
 	threat_table[by] += amount
+
 func get_top_threat() -> CombatCharacter:
 
 	if threat_table.size() == 0:
@@ -158,7 +167,7 @@ func get_top_threat() -> CombatCharacter:
 			best = attacker
 	return best
 
-func decay_threat(delta: float) -> void:
+func decay_threat(delta: float):
 	var to_remove = []
 	for attacker in threat_table.keys():
 		threat_table[attacker] -= threat_decay_rate * delta
@@ -172,19 +181,24 @@ func clear_threats():
 
 # ------------------ Slotting / engagement point ------------------
 # Calcula uma posição (slot) ao redor do target para evitar empilhamento
+
 func get_slot_position_around_target(self_char: CombatCharacter, target: CombatCharacter, allies: Array, slot_distance: float = 1.8) -> Vector3:
 	if target == null:
 		return global_position
 
-	# tenta usar o BattleManager para reservar um slot (se estiver disponível)
+	# tenta usar o BattleManager para reservar um slot
 	var manager = get_tree().get_root().get_node("Game2000/BattleManager")
 	var slots_count := DEFAULT_SLOTS_PER_TARGET
 	var slot_idx := -1
 	if manager and manager.has_method("reserve_slot_for"):
-		# passa slots_count; o manager pode sobrescrever o padrão internamente
 		slot_idx = manager.reserve_slot_for(target, self_char, slots_count)
+		if slot_idx != -1:
+			# guarda reserva
+			reserved_slot_idx = slot_idx
+			reserved_target_id = target.get_instance_id()
+			slot_renew_timer = SLOT_RENEW_INTERVAL
 
-	# fallback: se não conseguiu reservar, distribui com base nos aliados locais
+	# fallback: se não conseguiu reservar
 	if slot_idx == -1:
 		var same_target_allies := []
 		for ally in allies:
@@ -208,7 +222,7 @@ func get_slot_position_around_target(self_char: CombatCharacter, target: CombatC
 		var offset = Vector3(sin(angle), 0, cos(angle)) * slot_distance
 		return target.global_position + offset
 	else:
-		# slot reservado: calcule posição circular com base em slot_idx
+		# slot reservado: calcula posição com base no índice
 		var count = slots_count
 		var radius = slot_distance + int(slot_idx / 6) * 0.6
 		var angle = (float(slot_idx) / float(count)) * TAU
@@ -225,16 +239,24 @@ func release_slot_of_target(target: CombatCharacter) -> void:
 # ------------------ Process / movement helpers ------------------
 
 func _process(delta):
-	
+	# Renovar reserva de slot
+	if reserved_slot_idx != -1 and reserved_target_id != 0:
+		slot_renew_timer -= delta
+		if slot_renew_timer <= 0:
+			var bm = get_tree().get_root().get_node("Game2000/BattleManager")
+			if bm and bm.has_method("reserve_slot_for"):
+				var target_node = instance_from_id(reserved_target_id)
+				if target_node:
+					bm.reserve_slot_for(target_node, self, DEFAULT_SLOTS_PER_TARGET)
+			slot_renew_timer = SLOT_RENEW_INTERVAL
+
 	decay_threat(delta)
-	
+
 	if not health_bar or not model:
 		return
 
-	# Atualizar a carga do turno
 	_update_turn_charge(delta)
-	
-	# Atualiza cooldowns das habilidades
+
 	for i in range(ability_cooldowns.size()):
 		if ability_cooldowns[i] > 0:
 			ability_cooldowns[i] = max(ability_cooldowns[i] - delta, 0)
@@ -251,16 +273,11 @@ func _process(delta):
 		var dot = camera_forward.dot(to_char)
 		health_bar.visible = dot > 0.0
 
-		# Aplica o deslocamento na posição da barra
-		var offset_x = -50  # ajustar para o lado que quiser
-		var offset_y = -25  # ajustar para cima/baixo
-
+		var offset_x = -50
+		var offset_y = -25
 		health_bar.position = screen_pos + Vector2(offset_x, offset_y)
 
-		# Atualiza a barra de vida
 		health_bar.set_health(hp, max_hp)
-
-		# Atualiza a barra de turno (turn_charge)
 		health_bar.set_turn_charge(turn_charge, turn_threshold)
 
 func _physics_process(delta: float) -> void:
@@ -311,6 +328,11 @@ func _handle_movement(delta):
 			move_and_slide()
 			if anim and anim.current_animation != "Idle":
 				anim.play("Idle")
+
+func take_turn():
+	if current_target and current_target.is_alive():
+		var battle_manager = get_tree().get_root().get_node("Game2000/BattleManager")
+		battle_manager._execute_attack(self, current_target)
 
 func apply_damage(amount: int, attacker: CombatCharacter):
 	# Se tentar esquivar
@@ -390,7 +412,7 @@ func set_camera(cam: Camera3D):
 func update_ai(_delta: float) -> void:
 	# IA desativada, ataques automáticos serão tratados no BattleManager
 	pass
-	
+
 func _update_vision_cone(target: CombatCharacter, attack_range: float):
 	if not vision_cone_material or not target:
 		return

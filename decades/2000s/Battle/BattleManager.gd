@@ -1,5 +1,6 @@
 extends Node
 
+# --- Paths para instanciar personagens e inimigos ---
 var party_paths := [
 	preload("res://decades/2000s/Characters/Barbarian3D.tscn"),
 	preload("res://decades/2000s/Characters/Mage3D.tscn"),
@@ -9,39 +10,73 @@ var party_paths := [
 
 var enemy_paths := [
 	preload("res://decades/2000s/Characters/Enemies/Skeleton_Minion.tscn"),
+	preload("res://decades/2000s/Characters/Enemies/Skeleton_Mage.tscn")
 ]
+
+var fixed_positions = [
+	Vector3(6, base_height, 6),
+	Vector3(-6, base_height, 0),
+	Vector3(6, base_height, -12),
+	Vector3(0, base_height, -22),
+	Vector3(-36, base_height, 6),
+	Vector3(-22, base_height, -22),
+	Vector3(-22, base_height, -6),
+	Vector3(-22, base_height, -59),
+	Vector3(-32, base_height, -71),
+	Vector3(-22, base_height, -83),
+	Vector3(-6, base_height, -79),
+	Vector3(-40, base_height, -79),
+	Vector3(24, base_height, -71),
+	Vector3(12, base_height, -75),
+	Vector3(16, base_height, -119),
+	Vector3(24, base_height, -115),
+	Vector3(6, base_height, -111),
+	Vector3(24, base_height, -103),
+	Vector3(6, base_height, -95),
+	Vector3(20, base_height, -127),
+]
+
+# --- Referências para HUD, câmera e altura base ---
 var ability_hud: AbilityHUD = null
-var base_height = 0.5
 var camera: ThirdPersonCamera3D = null
-var hud: CanvasLayer = null  # <-- nova variável para armazenar o HUD
-var is_processing_turn = false
-var enemies: Array[CombatCharacter] = []
+var hud: CanvasLayer = null
+var base_height := 0.5
+
+# --- Estado do combate ---
 var party_members: Array[CombatCharacter] = []
+var enemies: Array[CombatCharacter] = []
 var player_character: CombatCharacter = null
 
-# Sistema de XP e Nível do Grupo
-var group_level: int = 1
-var group_xp: int = 0
-var xp_per_enemy: int = 20  # XP que cada inimigo derrotado dá
-var hordes_defeated: int = 0
-var max_hordes: int = 6
-var enemies_per_horde: int = 3
-
-# Controle do combate
+var is_processing_turn := false
 var is_tactical_pause_active := false
 var is_player_choosing_action := false
 var player_auto_attacking := false
+
+# --- XP e nível do grupo ---
+var group_level: int = 1
+var group_xp: int = 0
+var xp_per_enemy: int = 20
+var hordes_defeated: int = 0
+var max_hordes: int = 2
+var enemies_per_horde: int = 20
+
+# --- Controle de slots de posicionamento ---
 var slot_occupancy := {}
 const DEFAULT_SLOTS_PER_TARGET := 12
+const SLOT_LEASE_MS := 1200  # tempo até expirar se não renovado
 
-# Constantes
+# --- Constantes de jogo ---
 const ATTACK_RANGE := 2.0
+
+# --- Funções de inicialização e setup ---
 
 func _ready():
 	_spawn_new_horde()
 	_spawn_party()
-	
-	var cam = get_node("Camera3D") # Ajuste o caminho real da câmera
+	_setup_camera_for_characters()
+
+func _setup_camera_for_characters():
+	var cam = get_node("Camera3D") # Ajuste o caminho conforme necessário
 	for char in party_members + enemies:
 		char.set_camera(cam)
 
@@ -64,18 +99,44 @@ func _spawn_party():
 	for i in party_paths.size():
 		var char: CombatCharacter = party_paths[i].instantiate()
 		add_child(char)
-		char.global_position = Vector3(start_positions[i % start_positions.size()].x, base_height, start_positions[i % start_positions.size()].z)
+		char.global_position = Vector3(
+			start_positions[i % start_positions.size()].x,
+			base_height,
+			start_positions[i % start_positions.size()].z
+		)
 		party_members.append(char)
 
-		# Knight será o último no array (index 3)
+		# Definir controle manual somente para o Knight (índice 3)
 		if i == 3:
 			char.manual_control = true
 			player_character = char
-
 		else:
-			char.manual_control = false  # serão IA no futuro
+			char.manual_control = false  # IA futura
 
 		print("BattleManager: Personagem da party instanciado: ", char.name)
+
+func _spawn_new_horde():
+	enemies.clear()
+	for i in range(enemies_per_horde):
+		var enemy_scene = enemy_paths[randi() % enemy_paths.size()]
+		var enemy: CombatCharacter = enemy_scene.instantiate()
+		add_child(enemy)
+		
+		# Usa a posição fixa correspondente
+		if i < fixed_positions.size():
+			enemy.global_position = fixed_positions[i]
+		else:
+			# fallback se tiver mais inimigos que posições fixas
+			enemy.global_position = Vector3(
+				randf_range(2, 6),
+				base_height,
+				randf_range(6, 10)
+			)
+		
+		enemy.manual_control = false
+		enemies.append(enemy)
+		print("Novo inimigo spawnado:", enemy.name)
+
 
 func set_camera(cam: ThirdPersonCamera3D):
 	camera = cam
@@ -85,112 +146,218 @@ func set_camera(cam: ThirdPersonCamera3D):
 		camera.set_camera_to_combat(true)
 		print("BattleManager: Câmera setada para seguir o Knight.")
 
-func _process(delta):
+# --- Loop principal e controle do fluxo ---
 
-	if Input.is_action_just_pressed("strategic_pause"):
-		# Não permite sair se o editor estiver aberto
-		var editor = get_tree().get_root().find_child("GambitEditor", true, false)
-		if editor and editor.visible:
-			return
-		_toggle_tactical_pause()
+func _process(delta: float) -> void:
+	if _handle_pause_input():
 		return
-
 
 	if is_tactical_pause_active:
-		# Verifica se o editor está aberto
-		var editor = get_tree().get_root().find_child("GambitEditor", true, false)
-		if editor and editor.visible:
-			return  # Não permite sair do modo tático com tecla enquanto editor estiver visível
-		_handle_tactical_camera_movement(delta)
+		_handle_tactical_mode(delta)
 		return
 
-	# Atualiza e processa inimigos
+	_update_enemies(delta)
+	_update_party_members(delta)
+	_handle_player_auto_attack()
+
+	_cleanup_slot_occupancy()
+
+func _handle_pause_input() -> bool:
+	if Input.is_action_just_pressed("strategic_pause"):
+		var editor = get_tree().get_root().find_child("GambitEditor", true, false)
+		if editor and editor.visible:
+			return true
+		_toggle_tactical_pause()
+		return true
+	return false
+
+func _handle_tactical_mode(delta: float) -> void:
+	var editor = get_tree().get_root().find_child("GambitEditor", true, false)
+	if editor and editor.visible:
+		return
+	_handle_tactical_camera_movement(delta)
+
+func _update_enemies(delta: float) -> void:
 	for enemy in enemies:
 		enemy._update_turn_charge(delta)
-		enemy._update_vision_cone(player_character, 2.0)
+		if enemy.has_method("update_ai_movement"):
+			enemy.update_ai_movement(delta)
+		enemy._update_vision_cone(player_character, ATTACK_RANGE)
 		if enemy.is_turn_ready and not enemy.is_performing_action:
-			enemy.is_performing_action = true  # Marca como ocupado
 			await _handle_ai_turn(enemy)
-			enemy.turn_charge = 0.0
-			enemy.is_turn_ready = false
-			enemy.is_performing_action = false  # Libera depois da ação
 
-	# Atualiza e processa membros da party
+func _update_party_members(delta: float) -> void:
 	for member in party_members:
 		member._update_turn_charge(delta)
-
+		
 		if not member.manual_control and not member.is_performing_action and member != player_character:
-			await member.update_ai(delta)
-			var attack_range = 2.0
-			var closest_enemy: CombatCharacter = null
-			var min_dist = INF
-			for enemy in enemies:
-				var dist = member.global_position.distance_to(enemy.global_position)
-				if dist < min_dist:
-					min_dist = dist
-					closest_enemy = enemy
-			if closest_enemy:
-				member._update_vision_cone(closest_enemy, attack_range)
+			
+			# Atualiza ataque de forma assíncrona
+			await member.update_aiassadswasas(delta)
+			
+			# Atualiza visão depois do movimento/ataque
+			_update_member_vision(member)
 
-		# Atualiza o cone de visão para o player controlado manualmente
 		if member == player_character:
-			var attack_range = 2.0
-			var closest_enemy: CombatCharacter = null
-			var min_dist = INF
-			for enemy in enemies:
-				var dist = player_character.global_position.distance_to(enemy.global_position)
-				if dist < min_dist:
-					min_dist = dist
-					closest_enemy = enemy
-			if closest_enemy:
-				player_character._update_vision_cone(closest_enemy, attack_range)
+			_update_member_vision(player_character)
 
-		# Se for o player manual e pronto, mostra menu de ação
+		# Gerenciamento da vez do jogador
 		if member.is_turn_ready and member == player_character and not is_player_choosing_action:
 			is_player_choosing_action = true
 			if hud:
 				hud.show_action_menu(member)
-		
-	# Atualizar turn charge de todo mundo
-	for char in party_members + enemies:
-		if char.is_alive():
-			char._update_turn_charge(delta)
 
-	# Loop de ataque automático do player
-	if player_auto_attacking and player_character and player_character.current_target:
-		
-		var tgt = player_character.current_target
+func _update_member_vision(member: CombatCharacter) -> void:
+	var closest_enemy = _find_closest_enemy(member)
+	if closest_enemy:
+		member._update_vision_cone(closest_enemy, ATTACK_RANGE)
 
-		if not tgt.is_alive():
-			print("Alvo morto, parando auto ataque.")
-			player_auto_attacking = false
-			player_character.is_moving = false
-			player_character.manual_control = true
-			return
+func _find_closest_enemy(member: CombatCharacter) -> CombatCharacter:
+	var closest_enemy = null
+	var min_dist := INF
+	for enemy in enemies:
+		var dist = member.global_position.distance_to(enemy.global_position)
+		if dist < min_dist:
+			min_dist = dist
+			closest_enemy = enemy
+	return closest_enemy
 
-		if player_character.hp <= 0:
-			player_auto_attacking = false
-			player_character.is_moving = false
-			return
+func _handle_player_auto_attack() -> void:
+	if not player_auto_attacking or player_character == null or player_character.current_target == null:
+		return
 
-		if player_character.is_performing_action:
-			return # espera terminar ação
+	var tgt = player_character.current_target
 
-		var dist = player_character.global_position.distance_to(tgt.global_position)
-		
-		if dist > ATTACK_RANGE:
-			player_character.manual_control = false  # garante movimento automático
-			player_character.nav_agent.target_position = tgt.global_position
-			player_character.is_moving = true
-		else:
-			player_character.is_moving = false
-			player_character.manual_control = true
-			if player_character.is_turn_ready:
-				await _execute_attack(player_character)
-				player_character.turn_charge = 0
-				player_character.is_turn_ready = false
+	if not tgt.is_alive():
+		print("Alvo morto, parando auto ataque.")
+		_stop_player_auto_attack()
+		return
+
+	if player_character.hp <= 0:
+		_stop_player_auto_attack()
+		return
+
+	if player_character.is_performing_action:
+		return # espera terminar ação
+
+	var dist = player_character.global_position.distance_to(tgt.global_position)
+
+	if dist > ATTACK_RANGE:
+		player_character.manual_control = false
+		player_character.nav_agent.target_position = tgt.global_position
+		player_character.is_moving = true
+	else:
+		player_character.is_moving = false
+		player_character.manual_control = true
+		if player_character.is_turn_ready:
+			await _execute_attack(player_character, player_character.current_target)
+
+func _stop_player_auto_attack() -> void:
+	player_auto_attacking = false
+	if player_character:
+		player_character.is_moving = false
+		player_character.manual_control = true
+
+# --- Funções de combate e ataque ---
+
+func _execute_attack(attacker: CombatCharacter, target: CombatCharacter) -> void:
 	
-	_cleanup_slot_occupancy()
+	if target:
+		if attacker.global_position.distance_to(target.global_position) > attacker.attack_range:
+			print(attacker.name, " está fora do alcance para atacar ", target.name)
+			return
+	
+	if not target or not target.is_alive():
+		return
+
+	attacker.is_performing_action = true
+
+	# Rolar acerto
+	var attack_roll = randi_range(1, 20)
+	var target_roll = randi_range(1, 20)
+
+	if attack_roll >= target_roll:
+		print(attacker.name, "acertou", target.name)
+		await _play_attack_animation(attacker)
+
+		var damage = randi_range(attacker.min_damage, attacker.max_damage)
+		target.apply_damage(damage, attacker)
+		if target.has_method("add_threat"):
+			target.add_threat(attacker, damage)
+	else:
+		print(attacker.name, "errou o ataque.")
+		await _play_attack_animation(attacker)
+
+	attacker.is_performing_action = false
+	attacker.turn_charge = 0
+	attacker.is_turn_ready = false
+
+# Função auxiliar só para animação
+func _play_attack_animation(character: CombatCharacter) -> void:
+	if character.anim:
+		character.anim.play("1H_Melee_Attack_Slice_Diagonal")
+		await get_tree().create_timer(1.0).timeout
+
+func _apply_hit(attacker: CombatCharacter, target: CombatCharacter) -> int:
+	var damage = _calculate_damage(attacker, target)
+	target.apply_damage(damage, attacker) # Aqui entra defesa/esquiva
+	return damage
+
+# --- Funções de morte, recompensas e evolução  ---
+
+func _on_character_death(character: CombatCharacter) -> void:
+	print(character.name, "morreu!")
+	if enemies.has(character):
+		enemies.erase(character)
+		group_xp += xp_per_enemy
+		hordes_defeated += 1
+		_check_level_up()
+		_spawn_new_horde_if_needed()
+	character.queue_free()
+
+func _check_level_up():
+	var xp_needed = 100 * group_level
+	if group_xp >= xp_needed:
+		group_level += 1
+		group_xp -= xp_needed
+		print("Grupo subiu para nível ", group_level)
+
+func _spawn_new_horde_if_needed():
+	if hordes_defeated >= max_hordes:
+		print("Todas as hordas derrotadas!")
+		return
+	_spawn_new_horde()
+
+func add_group_xp(amount: int) -> void:
+	group_xp += amount
+	print("Grupo ganhou %d XP (Total: %d)" % [amount, group_xp])
+
+	var xp_to_next_level = 100 * group_level
+	if group_xp >= xp_to_next_level:
+		group_xp -= xp_to_next_level
+		group_level += 1
+		print("🎉 Grupo subiu para o nível %d!" % group_level)
+		
+		for member in party_members:
+			if not member.has_meta("points_to_spend"):
+				member.level += 1
+				member.set_meta("points_to_spend", 0)
+			member.set_meta("points_to_spend", member.get_meta("points_to_spend") + 5)
+
+# --- Callbacks de UI e interação  ---
+
+func _on_player_action_selected(action_name: String):
+	match action_name:
+		"attack":
+			player_auto_attacking = true
+		"Defend":
+			# Implementar defesa
+			pass
+		_:
+			print("Ação desconhecida selecionada:", action_name)
+	is_player_choosing_action = false
+
+# --- Cálculos e lógica de combate ---
 
 func _calculate_damage(attacker: CombatCharacter, target: CombatCharacter) -> int:
 	var base_damage = attacker.attack_power
@@ -212,47 +379,31 @@ func _calculate_damage(attacker: CombatCharacter, target: CombatCharacter) -> in
 
 	return int(max(1, damage))
 
-func _handle_ai_turn(character: CombatCharacter) -> void:
-	if character.has_method("update_ai"):
-		await character.update_ai(get_process_delta_time())
+func execute_item_use(user: CombatCharacter, target: CombatCharacter, item: Dictionary):
+	user.is_performing_action = true
+	if target == user:
+		user.anim.play("Use_Item")
 	else:
-		push_error("Character " + character.name + " não tem método update_ai()")
+		user.look_at(target.global_position)
+		user.anim.play("Throw")
 
-func _on_player_action_selected(action_name: String):
-	if is_tactical_pause_active:
-		return
+	await get_tree().create_timer(1.0).timeout
 
-	match action_name:
-		"attack":
-			if player_character.current_target and player_character.current_target.is_alive():
-				player_auto_attacking = true
-				print("Auto ataque iniciado contra", player_character.current_target.name)
-			else:
-				print("Nenhum alvo válido.")
-		"item":
-			player_auto_attacking = false
-		"defend":
-			player_auto_attacking = false
-			await _execute_defend(player_character)
-
-	if hud:
-		hud.hide_action_menu()
-
+	if item.type == "healing":
+		target.hp = clamp(target.hp + item.heal, 0, target.max_hp)
+	
+	user.turn_charge = 0
+	user.is_turn_ready = false
+	user.is_performing_action = false
 	is_player_choosing_action = false
 
-func _execute_defend(user: CombatCharacter) -> void:
-	print(user.name, "defendeu")
-	await get_tree().create_timer(0.5).timeout
+# --- IA e comportamento dos personagens ---
 
-func _auto_attack(character: CombatCharacter) -> void:
-	if is_tactical_pause_active:
-		return  # bloqueia ataque automático durante pausa tática
-	if character.is_performing_action:
-		return  # já está atacando
-	if character.manual_control and character == player_character:
-		push_warning("Player não deve atacar automaticamente")
-		return
-	await _execute_attack(character)
+func _handle_ai_turn(character: CombatCharacter) -> void:
+	if character.has_method("update_ai_attack"):
+		await character.update_ai_attack(get_process_delta_time())
+	else:
+		push_error("Character " + character.name + " não tem método update_ai()")
 
 func _handle_party_member_ai_turn(member: CombatCharacter) -> void:
 	var attack_range = 2.0
@@ -279,6 +430,118 @@ func _handle_party_member_ai_turn(member: CombatCharacter) -> void:
 	else:
 		member.nav_agent.target_position = target.global_position
 		member.is_moving = true
+
+# --- Controle de slots de combate (posicionamento tático) ---
+
+func _ensure_slots_for_target(target: CombatCharacter, slots_count: int = DEFAULT_SLOTS_PER_TARGET) -> void:
+	if target == null:
+		return
+	var id = target.get_instance_id()
+	if not slot_occupancy.has(id):
+		slot_occupancy[id] = []
+		for i in range(slots_count):
+			slot_occupancy[id].append({ "agent": null, "reserved_at": 0, "priority": 0 })
+
+func reserve_slot_for(target: CombatCharacter, agent: CombatCharacter, slots_count: int = DEFAULT_SLOTS_PER_TARGET, desired_role: String = "any") -> int:
+	if target == null or agent == null:
+		return -1
+	_ensure_slots_for_target(target, slots_count)
+	var id = target.get_instance_id()
+	var slots = slot_occupancy[id]
+
+	# limpar slots expirados
+	var now = Time.get_unix_time_from_system() * 1000
+	for i in range(slots.size()):
+		var s = slots[i]
+		if s["agent"] != null and (not is_instance_valid(s["agent"]) or not s["agent"].is_alive() or now - s["reserved_at"] > SLOT_LEASE_MS):
+			slots[i] = { "agent": null, "reserved_at": 0, "priority": 0 }
+
+	# base_angle do agent em relação ao target (convenção: atan2(z,x))
+	var dir = (agent.global_position - target.global_position)
+	dir.y = 0
+	if dir.length() == 0:
+		dir = Vector3(1,0,0)
+	var base_angle = atan2(dir.z, dir.x)
+
+	# preferir slots por role (ex: front 0..2, side 3..8, back 9..11) - ajustável
+	var preferred_ranges = []
+	if desired_role == "tank":
+		preferred_ranges = [0,1,2]
+	elif desired_role == "melee":
+		preferred_ranges = [0,1,2,3,4]
+	elif desired_role == "ranged":
+		preferred_ranges = [5,6,7,8,9,10,11]
+	else:
+		for i in range(slots.size()):
+			preferred_ranges.append(i)
+
+	var best_idx := -1
+	var best_ang_diff := 99999.0
+	for i in preferred_ranges:
+		if i < 0 or i >= slots.size():
+			continue
+		var s = slots[i]
+		if s["agent"] == null:
+			var angle = (float(i) / float(slots.size())) * TAU
+			var diff = abs(wrapf(angle - base_angle, -PI, PI))
+			if diff < best_ang_diff:
+				best_ang_diff = diff
+				best_idx = i
+
+	# se não encontrou em preferred, tenta qualquer slot livre
+	if best_idx == -1:
+		for i in range(slots.size()):
+			var s = slots[i]
+			if s["agent"] == null:
+				var angle = (float(i) / float(slots.size())) * TAU
+				var diff = abs(wrapf(angle - base_angle, -PI, PI))
+				if diff < best_ang_diff:
+					best_ang_diff = diff
+					best_idx = i
+
+	if best_idx != -1:
+		slots[best_idx] = {
+			"agent": agent,
+			"reserved_at": now,
+			"priority": 1
+		}
+		slot_occupancy[id] = slots
+		return best_idx
+
+	return -1
+
+func release_slot_for(target: CombatCharacter, agent: CombatCharacter) -> void:
+	if target == null or agent == null:
+		return
+	var id = target.get_instance_id()
+	if not slot_occupancy.has(id):
+		return
+	var slots = slot_occupancy[id]
+	for i in range(slots.size()):
+		var s = slots[i]
+		if s["agent"] == agent:
+			slots[i] = { "agent": null, "reserved_at": 0, "priority": 0 }
+	slot_occupancy[id] = slots
+
+func _cleanup_slot_occupancy() -> void:
+	var to_delete = []
+	for key in slot_occupancy.keys():
+		var slots = slot_occupancy[key]
+		for i in range(slots.size()):
+			if slots[i] != null and (not is_instance_valid(slots[i]) or not slots[i].is_alive()):
+				slots[i] = null
+		slot_occupancy[key] = slots
+		# opcional: se todos nulos, remover entrada
+		var all_null = true
+		for s in slots:
+			if s != null:
+				all_null = false; break
+		if all_null:
+			to_delete.append(key)
+	for k in to_delete:
+		slot_occupancy.erase(k)
+
+# --- Modo tático e controle da pausa estratégica ---
 
 func _toggle_tactical_pause():
 	is_tactical_pause_active = !is_tactical_pause_active
@@ -366,6 +629,8 @@ func _anyone_is_acting() -> bool:
 		if char.is_performing_action:
 			return true
 	return false
+
+# --- Input e seleção de personagem / controle de câmera ---
 
 func _unhandled_input(event):
 	if is_tactical_pause_active:
@@ -459,58 +724,10 @@ func _set_new_player_character(new_char: CombatCharacter):
 		if hud:
 			hud.set_gambit_button_enabled(true)
 
+# --- Gerenciamento de batalha e evento de inimigos ---
+
 func get_party_members() -> Array:
 	return party_members
-
-func _execute_attack(attacker: CombatCharacter) -> void:
-	if not attacker.current_target or not attacker.current_target.is_alive():
-		return
-
-	attacker.is_performing_action = true
-
-	# Rolagem de acerto simples
-	var attack_roll = randi_range(1, 20)
-	var target_roll = randi_range(1, 20)
-
-	if attack_roll >= target_roll:
-		print(attacker.name, "acertou", attacker.current_target.name)
-		attacker.anim.play("1H_Melee_Attack_Slice_Diagonal", -1, 2.0)
-		await get_tree().create_timer(1.0).timeout
-
-		# Aplica o hit usando o sistema novo e captura o dano real
-		var damage_done = _apply_hit(attacker, attacker.current_target)
-
-		# Se o alvo for inimigo, aumenta threat baseado no dano real
-		if damage_done > 0 and "add_threat" in attacker.current_target:
-			attacker.current_target.add_threat(attacker, damage_done)
-
-	else:
-		attacker.anim.play("1H_Melee_Attack_Chop", -1, 2.0)
-		await get_tree().create_timer(1.0).timeout
-		print(attacker.name, "errou o ataque")
-
-	attacker.is_performing_action = false
-
-func _apply_hit(attacker: CombatCharacter, target: CombatCharacter) -> int:
-	var damage = _calculate_damage(attacker, target)
-	target.apply_damage(damage, attacker) # Aqui entra defesa/esquiva
-	return damage
-
-func add_group_xp(amount: int) -> void:
-	group_xp += amount
-	print("Grupo ganhou %d XP (Total: %d)" % [amount, group_xp])
-
-	var xp_to_next_level = 100 * group_level
-	if group_xp >= xp_to_next_level:
-		group_xp -= xp_to_next_level
-		group_level += 1
-		print("🎉 Grupo subiu para o nível %d!" % group_level)
-		
-		for member in party_members:
-			if not member.has_meta("points_to_spend"):
-				member.level += 1
-				member.set_meta("points_to_spend", 0)
-			member.set_meta("points_to_spend", member.get_meta("points_to_spend") + 5)
 
 func _check_enemies_defeated():
 	if enemies.is_empty():
@@ -525,16 +742,7 @@ func _check_enemies_defeated():
 		await get_tree().create_timer(2.0).timeout
 		_spawn_new_horde()
 
-func _spawn_new_horde():
-	enemies.clear()
-	for i in range(enemies_per_horde):
-		var enemy_scene = enemy_paths[randi() % enemy_paths.size()]
-		var enemy: CombatCharacter = enemy_scene.instantiate()
-		add_child(enemy)
-		enemy.global_position = Vector3(randf_range(2, 6), base_height, randf_range(6, 10))
-		enemy.manual_control = false
-		enemies.append(enemy)
-		print("Novo inimigo spawnado:", enemy.name)
+# --- HUD e interface de habilidades ---
 
 func _on_ability_selected(index: int):
 	if not player_character:
@@ -548,98 +756,3 @@ func _on_ability_selected(index: int):
 func set_ability_hud(hud: AbilityHUD):
 	ability_hud = hud
 	ability_hud.ability_selected.connect(_on_ability_selected)
-
-func execute_item_use(user: CombatCharacter, target: CombatCharacter, item: Dictionary):
-	user.is_performing_action = true
-	if target == user:
-		user.anim.play("Use_Item")
-	else:
-		user.look_at(target.global_position)
-		user.anim.play("Throw")
-
-	await get_tree().create_timer(1.0).timeout
-
-	if item.type == "healing":
-		target.hp = clamp(target.hp + item.heal, 0, target.max_hp)
-	
-	user.turn_charge = 0
-	user.is_turn_ready = false
-	user.is_performing_action = false
-	is_player_choosing_action = false
-
-func _ensure_slots_for_target(target: CombatCharacter, slots_count: int = DEFAULT_SLOTS_PER_TARGET) -> void:
-	if target == null:
-		return
-	var id = target.get_instance_id()
-	if not slot_occupancy.has(id):
-		slot_occupancy[id] = []
-		for i in range(slots_count):
-			slot_occupancy[id].append(null)
-
-# Reserva o slot que mais faz sentido (baseado no ângulo do agent em relação ao target).
-# Retorna slot_index (int) ou -1 se não conseguiu reservar.
-func reserve_slot_for(target: CombatCharacter, agent: CombatCharacter, slots_count: int = DEFAULT_SLOTS_PER_TARGET) -> int:
-	if target == null or agent == null:
-		return -1
-	_ensure_slots_for_target(target, slots_count)
-	var id = target.get_instance_id()
-	var slots = slot_occupancy[id]
-
-	# calcula ângulo do agent em relação ao target
-	var dir = (agent.global_position - target.global_position)
-	dir.y = 0
-	if dir.length() == 0:
-		dir = Vector3(1,0,0)
-	var base_angle = atan2(dir.x, dir.z)
-
-	# tenta achar slot livre com menor diferença angular
-	var best_idx := -1
-	var best_ang_diff := 9999.0
-	for i in range(slots.size()):
-		if slots[i] == null or not is_instance_valid(slots[i]) or not slots[i].is_alive():
-			# ângulo que esse slot representa (distribuição circular)
-			var angle = (float(i) / float(slots.size())) * TAU
-			var diff = abs(wrapf(angle - base_angle, -PI, PI))
-			if diff < best_ang_diff:
-				best_ang_diff = diff
-				best_idx = i
-
-	# marca o slot
-	if best_idx != -1:
-		slots[best_idx] = agent
-		slot_occupancy[id] = slots
-		return best_idx
-
-	# nenhum slot livre
-	return -1
-
-func release_slot_for(target: CombatCharacter, agent: CombatCharacter) -> void:
-	if target == null or agent == null:
-		return
-	var id = target.get_instance_id()
-	if not slot_occupancy.has(id):
-		return
-	var slots = slot_occupancy[id]
-	for i in range(slots.size()):
-		if slots[i] == agent:
-			slots[i] = null
-	slot_occupancy[id] = slots
-
-# cleanup - remover referências inválidas (chamar em _process)
-func _cleanup_slot_occupancy() -> void:
-	var to_delete = []
-	for key in slot_occupancy.keys():
-		var slots = slot_occupancy[key]
-		for i in range(slots.size()):
-			if slots[i] != null and (not is_instance_valid(slots[i]) or not slots[i].is_alive()):
-				slots[i] = null
-		slot_occupancy[key] = slots
-		# opcional: se todos nulos, remover entrada
-		var all_null = true
-		for s in slots:
-			if s != null:
-				all_null = false; break
-		if all_null:
-			to_delete.append(key)
-	for k in to_delete:
-		slot_occupancy.erase(k)
