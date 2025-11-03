@@ -1,7 +1,7 @@
 extends Node
 class_name Enemy
 
-var nome: String = "Goblin"
+var nome: String = "Enemy"
 var max_hp: int = 50
 var current_hp: int = max_hp
 var max_mp: int = 0
@@ -20,8 +20,10 @@ var magic_power: int = 0
 var magic_defense: int = 0
 var luck: int = 0
 
+var ai_behavior: String = "simple_attack" # <-- ADICIONE ESTA LINHA
+
 func attack(target):
-	var accuracy_atacante = accuracy + int(randf() * 10) *  1.5
+	var accuracy_atacante = accuracy + int(randf() * 10) * 1.5
 	
 	var evasion_alvo = target.evasion + int(randf() * 10)
 	# Se o alvo está defendendo, recebe bônus de evasão (20%)

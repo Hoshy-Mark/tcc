@@ -2,24 +2,19 @@ extends Sprite2D
 @export var enemy: Enemy
 var enemy_id: String
 
+# --- MODIFICADO AQUI ---
 const VISUAL_CONFIG = {
-	"Goblin": {
-		"texture": preload("res://assets/Goblin.png"),
+	"Esqueleto": { # <-- Renomeado de "Goblin"
+		"texture": preload("res://assets/Goblin.png"), # <-- Ainda usa a arte do Goblin
 		"scale": Vector2(1.6, 1.6),
 	},
-	"Orc": {
-		"texture": preload("res://assets/Orc.png"),
-		"scale": Vector2(1.5, 1.5),
-	},
-	"Little Orc": {
-		"texture": preload("res://assets/Little Orc.png"),
-		"scale": Vector2(1.2, 1.2),
-	},
+	# "Orc" e "Little Orc" foram removidos
 	"Morcego": {
 		"texture": preload("res://assets/Morcego.png"),
 		"scale": Vector2(1.0, 1.0),
 	}
 }
+# --- FIM DA MODIFICAÇÃO ---
 
 func _ready():
 	if enemy:
@@ -31,8 +26,10 @@ func _update_visual():
 		var config = VISUAL_CONFIG[enemy.nome]
 		texture = config["texture"]
 		scale = config["scale"]
-		if enemy.nome != "Orc":
-			flip_h = true
+		
+		# Como o Orc era o único não-flipado, agora podemos
+		# simplesmente flipar todos (Morcego e Esqueleto)
+		flip_h = true
 
 
 func set_enemy(e):
