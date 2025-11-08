@@ -58,10 +58,88 @@ func _load_party():
 			member.setup(saved_member_data)
 			party_members.append(member)
 	else:
-		var black_mage_data = { "nome": "Mago Negro", "vitality": 8, "strength": 5, "defense": 7, "accuracy": 10, "evasion": 8, "intelligence": 10, "magic_power": 12, "magic_defense": 12, "luck": 8, "speed": 6, "max_mp": 30, "mp": 30, "level": 1, "xp": 1, "xp_to_next_level": 100, "spell_slots": {1: 3, 2: 2, 3: 3, 4:2}, "max_spell_slots": {1: 3, 2: 2, 3: 3, 4:2}, "spells": { "fogo": {"level": 1, "cost": 5, "power": 10, "power_max": 15, "type": "damage", "hit_chance": 100}, "trovao": {"level": 2, "cost": 10, "power": 15, "power_max": 30, "type": "damage", "hit_chance": 75}, "explosao": {"level": 3, "cost": 15, "power": 10, "power_max": 15, "type": "damage", "area": true, "hit_chance": 60}, "tempestade": {"level": 4, "cost": 20, "power": 15, "power_max": 30, "type": "damage", "area": true, "secondary_effect": {"type": "debuff", "attribute": "shock", "amount": -3, "duration": 2, "chance": 0.3}}, }}
-		var warrior_data = { "nome": "Guerreiro", "vitality": 12, "strength": 20, "defense": 10, "accuracy": 15, "evasion": 8, "intelligence": 3, "magic_power": 0, "magic_defense": 5, "luck": 8, "speed": 4, "max_mp": 0, "mp": 0, "level": 1, "xp": 1, "xp_to_next_level": 100, "spell_slots": {}, "spells": {} }
-		var white_mage_data = { "nome": "Maga Branca", "vitality": 8, "strength": 5, "defense": 6, "accuracy": 8, "evasion": 6, "intelligence": 6, "magic_power": 8, "magic_defense": 10, "luck": 6, "speed": 6, "max_mp": 30, "mp": 30, "level": 1, "xp": 1, "xp_to_next_level": 100, "spell_slots": {1: 5, 2: 3, 3: 3, 4:2}, "max_spell_slots": {1: 3, 2: 2, 3: 2, 4:2}, "spells": { "cura total": {"level": 3 ,"cost": 15, "power": -20, "power_max": -35, "type": "heal", "area": true}, "cura": {"level": 1, "cost": 5, "power": -10, "power_max": -10, "type": "heal"}, "protecao": {"level": 2, "cost": 5, "type": "buff", "attribute": "defense", "amount": 3, "duration": 3}, "lentidao": {"level": 2, "cost": 5, "type": "debuff", "attribute": "speed", "amount": -2, "duration": 3} }}
-		var thief_data = { "nome": "Ladrão", "vitality": 5, "strength": 10, "defense": 6, "accuracy": 18, "evasion": 12, "intelligence": 0, "magic_power": 0, "magic_defense": 5, "luck": 15, "speed": 10, "max_mp": 0, "mp": 0, "level": 1, "xp": 1, "xp_to_next_level": 100, "spell_slots": {}, "spells": {} }
+		var black_mage_data = { "nome": "Mago Negro",
+		 "vitality": 8,
+		 "strength": 5,
+		 "defense": 7,
+		 "accuracy": 10,
+		 "evasion": 8,
+		 "intelligence": 10,
+		 "magic_power": 12,
+		 "magic_defense": 12,
+		 "luck": 8,
+		 "speed": 6,
+		 "max_mp": 30,
+		 "mp": 30,
+		 "level": 1,
+		 "xp": 1,
+		 "xp_to_next_level": 100,
+		 "spell_slots": {1: 3, 2: 2, 3: 3, 4:2},
+		 "max_spell_slots": {1: 3, 2: 2, 3: 3, 4:2},
+		 "spells": { 
+			"fogo": {"level": 1, "cost": 5, "power": 10, "power_max": 15, "type": "damage", "hit_chance": 100},
+			 "trovao": {"level": 2, "cost": 10, "power": 15, "power_max": 30, "type": "damage", "hit_chance": 75},
+			 "explosao": {"level": 3, "cost": 15, "power": 10, "power_max": 15, "type": "damage", "area": true, "hit_chance": 60},
+			 "tempestade": {"level": 4, "cost": 20, "power": 15, "power_max": 30, "type": "damage", "area": true, "secondary_effect": {"type": "debuff", "attribute": "shock", "amount": -3, "duration": 2, "chance": 0.3}}, }}
+		
+		var warrior_data = { "nome": "Guerreiro",
+		 "vitality": 12,
+		 "strength": 20,
+		 "defense": 10,
+		 "accuracy": 15,
+		 "evasion": 8,
+		 "intelligence": 3,
+		 "magic_power": 0,
+		 "magic_defense": 5,
+		 "luck": 8, 
+		"speed": 4,
+		 "max_mp": 0,
+		 "mp": 0,
+		 "level": 1,
+		 "xp": 1, 
+		"xp_to_next_level": 100,
+		 "spell_slots": {}, "spells": {} }
+		
+		var white_mage_data = { "nome": "Maga Branca",
+		 "vitality": 8,
+		 "strength": 5,
+		 "defense": 6,
+		 "accuracy": 8,
+		 "evasion": 6,
+		 "intelligence": 6,
+		 "magic_power": 8,
+		 "magic_defense": 10,
+		 "luck": 6,
+		 "speed": 6,
+		 "max_mp": 30,
+		 "mp": 30,
+		 "level": 1,
+		 "xp": 1,
+		 "xp_to_next_level": 100,
+		 "spell_slots": {1: 5, 2: 3, 3: 3, 4:2},
+		 "max_spell_slots": {1: 3, 2: 2, 3: 2, 4:2},
+		 "spells": { "cura total": {"level": 3 ,"cost": 15, "power": -20, "power_max": -35, "type": "heal", "area": true},
+		 "cura": {"level": 1, "cost": 5, "power": -10, "power_max": -10, "type": "heal"},
+		 "protecao": {"level": 2, "cost": 5, "type": "buff", "attribute": "defense", "amount": 3, "duration": 3},
+		 "lentidao": {"level": 2, "cost": 5, "type": "debuff", "attribute": "speed", "amount": -2, "duration": 3} }}
+		
+		var thief_data = { "nome": "Ladrão",
+		 "vitality": 5,
+		 "strength": 10,
+		 "defense": 6,
+		 "accuracy": 18,
+		 "evasion": 12,
+		 "intelligence": 0,
+		 "magic_power": 0, 
+		"magic_defense": 5,
+		 "luck": 15,
+		 "speed": 10,
+		 "max_mp": 0,
+		 "mp": 0,
+		 "level": 1,
+		 "xp": 1,
+		 "xp_to_next_level": 100,
+		 "spell_slots": {}, "spells": {} }
 		var characters_data = [black_mage_data, warrior_data, white_mage_data, thief_data]
 		for char_data in characters_data:
 			var member = PlayerPartyMember.new()
@@ -416,10 +494,10 @@ func _create_enemy_by_type(nome: String) -> Enemy:
 			enemy.ai_behavior = "boss_ai"
 		
 		"Necromante":
-			enemy.max_hp = 45
+			enemy.max_hp = 60
 			enemy.accuracy = 10
 			enemy.strength = 5 # Fraco
-			enemy.defense = 10
+			enemy.defense = 15
 			enemy.magic_defense = 20
 			enemy.evasion = 5
 			enemy.luck = 10
