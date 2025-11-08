@@ -67,7 +67,7 @@ func setup(data: Dictionary) -> void:
 	hp = data.get("hp", max_hp)
 
 func attack(target):
-	var accuracy_atacante = accuracy + int(randf() * 10) *  1.2
+	var accuracy_atacante = accuracy + int(randf() * 10) * 1.2
 	var evasion_alvo = target.evasion + int(randf() * 10)
 	var accuracy_check = accuracy_atacante > evasion_alvo
 	if not accuracy_check:
@@ -82,7 +82,7 @@ func attack(target):
 	if is_crit:
 		damage = int(damage * 1.5)
 
-	target.take_damage(damage)
+	target.take_damage(damage, self) # <-- MODIFICAÇÃO 1: Passa 'self'
 	return {"damage": damage, "crit": is_crit}
 
 func apply_status_effect(effect: StatusEffect):
@@ -162,7 +162,7 @@ func cast_spell(targets, spell_name := "fogo"):
 				var final_damage = boosted_damage + remaining_boost - magic_power
 				final_damage = max(final_damage, 0)
 
-				alvo.take_damage(final_damage)
+				alvo.take_damage(final_damage, self) # <-- MODIFICAÇÃO 2: Passa 'self'
 				efeito = final_damage
 
 			"heal":
@@ -189,7 +189,8 @@ func try_escape():
 func defend():
 	is_defending = true
 
-func take_damage(amount):
+# v-- MODIFICAÇÃO 3: Aceita o 'attacker' (e o ignora, o que não tem problema)
+func take_damage(amount, attacker: Node = null):
 	var damage_taken = amount
 	if is_defending:
 		damage_taken = int(amount * 0.8)  # Reduz 20%
@@ -255,7 +256,7 @@ func level_up():
 			# Restaura os slots para o novo máximo
 			for key in max_spell_slots.keys():
 				spell_slots[key] = max_spell_slots[key]
-		"Ladrao":
+		"Ladrao": # <-- Erro de digitação original, mantido
 			speed += 2
 			evasion += 2
 			accuracy += 1
