@@ -17,7 +17,7 @@ const ENEMY_POSITIONS = [
 ]
 
 var party_members = []
-var enemies = []
+var enemies = [] # <-- Esta lista agora guarda VIVOS E MORTOS (escondidos)
 var turn_order = []
 var turn_index = 0
 var hud
@@ -48,64 +48,28 @@ func _ready():
 func set_background_node(node: TextureRect):
 	background_node = node
 
-#AÇÕES DO PLAYER (Nenhuma mudança aqui)
-
+# ... (Todo o código de _load_party e ações do jogador permanece O MESMO) ...
+# ... (Omitido por tamanho) ...
 func _load_party():
 	party_members.clear()
-	
 	if GameManager.saved_party_data.size() > 0:
-		# Carrega a party a partir dos dados salvos
 		for saved_member_data in GameManager.saved_party_data:
 			var member = PlayerPartyMember.new()
 			member.setup(saved_member_data)
 			party_members.append(member)
 	else:
-		# ... (Toda a criação dos personagens) ...
-		# ... (Vou omitir por tamanho, mas NADA mudou aqui) ...
-		var black_mage_data = {
-			"nome": "Mago Negro", "vitality": 8, "strength": 5, "defense": 7, "accuracy": 10, "evasion": 8, "intelligence": 10,
-			"magic_power": 12, "magic_defense": 12, "luck": 8, "speed": 6, "max_mp": 30, "mp": 30, "level": 1, "xp": 1, "xp_to_next_level": 100,
-			"spell_slots": {1: 3, 2: 2, 3: 3, 4:2}, "max_spell_slots": {1: 3, 2: 2, 3: 3, 4:2},
-			"spells": {
-				"fogo": {"level": 1, "cost": 5, "power": 10, "power_max": 15, "type": "damage", "hit_chance": 100},
-				"trovao": {"level": 2, "cost": 10, "power": 15, "power_max": 30, "type": "damage", "hit_chance": 75},
-				"explosao": {"level": 3, "cost": 15, "power": 10, "power_max": 15, "type": "damage", "area": true, "hit_chance": 60},
-				"tempestade": {"level": 4, "cost": 20, "power": 15, "power_max": 30, "type": "damage", "area": true, "secondary_effect": {"type": "debuff", "attribute": "shock", "amount": -3, "duration": 2, "chance": 0.3}},
-			}
-		}
-		var warrior_data = {
-			"nome": "Guerreiro", "vitality": 12, "strength": 20, "defense": 10, "accuracy": 15, "evasion": 8, "intelligence": 3,
-			"magic_power": 0, "magic_defense": 5, "luck": 8, "speed": 4, "max_mp": 0, "mp": 0, "level": 1, "xp": 1, "xp_to_next_level": 100,
-			"spell_slots": {}, "spells": {}
-		}
-		var white_mage_data = {
-			"nome": "Maga Branca", "vitality": 8, "strength": 5, "defense": 6, "accuracy": 8, "evasion": 6, "intelligence": 6,
-			"magic_power": 8, "magic_defense": 10, "luck": 6, "speed": 6, "max_mp": 30, "mp": 30, "level": 1, "xp": 1, "xp_to_next_level": 100,
-			"spell_slots": {1: 5, 2: 3, 3: 3, 4:2}, "max_spell_slots": {1: 3, 2: 2, 3: 2, 4:2},
-			"spells": {
-				"cura total": {"level": 3 ,"cost": 15, "power": -20, "power_max": -35, "type": "heal", "area": true},
-				"cura": {"level": 1, "cost": 5, "power": -10, "power_max": -10, "type": "heal"},
-				"protecao": {"level": 2, "cost": 5, "type": "buff", "attribute": "defense", "amount": 3, "duration": 3},
-				"lentidao": {"level": 2, "cost": 5, "type": "debuff", "attribute": "speed", "amount": -2, "duration": 3}
-			}
-		}
-		var thief_data = {
-			"nome": "Ladrão", "vitality": 5, "strength": 10, "defense": 6, "accuracy": 18, "evasion": 12, "intelligence": 0,
-			"magic_power": 0, "magic_defense": 5, "luck": 15, "speed": 10, "max_mp": 0, "mp": 0, "level": 1, "xp": 1, "xp_to_next_level": 100,
-			"spell_slots": {}, "spells": {}
-		}
+		var black_mage_data = { "nome": "Mago Negro", "vitality": 8, "strength": 5, "defense": 7, "accuracy": 10, "evasion": 8, "intelligence": 10, "magic_power": 12, "magic_defense": 12, "luck": 8, "speed": 6, "max_mp": 30, "mp": 30, "level": 1, "xp": 1, "xp_to_next_level": 100, "spell_slots": {1: 3, 2: 2, 3: 3, 4:2}, "max_spell_slots": {1: 3, 2: 2, 3: 3, 4:2}, "spells": { "fogo": {"level": 1, "cost": 5, "power": 10, "power_max": 15, "type": "damage", "hit_chance": 100}, "trovao": {"level": 2, "cost": 10, "power": 15, "power_max": 30, "type": "damage", "hit_chance": 75}, "explosao": {"level": 3, "cost": 15, "power": 10, "power_max": 15, "type": "damage", "area": true, "hit_chance": 60}, "tempestade": {"level": 4, "cost": 20, "power": 15, "power_max": 30, "type": "damage", "area": true, "secondary_effect": {"type": "debuff", "attribute": "shock", "amount": -3, "duration": 2, "chance": 0.3}}, }}
+		var warrior_data = { "nome": "Guerreiro", "vitality": 12, "strength": 20, "defense": 10, "accuracy": 15, "evasion": 8, "intelligence": 3, "magic_power": 0, "magic_defense": 5, "luck": 8, "speed": 4, "max_mp": 0, "mp": 0, "level": 1, "xp": 1, "xp_to_next_level": 100, "spell_slots": {}, "spells": {} }
+		var white_mage_data = { "nome": "Maga Branca", "vitality": 8, "strength": 5, "defense": 6, "accuracy": 8, "evasion": 6, "intelligence": 6, "magic_power": 8, "magic_defense": 10, "luck": 6, "speed": 6, "max_mp": 30, "mp": 30, "level": 1, "xp": 1, "xp_to_next_level": 100, "spell_slots": {1: 5, 2: 3, 3: 3, 4:2}, "max_spell_slots": {1: 3, 2: 2, 3: 2, 4:2}, "spells": { "cura total": {"level": 3 ,"cost": 15, "power": -20, "power_max": -35, "type": "heal", "area": true}, "cura": {"level": 1, "cost": 5, "power": -10, "power_max": -10, "type": "heal"}, "protecao": {"level": 2, "cost": 5, "type": "buff", "attribute": "defense", "amount": 3, "duration": 3}, "lentidao": {"level": 2, "cost": 5, "type": "debuff", "attribute": "speed", "amount": -2, "duration": 3} }}
+		var thief_data = { "nome": "Ladrão", "vitality": 5, "strength": 10, "defense": 6, "accuracy": 18, "evasion": 12, "intelligence": 0, "magic_power": 0, "magic_defense": 5, "luck": 15, "speed": 10, "max_mp": 0, "mp": 0, "level": 1, "xp": 1, "xp_to_next_level": 100, "spell_slots": {}, "spells": {} }
 		var characters_data = [black_mage_data, warrior_data, white_mage_data, thief_data]
 		for char_data in characters_data:
 			var member = PlayerPartyMember.new()
 			member.setup(char_data)
 			member.connect("leveled_up", Callable(self, "_on_member_leveled_up"))
 			party_members.append(member)
-
-# ... (Funções de _on_player_action_selected até _executar_defesa não mudaram) ...
-# ... (Omitido por tamanho) ...
 func _on_member_leveled_up(new_level, member):
 	hud.add_log_entry("%s subiu para o nível %d!" % [member.nome, new_level])
-
 func _on_player_action_selected(action_name: String):
 	hud.set_enabled(false)
 	match action_name:
@@ -113,12 +77,9 @@ func _on_player_action_selected(action_name: String):
 			var alvos_validos = enemies.filter(func(e): return e.is_alive())
 			hud.target_selected.connect(_on_alvo_ataque_selecionado)
 			hud.show_target_selection(alvos_validos, "attack")
-		"magic":
-			_executar_acao_magia(jogador_atual)
-		"defend":
-			_executar_defesa(jogador_atual)
-		"flee":
-			_tentar_fugir(jogador_atual)
+		"magic": _executar_acao_magia(jogador_atual)
+		"defend": _executar_defesa(jogador_atual)
+		"flee": _tentar_fugir(jogador_atual)
 		"item":
 			hud.item_selected.connect(_on_item_escolhido)
 			hud.show_item_menu(inventario)
@@ -131,10 +92,8 @@ func _on_item_escolhido(item_name: String):
 		hud.item_selected.disconnect(_on_item_escolhido)
 	var alvos_validos = []
 	match item_name:
-		"Poção de Vida", "Poção de MP":
-			alvos_validos = party_members.filter(func(p): return p.is_alive())
-		"Pena da Fênix":
-			alvos_validos = party_members.filter(func(p): return not p.is_alive())
+		"Poção de Vida", "Poção de MP": alvos_validos = party_members.filter(func(p): return p.is_alive())
+		"Pena da Fênix": alvos_validos = party_members.filter(func(p): return not p.is_alive())
 	if alvos_validos.size() > 0:
 		hud.target_selected.connect(_on_item_alvo_escolhido.bind(item_name))
 		hud.show_target_selection(alvos_validos, "item")
@@ -196,14 +155,10 @@ func _on_magia_escolhida(spell_name: String):
 	var tipo_magia = spell_data.type
 	var alvos_validos := []
 	match tipo_magia:
-		"heal":
-			alvos_validos = party_members.filter(func(p): return p.is_alive() and p.hp < p.max_hp)
-		"buff":
-			alvos_validos = party_members.filter(func(p): return p.is_alive())
-		"debuff":
-			alvos_validos = enemies.filter(func(e): return e.is_alive())
-		_:
-			alvos_validos = enemies.filter(func(e): return e.is_alive())
+		"heal": alvos_validos = party_members.filter(func(p): return p.is_alive() and p.hp < p.max_hp)
+		"buff": alvos_validos = party_members.filter(func(p): return p.is_alive())
+		"debuff": alvos_validos = enemies.filter(func(e): return e.is_alive())
+		_: alvos_validos = enemies.filter(func(e): return e.is_alive())
 	if alvos_validos.is_empty():
 		hud.add_log_entry("Nenhum alvo válido para %s." % spell_name)
 		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
@@ -230,14 +185,10 @@ func _on_magia_alvo_escolhido(alvo):
 	var tipo = spell_data.get("type", "damage")
 	var alvos_validos = []
 	match tipo:
-		"heal":
-			alvos_validos = party_members.filter(func(p): return p.is_alive() and p.hp < p.max_hp)
-		"buff":
-			alvos_validos = party_members.filter(func(p): return p.is_alive())
-		"debuff":
-			alvos_validos = enemies.filter(func(e): return e.is_alive())
-		_:
-			alvos_validos = enemies.filter(func(e): return e.is_alive())
+		"heal": alvos_validos = party_members.filter(func(p): return p.is_alive() and p.hp < p.max_hp)
+		"buff": alvos_validos = party_members.filter(func(p): return p.is_alive())
+		"debuff": alvos_validos = enemies.filter(func(e): return e.is_alive())
+		_: alvos_validos = enemies.filter(func(e): return e.is_alive())
 	if not alvos_validos.has(alvo):
 		hud.add_log_entry("Alvo inválido para a magia %s!" % spell_name)
 		return
@@ -252,10 +203,10 @@ func _on_magia_alvo_escolhido(alvo):
 				hud.add_log_entry("%s lançou %s em %s causando %d de dano!" % [caster.nome, spell_name, alvo.nome, efeito])
 				if alvo is Enemy and not alvo.is_alive():
 					hud.add_log_entry("%s foi derrotado!" % alvo.nome)
-					for child in enemy_sprites_node.get_children():
-						if "enemy" in child and child.enemy.id == alvo.id:
-							child.desaparecer()
-							break
+					# --- MODIFICADO: Só chama desaparecer (hide()) ---
+					var sprite = _get_sprite_for_enemy(alvo)
+					if sprite:
+						sprite.desaparecer()
 			else:
 				hud.add_log_entry("%s lançou %s em %s, mas não teve efeito." % [caster.nome, spell_name, alvo.nome])
 		elif tipo == "heal":
@@ -286,10 +237,10 @@ func _executar_magia_area(caster, spell_name, alvos):
 				hud.add_log_entry("%s lançou %s em %s causando %d de dano!" % [caster.nome, spell_name, alvo.nome, efeito])
 				if alvo is Enemy and not alvo.is_alive():
 					hud.add_log_entry("%s foi derrotado!" % alvo.nome)
-					for child in enemy_sprites_node.get_children():
-						if "enemy" in child and child.enemy.id == alvo.id:
-							child.desaparecer()
-							break
+					# --- MODIFICADO: Só chama desaparecer (hide()) ---
+					var sprite = _get_sprite_for_enemy(alvo)
+					if sprite:
+						sprite.desaparecer()
 			else:
 				hud.add_log_entry("%s tentou lançar %s em %s, mas não teve efeito." % [caster.nome, spell_name, alvo.nome])
 		elif tipo == "heal":
@@ -337,10 +288,10 @@ func _executar_acao_ataque(actor, alvo):
 				hud.add_log_entry("%s atacou %s causando %d de dano." % [actor.nome, alvo.nome, dano])
 			if alvo is Enemy and not alvo.is_alive():
 				hud.add_log_entry("%s foi derrotado!" % alvo.nome)
-				for child in enemy_sprites_node.get_children():
-					if "enemy" in child and child.enemy.id == alvo.id:
-						child.desaparecer()
-						break
+				# --- MODIFICADO: Só chama desaparecer (hide()) ---
+				var sprite = _get_sprite_for_enemy(alvo)
+				if sprite:
+					sprite.desaparecer()
 		hud.update_party_info(party_members)
 		hud.update_enemy_status(enemies)
 	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
@@ -362,7 +313,8 @@ func _tentar_fugir(actor):
 			velocidade_party += p.speed
 		var velocidade_inimigos = 0
 		for e in enemies:
-			velocidade_inimigos += e.speed
+			if e.is_alive(): # <-- Só conta velocidade dos vivos
+				velocidade_inimigos += e.speed
 		var chance_fuga = 50 + (velocidade_party - velocidade_inimigos) * 5
 		chance_fuga = clamp(chance_fuga, 10, 90)
 		var sucesso = randi() % 100 < chance_fuga
@@ -380,40 +332,40 @@ func _tentar_fugir(actor):
 
 func _load_enemies():
 	enemies.clear()
-
+	# Destrói os sprites da batalha ANTERIOR
 	for child in enemy_sprites_node.get_children():
 		child.queue_free()
 	await get_tree().process_frame
 
 	var party_level = _get_average_party_level()
-	var possible_enemies = ["Morcego", "Esqueleto"] # <-- MODIFICADO: Lista simplificada
-
-	# Trocar o fundo com base no tipo de inimigo
+	var possible_enemies = []
+	var num_to_generate = 0
 	var background_texture : Texture2D
-	# if party_level >= 5: # <-- REMOVIDO: Lógica do boss
-	# 	background_texture = preload("res://assets/Sala do Boss.png")
-	# else:
-	# 	background_texture = preload("res://assets/Corredores.png")
-	
-	background_texture = preload("res://assets/Corredores.png") # <-- MODIFICADO: Sempre o corredor por enquanto
+
+	if party_level >= 5:
+		possible_enemies = ["Rei Morto-Vivo"] # <-- Renomeado
+		num_to_generate = 1
+		background_texture = preload("res://assets/Sala do Boss.png")
+	else:
+		possible_enemies = ["Morcego", "Morto-Vivo", "Necromante"] # <-- Renomeado e Adicionado
+		num_to_generate = randf_range(1, 4)
+		background_texture = preload("res://assets/Corredores.png")
 
 	if background_node:
 		background_node.texture = background_texture
 
-	var num_to_generate = randf_range(1, 4)
-	# if party_level >= 5: # <-- REMOVIDO: Lógica do boss
-	# 	num_to_generate = 1
-
 	for i in range(num_to_generate):
 		var enemy_name = possible_enemies[randi() % possible_enemies.size()]
 		var enemy = _create_enemy_by_type(enemy_name)
-		enemies.append(enemy)
+		enemies.append(enemy) # Adiciona o inimigo (vivo) na lista
 
 		var enemy_sprite = enemy_sprite_scene.instantiate()
 		enemy_sprite.set_enemy(enemy)
 
-
-		enemy_sprite.position = ENEMY_POSITIONS[i]
+		if enemy_name == "Rei Morto-Vivo": # <-- Renomeado
+			enemy_sprite.position = ENEMY_POSITIONS[1]
+		else:
+			enemy_sprite.position = ENEMY_POSITIONS[i]
 
 		enemy_sprites_node.add_child(enemy_sprite)
 
@@ -437,43 +389,131 @@ func _create_enemy_by_type(nome: String) -> Enemy:
 			enemy.luck = 3
 			enemy.speed = 10
 			enemy.xp_value = 15
-			enemy.ai_behavior = "simple_attack"
+			enemy.ai_behavior = "retaliate_attack"
 		
-		"Esqueleto": # <-- MODIFICADO: Era "Goblin"
-			enemy.max_hp = 30 # Stats ajustados
+		"Morto-Vivo": # <-- Renomeado
+			enemy.max_hp = 25 
 			enemy.accuracy = 12
 			enemy.strength = 15
-			enemy.defense = 5 # Mais defesa
+			enemy.defense = 5
 			enemy.magic_defense = 3
-			enemy.evasion = 2 # Menos evasão
+			enemy.evasion = 2
 			enemy.luck = 5
-			enemy.speed = 5 # Mais lento
-			enemy.xp_value = 30 # Mais XP
+			enemy.speed = 5
+			enemy.xp_value = 30
 			enemy.ai_behavior = "simple_attack"
+
+		"Rei Morto-Vivo": # <-- Renomeado
+			enemy.max_hp = 500
+			enemy.accuracy = 20
+			enemy.strength = 35
+			enemy.defense = 10
+			enemy.magic_defense = 10
+			enemy.evasion = 5
+			enemy.luck = 10
+			enemy.speed = 7
+			enemy.xp_value = 500
+			enemy.ai_behavior = "boss_ai"
 		
-		# "Little Orc": <-- REMOVIDO
-		# "Orc": <-- REMOVIDO
+		"Necromante":
+			enemy.max_hp = 45
+			enemy.accuracy = 10
+			enemy.strength = 5 # Fraco
+			enemy.defense = 10
+			enemy.magic_defense = 20
+			enemy.evasion = 5
+			enemy.luck = 10
+			enemy.speed = 3 # Lento
+			enemy.xp_value = 100
+			enemy.ai_behavior = "summon_ai" # <-- IA de Invocar
 
 	enemy.current_hp = enemy.max_hp
 	enemy.current_mp = enemy.max_mp
 	return enemy
 
+# --- MODIFICADO: Função de "spawn" ---
+func _spawn_enemy_from_summon(enemy_type_name: String):
+	# Procura por um slot vago (posição não usada por um inimigo VIVO)
+	var occupied_indices = []
+	for e in enemies.filter(func(x): return x.is_alive()):
+		var sprite = _get_sprite_for_enemy(e)
+		if sprite:
+			var idx = ENEMY_POSITIONS.find(sprite.position)
+			if idx != -1:
+				occupied_indices.append(idx)
+	
+	var spawn_slot_index = -1
+	for i in range(ENEMY_POSITIONS.size()):
+		if not i in occupied_indices:
+			spawn_slot_index = i
+			break
+	
+	if spawn_slot_index == -1:
+		hud.add_log_entry("Mas a invocação falha! (Sem espaço!)")
+		return
+
+	hud.add_log_entry("...e um %s aparece!" % enemy_type_name)
+
+	var new_enemy = _create_enemy_by_type(enemy_type_name)
+	enemies.append(new_enemy) # Adiciona na lista principal
+
+	var enemy_sprite = enemy_sprite_scene.instantiate()
+	enemy_sprite.set_enemy(new_enemy)
+	enemy_sprite.position = ENEMY_POSITIONS[spawn_slot_index]
+	enemy_sprites_node.add_child(enemy_sprite)
+	
+	hud.update_enemy_status(enemies)
+	# O inimigo novo será adicionado na ordem de turno no próximo round
+
+# --- ADICIONADO: Função de "reviver" ---
+func _revive_enemy(alvo_inimigo: Enemy):
+	# Reseta o HP e status
+	alvo_inimigo.reset() 
+	
+	hud.add_log_entry("...e %s se levanta novamente!" % alvo_inimigo.nome)
+	
+	# Encontra o sprite e o mostra
+	var sprite = _get_sprite_for_enemy(alvo_inimigo)
+	if sprite:
+		sprite.reviver() # Chama a função que dá show() e re-randomiza
+	
+	# Atualiza a UI
+	hud.update_enemy_status(enemies)
+	# O inimigo revivido será adicionado na ordem de turno no próximo round
+
+# --- ADICIONADO: Função ajudante para encontrar sprite ---
+func _get_sprite_for_enemy(enemy_data: Enemy):
+	for child in enemy_sprites_node.get_children():
+		# Usamos 'enemy_id' para garantir que é o inimigo certo
+		if "enemy_id" in child and child.enemy_id == enemy_data.id:
+			return child
+	return null
+
 func _executar_acao_inimiga(enemy):
 	enemy.process_status_effects()
 	state = BattleState.EXECUTANDO_ACAO
 	
-	# Lógica agora delegada para o script EnemyAi1980
+	# <-- MODIFICADO: Adiciona o case "summon_ai"
 	match enemy.ai_behavior:
 		"simple_attack":
 			ai_logic.execute_simple_attack(enemy, party_members, self)
 		
+		"retaliate_attack":
+			ai_logic.execute_retaliate_attack(enemy, party_members, self)
+		
+		"boss_ai":
+			ai_logic.execute_boss_ai(enemy, party_members, self)
+		
+		"summon_ai":
+			ai_logic.execute_summon_ai(enemy, party_members, self)
+		
 		_:
-			push_warning("Comportamento de IA '%s' não encontrado para %s! Usando simple_attack." % [enemy.ai_behavior, enemy.nome])
+			push_warning("Comportamento de IA '%s' não encontrado! Usando simple_attack." % [enemy.ai_behavior])
 			ai_logic.execute_simple_attack(enemy, party_members, self)
 
 func _get_average_party_level() -> int:
 	if party_members.size() == 0:
-		return 1  # fallback
+		return 1
 	var total_level = 0
 	for member in party_members:
 		total_level += member.level
@@ -481,18 +521,18 @@ func _get_average_party_level() -> int:
 
 func _boss_derrotado() -> bool:
 	for enemy in enemies:
-		# <-- MODIFICADO: Preparado para o futuro boss
-		if enemy.nome == "Rei dos Esqueletos" and not enemy.is_alive(): 
+		if enemy.nome == "Rei Morto-Vivo" and not enemy.is_alive(): # <-- Renomeado
 			return true
 	return false
 
 
 # CONTROLE DE FLUXO DE JOGO
-# ... (Nenhuma mudança de _sort_turn_order até o final) ...
-# ... (Omitido por tamanho) ...
+# ...
 func _sort_turn_order():
 	turn_order.clear()
 	var all_characters = []
+	
+	# --- MODIFICADO: Só adiciona VIVOS na ordem de turno ---
 	for member in party_members:
 		if member.is_alive():
 			member.update_status_effects()
@@ -501,6 +541,8 @@ func _sort_turn_order():
 		if enemy.is_alive():
 			enemy.update_status_effects()
 			all_characters.append(enemy)
+	# --- FIM DA MODIFICAÇÃO ---
+
 	for character in all_characters:
 		var modified_speed = character.get_modified_stat(character.speed, "speed")
 		var inserted = false
@@ -514,17 +556,23 @@ func _sort_turn_order():
 			turn_order.append(character)
 func _speed_sort(a, b):
 	return b.speed - a.speed
+	
 func _start_turn():
+	# --- MODIFICADO: Recalcula a ordem de turno no início de CADA round ---
 	if turn_index >= turn_order.size():
 		turn_index = 0
+		_sort_turn_order() # <-- Garante que mortos saiam e revividos entrem
+	# --- FIM DA MODIFICAÇÃO ---
+		
 	if turn_order.size() == 0:
-		push_error("A ordem de turnos (turn_order) está vazia!")
+		# Isso pode acontecer se o jogador fugir ou todos morrerem
 		return
+		
 	var current_actor = turn_order[turn_index]
-	if not current_actor.is_alive():
-		turn_index += 1
-		_start_turn()
-		return
+	
+	# (A checagem de 'is_alive' não é mais necessária aqui,
+	# pois _sort_turn_order() já filtrou)
+
 	if current_actor is PlayerPartyMember:
 		jogador_atual = current_actor
 		hud.update_party_info(party_members)
@@ -538,35 +586,50 @@ func _start_turn():
 		hud.highlight_current_player(null)
 		state = BattleState.EXECUTANDO_ACAO
 		_executar_acao_inimiga(current_actor)
+		
 func _esperar_comando_do_jogador(player):
 	state = BattleState.ESPERANDO_COMANDO
 	player.process_status_effects()
 	hud.add_log_entry("%s está se preparando para agir..." % player.nome)
 	hud.set_enabled(true)
+	
 func _finalizar_turno():
+	# Verifica vitória (TODOS os inimigos na lista 'enemies' estão mortos)
 	if enemies.all(func(e): return not e.is_alive()):
 		hud.add_log_entry("Vitória! Todos os inimigos derrotados.")
 		_encerrar_combate("vitoria")
 		return
+	
+	# Verifica derrota (TODOS os membros da party estão mortos)
 	if party_members.all(func(p): return not p.is_alive()):
 		hud.add_log_entry("Derrota! Todos os membros do grupo foram derrotados.")
 		_encerrar_combate("derrota")
 		return
+		
+	# Processa status dos vivos
 	for member in party_members:
 		if member.is_alive():
 			member.process_status_effects()
+	
 	turn_index += 1
 	_start_turn()
+	
 func _encerrar_combate(resultado: String):
 	state = BattleState.FIM_COMBATE
+
 	if resultado == "vitoria":
 		var xp_total = 0
-		for enemy in enemies:
+		# Dá XP por TODOS os inimigos da lista (mesmo os que foram mortos e revividos?)
+		# Vamos dar XP apenas pelos inimigos que *terminaram* mortos.
+		for enemy in enemies.filter(func(e): return not e.is_alive()):
 			xp_total += enemy.xp_value if "xp_value" in enemy else 50
+		
 		_dar_xp_para_party(xp_total)
 		hud.update_party_info(party_members)
 		_save_party_status()
+	
 	await get_tree().create_timer(1.0).timeout
+
 	match resultado:
 		"vitoria":
 			if _boss_derrotado():
@@ -574,15 +637,27 @@ func _encerrar_combate(resultado: String):
 			else:
 				_carregar_proxima_batalha()
 		"derrota", "fuga":
+			# Limpa os inimigos mortos para a próxima batalha
+			for e in enemies:
+				e.queue_free()
 			get_tree().change_scene_to_file("res://decades/1980s/battle/DefeatScreen.tscn")
+			
 func _carregar_proxima_batalha():
 	await get_tree().create_timer(1.0).timeout
+	
+	# --- MODIFICADO: Limpa os inimigos da batalha anterior ---
+	# (Eles não foram 'queue_free' na vitória, só escondidos)
+	for e in enemies:
+		e.queue_free()
+	# --- FIM DA MODIFICAÇÃO ---
+
 	_load_party() 
 	await _load_enemies() 
 	_sort_turn_order()
 	turn_index = 0
 	state = BattleState.TURNO
 	_start_turn()
+	
 func _save_party_status():
 	var saved_data = []
 	for member in party_members:
@@ -590,12 +665,13 @@ func _save_party_status():
 			"nome": member.nome, "vitality": member.vitality, "strength": member.strength, "defense": member.defense,
 			"accuracy": member.accuracy, "evasion": member.evasion, "intelligence": member.intelligence, "magic_power": member.magic_power,
 			"magic_defense": member.magic_defense, "luck": member.luck, "speed": member.speed, "hp": member.hp, "max_hp": member.max_hp,
-			"mp": member.mp, # <-- CORRIGIDO (estava max_mp)
+			"mp": member.mp,
 			"max_mp": member.max_mp, "level": member.level, "xp": member.xp, "xp_to_next_level": member.xp_to_next_level,
 			"spells": member.spells, "spell_slots": {"current": member.spell_slots, "max": member.max_spell_slots}
 		}
 		saved_data.append(member_data)
 	GameManager.saved_party_data = saved_data
+	
 func _dar_xp_para_party(xp_por_membro: int):
 	for member in party_members:
 		if member.is_alive():
