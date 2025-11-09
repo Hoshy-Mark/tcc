@@ -4,6 +4,10 @@ extends Node
 var hud
 @onready var characters_node = $Characters
 
+var encounter_generator: EncounterGenerator1990
+var enemy_ai: EnemyAi1990
+var action_executor: ActionExecutor1990
+
 # Dados do combate
 var party := []
 var enemies := []
@@ -22,347 +26,8 @@ var inventory := {
 	"Spirit Water": 2
 }
 
-var status_cure_map = {
-	"poison": {"items": ["Antídoto"], "spells": ["Esuna"]},
-	"sleep": {"items": ["Despertar"], "spells": ["Esuna"]},
-	"paralysis": {"items": ["Tônico Neural"], "spells": ["Esuna"]},
-	"blind": {"items": ["Colírio"], "spells": ["Esuna"]},
-	"confuse": {"items": ["Calmante"], "spells": ["Esuna"]},
-	"curse": {"items": ["Água Benta"], "spells": ["Esuna"]},
-	"petrify": {"items": ["Erva Suave"], "spells": ["Esuna"]},
-	"charm": {"items": [], "spells": ["Dispel"]},
-	"doom": {"items": [], "spells": ["Dispel"]},
-	"stop": {"items": [], "spells": ["Dispel"]},
-	"stun": {"items": [], "spells": ["Dispel"]},
-	"slow": {"items": [], "spells": ["Dispel"]},
-	"knockout": {"items": ["Spirit Water"], "spells": ["Revive"]}
-}
-
-var item_database = {
-	"Potion": {"type": "heal", "power": 50, "target": "ally"},
-	"Ether": {"type": "restore_mp", "power": 30, "target": "ally"},
-	"Spirit Water": {"type": "restore_sp", "power": 30, "target": "ally"},
-	"Elixir": {"type": "full_restore", "target": "ally"},
-	
-	"Antídoto": {"type": "cure_status", "status": "poison", "target": "ally"},
-	"Despertar": {"type": "cure_status", "status": "sleep", "target": "ally"},
-	"Tônico Neural": {"type": "cure_status", "status": "paralysis", "target": "ally"},
-	"Colírio": {"type": "cure_status", "status": "blind", "target": "ally"},
-	"Calmante": {"type": "cure_status", "status": "confuse", "target": "ally"},
-	"Água Benta": {"type": "cure_status", "status": "curse", "target": "ally"},
-	"Erva Suave": {"type": "cure_status", "status": "petrify", "target": "ally"},
-}
-
 const TEMPO_ESPERA_APOS_ACAO = 0.5
-
-var enemy_base_stats = {
-	"Goblin": {
-		"STR": 10, "DEX": 6, "AGI": 20, "CON": 3, "MAG": 1, "INT": 2, "SPI": 2, "LCK": 4,
-		"xp_value": 20, "sprite_path": "res://assets/Goblin.png", "enemy_type": "Beast", "attack_type": "blunt"
-	},
-	"Little Orc": {
-		"STR": 10, "DEX": 4, "AGI": 20, "CON": 6, "MAG": 2, "INT": 3, "SPI": 3, "LCK": 3,
-		"xp_value": 50, "sprite_path": "res://assets/Little Orc.png", "enemy_type": "Beast", "attack_type": "blunt"
-	},
-	"Zumbi": {
-		"STR": 5, "DEX": 15, "AGI": 4, "CON": 3, "MAG": 1, "INT": 1, "SPI": 1, "LCK": 1,
-		"xp_value": 15, "sprite_path": "res://assets/Zumbi.png", "enemy_type": "Undead", "attack_type": "blunt"
-	},
-	"Necromante": {
-		"STR": 5, "DEX": 4, "AGI": 6, "CON": 6, "MAG": 6, "INT": 4, "SPI": 4, "LCK": 4,
-		"xp_value": 50, "sprite_path": "res://assets/Necromante.png", "enemy_type": "Undead", "attack_type": "blunt"
-	},
-	"Lobo": {
-		"STR": 8, "DEX": 6, "AGI": 8, "CON": 6, "MAG": 0, "INT": 0, "SPI": 4, "LCK": 6,
-		"xp_value": 50, "sprite_path": "res://assets/Lobo.png", "enemy_type": "Beast", "attack_type": "slash"
-	},
-	"Passaro": {
-		"STR": 6, "DEX": 7, "AGI": 10, "CON": 3, "MAG": 2, "INT": 2, "SPI": 2, "LCK": 4,
-		"xp_value": 30, "sprite_path": "res://assets/Passaro.png", "enemy_type": "Flying", "attack_type": "ranged"
-	},
-	"Aguia": {
-		"STR": 6, "DEX": 8, "AGI": 12, "CON": 5, "MAG": 0, "INT": 2, "SPI": 3, "LCK": 9,
-		"xp_value": 40, "sprite_path": "res://assets/Aguia.png", "enemy_type": "Flying", "attack_type": "slash"
-	},
-	"Lobisomen": {
-		"STR": 12, "DEX": 7, "AGI": 8, "CON": 9, "MAG": 0, "INT": 2, "SPI": 2, "LCK": 5,
-		"xp_value": 45, "sprite_path": "res://assets/Lobisomen.png", "enemy_type": "Beast", "attack_type": "slash"
-	},
-	"Oni": {
-		"STR": 14, "DEX": 6, "AGI": 6, "CON": 10, "MAG": 4, "INT": 5, "SPI": 6, "LCK": 9,
-		"xp_value": 70, "sprite_path": "res://assets/Oni.png", "enemy_type": "Demon", "attack_type": "blunt"
-	},
-	"Dragao": {
-		"STR": 18, "DEX": 8, "AGI": 8, "CON": 14, "MAG": 8, "INT": 6, "SPI": 6, "LCK": 7,
-		"xp_value": 150, "sprite_path": "res://assets/Dragão.png", "enemy_type": "Dragon", "attack_type": "magic"
-	}
-}
-
-var class_sprite_paths = {
-	"Knight": "res://assets/classes/Knight.png",
-	"Mage": "res://assets/classes/Mage.png",
-	"Thief": "res://assets/classes/Thief.png",
-	"Cleric": "res://assets/classes/Cleric.png",
-	"Hunter": "res://assets/classes/Hunter.png",
-	"Monk": "res://assets/classes/Monk.png",
-	"Paladin": "res://assets/classes/Paladin.png",
-	"Summoner": "res://assets/classes/Summoner.png",
-}
-
-var class_base_stats = {
-	"Knight": {
-		"STR": 10, "DEX": 7, "AGI": 4, "CON": 10, "MAG": 1, "INT": 3, "SPI": 5, "LCK": 5,
-		"attack_type": "slash"
-	},
-	"Mage": {
-		"STR": 1, "DEX": 4, "AGI": 7, "CON": 3, "MAG": 15, "INT": 13, "SPI": 10, "LCK": 7,
-		"attack_type": "blunt"
-	},
-	"Thief": {
-		"STR": 5, "DEX": 10, "AGI": 12, "CON": 4, "MAG": 1, "INT": 4, "SPI": 2, "LCK": 12,
-		"attack_type": "pierce"
-	},
-	"Cleric": {
-		"STR": 3, "DEX": 4, "AGI": 7, "CON": 6, "MAG": 10, "INT": 8, "SPI": 15, "LCK": 7,
-		"attack_type": "blunt"
-	},
-	"Hunter": {
-		"STR": 7, "DEX": 12, "AGI": 12, "CON": 5, "MAG": 1, "INT": 3, "SPI": 3, "LCK": 17,
-		"attack_type": "ranged"
-	},
-	"Paladin": {
-		"STR": 8, "DEX": 6, "AGI": 5, "CON": 9, "MAG": 6, "INT": 5, "SPI": 12, "LCK": 9,
-		"attack_type": "slash"
-	},
-	"Monk": {
-		"STR": 11, "DEX": 8, "AGI": 8, "CON": 9, "MAG": 2, "INT": 3, "SPI": 4, "LCK": 12,
-		"attack_type": "blunt"
-	},
-	"Summoner": {
-		"STR": 2, "DEX": 10, "AGI": 10, "CON": 4, "MAG": 14, "INT": 12, "SPI": 10, "LCK": 8,
-		"attack_type": "blunt"
-	},
-}
-
-var class_spell_slots = {
-	"Mage": {1: 3, 2: 2, 3:5, 4:2, 5:1},
-	"Cleric": {1: 3, 2: 2, 3:5, 4:2, 5:1},
-	"Paladin":  {1: 3, 2: 2, 3:5, 4:2, 5:1},
-	"Summoner": {1: 3, 2: 2, 3:5, 4:2, 5:1},
-	"Monk":  {1: 3, 2: 2, 3:5, 4:2, 5:1},
-	"Hunter":  {1: 3, 2: 2, 3:5, 4:2, 5:1},
-	"Thief": {1: 3, 2: 2, 3:5, 4:2, 5:1},
-	"Knight": {1: 3, 2: 2, 3:5, 4:2, 5:1},
-}
-
-var spell_database = {
-	# Magias ofensivas
-	"Fire": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 25, "power_max": 35, "cost": 5, "level": 1, "hit_chance": 95, "target_group": "single"},
-	"Ice": {"type": "damage", "element": "ice", "attack_type": "magic", "power": 22, "power_max": 32, "cost": 5, "level": 1, "hit_chance": 95, "target_group": "single"},
-	"Thunder": {"type": "damage", "element": "lightning", "attack_type": "magic", "power": 28, "power_max": 38, "cost": 6, "level": 1, "hit_chance": 90, "target_group": "single"},
-	"Flare": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 80, "power_max": 100, "cost": 20, "level": 2, "hit_chance": 85, "target_group": "single"},
-	"Fire Rain": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 30, "cost": 8, "level": 3, "target_group": "line"},
-	"Mega Flare": {"type": "damage", "element": "fire", "attack_type": "magic", "power": 60, "cost": 10, "level": 4, "target_group": "area"},
-	"Divine Blade": {"type": "damage", "attack_type": "holy", "power": 45, "cost": 10, "level": 3, "target_group": "single", "status_effects": [{"attribute": "blind", "amount": -1, "duration": 3, "chance": 30}]},
-	"Holy Smite": {"type": "damage", "attack_type": "holy", "power": 60, "cost": 15, "level": 3, "target_group": "single"},
-
-	# Cura de Vida
-	"Cure": {"type": "heal", "attack_type": "magic", "power": 30, "cost": 5, "level": 1, "target_group": "single"},
-	"Cura": {"type": "heal", "attack_type": "magic", "power": 60, "cost": 10, "level": 2, "target_group": "single"},
-	"Heal All": {"type": "heal", "attack_type": "magic", "power": 40, "cost": 12, "level": 3, "target_group": "area"},
-	
-	# Cura de Status
-	"Esuna": { "type": "cure_status", "cost": 6, "level": 2, "target_group": "single", "status_effects": [ { "attribute": "poison" }, { "attribute": "sleep" }, { "attribute": "paralysis" }, { "attribute": "blind" }, { "attribute": "confuse" }, { "attribute": "curse" }, { "attribute": "petrify" } ] },
-	"Dispel": { "type": "cure_status", "cost": 8, "level": 2, "target_group": "single", "status_effects": [ { "attribute": "charm" }, { "attribute": "doom" }, { "attribute": "stop" }, { "attribute": "stun" }, { "attribute": "slow" } ] },
-	"Revive": { "type": "cure_status", "cost": 10, "level": 3, "target_group": "single", "status_effects": [ { "attribute": "knockout" } ] },
-	
-	# Buffs
-	"Haste": {"type": "buff", "attack_type": "magic", "attribute": "haste", "amount": 0, "duration": 3, "cost": 8, "level": 3, "target_group": "single"},
-	"Blink": {"type": "buff", "attack_type": "magic", "attribute": "blink", "amount": 2, "duration": 5, "cost": 10, "level": 3, "target_group": "single"},
-	"Reflect": {"type": "buff", "attack_type": "magic", "attribute": "reflect", "amount": 1, "duration": 3, "cost": 10, "level": 4, "target_group": "single"},
-	"Protect": {"type": "buff", "attack_type": "magic", "attribute": "protect", "amount": 5, "duration": 3, "cost": 6, "level": 1, "target_group": "single"},
-	"Shell": {"type": "buff", "attack_type": "magic", "attribute": "shell", "amount": 5, "duration": 3, "cost": 6, "level": 1, "target_group": "single"},
-
-	# Debuffs com efeitos negativos
-	"Weaken": {"type": "debuff", "attack_type": "magic", "attribute": "strength", "amount": -5, "duration": 3, "cost": 8, "level": 2, "target_group": "single"},
-	"Poison Cloud": {"type": "debuff", "attack_type": "magic", "cost": 6, "level": 1, "target_group": "single", "status_effects": [{"attribute": "poison", "amount": -1, "duration": 4, "chance": 80}]},
-	"Dark Mist": {"type": "debuff", "attack_type": "magic", "cost": 5, "level": 1, "target_group": "single", "status_effects": [{"attribute": "blind", "amount": -1, "duration": 3, "chance": 70}]},
-	"Sleep": {"type": "debuff", "attack_type": "magic", "cost": 6, "level": 2, "target_group": "single", "status_effects": [{"attribute": "sleep", "amount": -1, "duration": 3, "chance": 75}]},
-	"Paralyze": {"type": "debuff", "attack_type": "magic", "cost": 7, "level": 2, "target_group": "single", "status_effects": [{"attribute": "paralysis", "amount": -1, "duration": 3, "chance": 60}]},
-	"Confuse": {"type": "debuff", "attack_type": "magic", "cost": 10, "level": 3, "target_group": "single", "status_effects": [{"attribute": "confuse", "amount": -1, "duration": 3, "chance": 50}]},
-	"Charm": {"type": "debuff", "attack_type": "magic", "cost": 5, "level": 1, "target_group": "single", "status_effects": [{"attribute": "charm", "amount": -1, "duration": 3, "chance": 100}]},
-	"Stone Gaze": {"type": "debuff", "attack_type": "magic", "cost": 5, "level": 1, "target_group": "single", "status_effects": [{"attribute": "petrify", "amount": -1, "duration": 0, "chance": 100}]},
-	"Curse": {"type": "debuff", "attack_type": "magic", "cost": 10, "level": 3, "target_group": "single", "status_effects": [{"attribute": "curse", "amount": -1, "duration": 5, "chance": 60}]},
-	"Doom": {"type": "debuff", "attack_type": "magic", "cost": 18, "level": 4, "target_group": "single", "status_effects": [{"attribute": "doom", "amount": -1, "duration": 5, "chance": 50}]},
-	"Stop Time": {"type": "debuff", "attack_type": "magic", "cost": 12, "level": 4, "target_group": "single", "status_effects": [{"attribute": "stop", "amount": -1, "duration": 2, "chance": 50}]},
-	"Stun Bolt": {"type": "debuff", "attack_type": "magic", "cost": 8, "level": 2, "target_group": "single", "status_effects": [{"attribute": "stun", "amount": -1, "duration": 1, "chance": 60}]},
-	"Knockout": {"type": "damage", "attack_type": "magic", "power": 9999, "cost": 5, "level": 1, "hit_chance": 100, "target_group": "single", "status_effects": [{"attribute": "knockout", "amount": -1, "duration": 0, "chance": 100}]},
-	"Slow": {"type": "debuff", "attack_type": "magic", "attribute": "speed", "amount": -4, "duration": 3, "cost": 8, "level": 2, "target_group": "single"},
-	
-	# Especiais
-	"Summon": {"type":"summon","cost":25,"level":4,"summon_data":{"nome":"Summon","STR":30,"DEX":15,"AGI":10,"CON":10,"MAG":35,"INT":30,"SPI":20,"LCK":10,"max_hp":100,"current_hp":100,"max_mp":100,"current_mp":100,"spells":["Fire Rain","Mega Flare"],"sprite_path":"res://assets/Invocação.png"}}
-}
-
-
-var skill_database = {
-	"Power Strike": {"effect_type": "damage",  "attack_type": "blunt", "power": 35, "cost": 4, "target_type": "enemy", "level": 1},
-	"Quick Shot": {"effect_type": "damage",  "attack_type": "pierce", "power": 25, "cost": 3, "target_type": "enemy", "level": 1},
-	"Focus": {"effect_type": "buff", "scaling_stat": "AGI", "amount": 5, "duration": 3, "cost": 2, "target_type": "self", "level": 1},
-	"Heal Self": {"effect_type": "heal", "power": 25, "cost": 5, "target_type": "self", "level": 1},
-	"Shield Breaker": {"effect_type": "damage", "attack_type": "pierce", "power": 30, "cost": 6, "target_type": "enemy", "status_inflicted": "defense_down", "status_chance": 0.6, "duration": 3, "level": 2},
-	"Tracking Shot": {"effect_type": "damage", "attack_type": "pierce", "power": 35, "cost": 6, "target_type": "enemy", "status_inflicted": "accuracy_up", "status_chance": 0.7, "duration": 3, "level": 2},
-	"Evade Boost": {"effect_type": "buff", "attribute": "evasion", "amount": 7, "duration": 3, "cost": 5, "target_type": "self", "level": 1},
-	"Fury Punch": {"effect_type": "damage", "attack_type": "blunt", "power": 45, "cost": 8, "target_type": "enemy", "level": 2},
-	"Holy Smite": {"effect_type": "damage", "attack_type": "holy", "power": 60, "cost": 15, "target_type": "enemy", "level": 3},
-	"Crushing Blow": {"effect_type": "damage", "attack_type": "blunt", "power": 55, "cost": 8, "target_type": "enemy", "status_inflicted": "stun", "status_chance": 0.4, "duration": 1, "level": 3},
-	"Arrow Barrage": {"effect_type": "damage", "attack_type": "pierce", "power": 28, "cost": 6, "target_type": "line", "level": 2},
-	"Shadow Jab": {"effect_type": "damage", "attack_type": "pierce", "power": 40, "cost": 5, "target_type": "enemy", "status_inflicted": "bleed", "status_chance": 0.35, "duration": 3, "level": 2},
-	"Chi Burst": {"effect_type": "hybrid", "attack_type": "magic", "power": 30, "heal": 30, "cost": 10, "target_type": "self", "level": 2},
-	"Steal": {"effect_type": "special", "attack_type": "None", "effect": "steal_item","cost": 4, "target_type": "enemy", "level": 1},
-	"Scan": {"effect_type": "special", "attack_type": "None", "effect": "scan_info","cost": 2, "target_type": "enemy", "level": 1},
-	"MP Drain": {"effect_type": "special", "attack_type": "None", "effect": "mp_drain","cost": 3, "target_type": "enemy", "level": 1}
-}
-
-var class_spell_trees = {
-	"Mage": {
-		"spells": {
-			"Fire": {"level": 1, "INT": 6},
-			"Ice": {"level": 2, "INT": 7},
-			"Thunder": {"level": 3, "INT": 8},
-		},
-		"skills": {},
-		"specials": {
-			"Arcane Surge": {"level": 1, "INT": 5}
-		},
-		"spell_upgrades": {
-			"Fire": "Fire Rain",
-			"Fire Rain": "Flare"
-		},
-		"skill_upgrades": {}
-	},
-
-	"Cleric": {
-		"spells": {
-			"Esuna": {"level": 1, "SPI": 6},
-			"Dispel": {"level": 1, "SPI": 1},
-			"Revive": {"level": 1, "SPI": 1},
-			"Cure": {"level": 1, "SPI": 1},
-			"Protect": {"level": 1, "SPI": 1},
-			"Shell": {"level": 1, "SPI": 1},
-		},
-		"skills": {},
-		"specials": {
-			"Safe Guard": {"level": 1, "INT": 2}
-		},
-		"spell_upgrades": {
-			"Cure": "Cura",
-			"Cura": "Heal All"
-		},
-		"skill_upgrades": {}
-	},
-
-	"Knight": {
-		"spells": {},
-		"skills": {
-			"Power Strike": {"level": 2, "STR": 10},
-			"Focus": {"level": 3, "AGI": 11},
-		},
-		"specials": {
-			"Shield Breaker": {"level": 1, "STR": 5}
-		},
-		"spell_upgrades": {},
-		"skill_upgrades": {
-			"Power Strike": "Crushing Blow"
-		}
-	},
-
-	"Hunter": {
-		"spells": {},
-		"skills": {
-			"Quick Shot": {"level": 1, "STR": 7},
-			"Focus": {"level": 2, "AGI": 11},
-		},
-		"specials": {
-			"Rain of Arrows": {"level": 1, "DEX": 2}
-		},
-		"spell_upgrades": {},
-		"skill_upgrades": {
-			"Quick Shot": "Arrow Barrage"
-		}
-	},
-
-	"Thief": {
-		"spells": {},
-		"skills": {
-			"Steal": {"level": 1, "STR": 1},
-			"Scan": {"level": 1, "STR": 1},
-		},
-		"specials": {
-			"Shadow Strike": {"level": 1, "AGI": 2}
-		},
-		"spell_upgrades": {},
-		"skill_upgrades": {
-			"Quick Shot": "Shadow Jab"
-		}
-	},
-
-	"Monk": {
-		"spells": {},
-		"skills": {
-			"Power Strike": {"level": 1, "STR": 8},
-			"Heal Self": {"level": 2, "AGI": 11},
-		},
-		"specials": {
-			"Inner Focus": {"level": 1, "SPI": 2}
-		},
-		"spell_upgrades": {},
-		"skill_upgrades": {
-			"Heal Self": "Chi Burst"
-		}
-	},
-
-	"Paladin": {
-		"spells": {
-			"Cure": {"level": 1, "SPI": 6},
-			"Protect": {"level": 2, "SPI": 8},
-		},
-		"skills": {},
-		"specials": {
-			"Divine Blade": {"level": 1, "STR": 2}
-		},
-		"spell_upgrades": {
-			"Cure": "Divine Light"
-		},
-		"skill_upgrades": {}
-	},
-
-	"Summoner": {
-		"spells": {
-			"Summon": {"level": 1, "SPI": 2},
-			"Fire": {"level": 1, "SPI": 2},
-			"Dispel": {"level": 1, "SPI": 2},
-		},
-		"skills": {},
-		"specials": {
-			"Eidolon Burst": {"level": 1, "SPI": 2}
-		},
-		"spell_upgrades": {},
-		"skill_upgrades": {}
-	}
-}
-
-var special_database = {
-	"Break Thunder": {"effect_type": "damage", "attack_type": "Slash", "power": 35, "target_type": "enemy", "level": 1},
-	"Safe Guard": {"effect_type": "heal", "attack_type": "Magic", "power": 25, "target_type": "ally", "level": 1},
-	"Arcane Surge": {"effect_type": "damage", "attack_type": "Magic", "power": 40, "target_type": "enemy","level": 1},
-	"Shield Breaker": {"effect_type": "damage", "attack_type": "Pierce", "power": 30, "target_type": "enemy", "status_inflicted": "defense_down", "status_chance": 0.6, "duration": 3,"level": 1},
-	"Rain of Arrows": {"effect_type": "damage", "attack_type": "Pierce", "power": 20, "target_type": "all_enemies", "level": 1},
-	"Shadow Strike": {"effect_type": "damage", "attack_type": "Pierce", "power": 35, "target_type": "enemy", "status_inflicted": "stun", "status_chance": 0.4, "duration": 2, "level": 1},
-	"Inner Focus": {"effect_type": "buff", "attack_type": "None", "power": 0, "target_type": "self", "attribute": "SPI", "amount": 5, "duration": 4, "level": 1},
-	"Divine Blade": {"effect_type": "damage", "attack_type": "Holy", "power": 45, "target_type": "enemy", "status_inflicted": "blind", "status_chance": 0.3, "duration": 3, "level": 1},
-	"Eidolon Burst": {"effect_type": "damage", "attack_type": "Magic", "power": 50, "target_type": "all_enemies", "level": 1 }
-}
-
+const ATB_GLOBAL_MULTIPLIER = 3.0
 # Estado da batalha
 var turn_order := []
 
@@ -370,61 +35,92 @@ var sp_values := {}
 
 var current_turn_index := 0
 
-
-
 # FLUXO DO JOGO
 
-func is_player(actor) -> bool:
-	return party.has(actor)
-
-func perform_enemy_action(enemy_actor) -> void:
+func perform_enemy_action(enemy_actor: Enemy1990) -> void:
 	var rng = RandomNumberGenerator.new()
 	rng.randomize()
 
-	var target
-
+	# 1. O BattleManager (Juiz) ainda checa status
 	if enemy_actor.is_charmed:
 		print("Status: Charm ativo para", enemy_actor.name)
-		# Charm: ataca apenas aliados (outros inimigos) ou ele mesmo
 		var allies = enemies.filter(func(e): return e.is_alive())
 		if allies.is_empty():
-			print("Nenhum aliado vivo para atacar, finalizando turno.")
 			end_turn()
 			return
-		target = allies[rng.randi_range(0, allies.size() - 1)]
-		print("Charm: alvo escolhido:", target.name)
+		var target = allies[rng.randi_range(0, allies.size() - 1)]
+		
+		# Manda o EXECUTOR fazer o ataque
+		await action_executor.perform_attack(enemy_actor, target)
+
+		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+		end_turn()
+		return
 
 	elif enemy_actor.is_confused:
 		print("Status: Confusão ativo para", enemy_actor.name)
-		# Confuse: ataca qualquer um aleatóriamente, inclusive ele mesmo
 		var all_targets = (party + enemies).filter(func(a): return a.is_alive())
 		if all_targets.is_empty():
-			print("Nenhum alvo vivo disponível para confusão, finalizando turno.")
 			end_turn()
 			return
-		target = all_targets[rng.randi_range(0, all_targets.size() - 1)]
-		print("Confusão: alvo escolhido:", target.name)
+		var target = all_targets[rng.randi_range(0, all_targets.size() - 1)]
 
-	else:
-		# Comportamento padrão: ataca jogadores não invisíveis
-		var alive_party = party.filter(func(p): return p.is_alive() and not p.is_invisible)
-		if alive_party.is_empty():
-			print("Todos os jogadores estão invisíveis ou mortos!")
-			hud.show_top_message("Todos os jogadores visíveis foram derrotados ou estão invisíveis!")
-			end_turn()
-			return
-		target = alive_party[rng.randi_range(0, alive_party.size() - 1)]
+		# Manda o EXECUTOR fazer o ataque
+		await action_executor.perform_attack(enemy_actor, target)
+		
+		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+		end_turn()
+		return
 
-	await perform_attack(enemy_actor, target)
+	# 2. Se o inimigo está OK, ele usa a própria IA
+	match enemy_actor.ai_behavior:
+		"simple_attack":
+			# A IA vai chamar o executor
+			enemy_ai.execute_simple_attack(enemy_actor, party, enemies, self)
+		_:
+			enemy_ai.execute_simple_attack(enemy_actor, party, enemies, self)
 
-	# 🔧 Zera ATB do inimigo
-	atb_values[enemy_actor] = 0
-	hud.update_atb_bars(atb_values)
+func atualizar_obstrucao_inimigos() -> void:
 
-	# 🔧 Espera e finaliza turno
-	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-	end_turn()
+	
+	for i in range(enemies.size()):
+		var enemy = enemies[i]
+		if enemies.size() <= 3:
+			enemy.obstruido = false
+			continue
+		
+		if enemy.position_line == "back":
+			var front_index = i - 3
+			if front_index < 0 and enemies[front_index].is_alive():
+				enemy.obstruido = true
+			else:
+				enemy.obstruido = false
+		else:
+			enemy.obstruido = false
 
+func atualizar_obstrucao_party() -> void:
+
+
+	for i in range(party.size()):
+		var player = party[i]
+		if player.position_line == "back":
+			var front_index = i - 2
+			if front_index >= 0 and party[front_index].is_alive():
+				player.obstruido = true
+			else:
+				player.obstruido = false
+		else:
+			player.obstruido = false
+
+
+func is_player(actor) -> bool:
+	if actor is PlayerPartyMember1990:
+		return true
+	if actor is Summon: 
+		return true
+	# Se não for nenhum dos dois, é um inimigo.
+	return false
+	
 func get_player_position(index: int, is_front: bool) -> Vector2:
 	var front_positions = [
 		Vector2(1180, 400),  # Jogador 0 front
@@ -574,6 +270,8 @@ func _load_party() -> Array:
 		member.max_sp = member_data["max_sp"]
 		member.spells = member_data.get("spells", [])
 		member.spell_slots = member_data.get("spell_slots", {})
+		member.max_spell_slots = Database1990.class_spell_slots.get(member.classe_name, {})
+		
 		member.skills = member_data.get("skills", [])
 		member.level = member_data.get("level", 1)
 		member.xp = member_data.get("xp", 0)
@@ -586,88 +284,6 @@ func _load_party() -> Array:
 		member.calculate_stats()
 		loaded_party.append(member)
 	return loaded_party
-
-func ajustar_dano_por_posicao(dano: int, atacante, alvo, is_ataque_fisico: bool) -> int:
-	if not is_ataque_fisico:
-		return dano  # ataques mágicos ou à distância não são afetados
-
-	# Reduzir dano causado se o atacante está na traseira
-	if atacante.position_line == "back":
-		dano *= 0.7
-	
-	# Reduzir dano recebido se o alvo está na traseira
-	if alvo.position_line == "back":
-		dano *= 0.5
-
-	return int(dano)
-
-func atualizar_obstrucao_inimigos() -> void:
-	for i in range(enemies.size()):
-		var enemy = enemies[i]
-		# Se houver 3 ou menos inimigos, ninguém está obstruído
-		if enemies.size() <= 3:
-			enemy.obstruido = false
-			continue
-		
-		if enemy.position_line == "back":
-			var front_index = i - 3
-			if front_index < 0 and enemies[front_index].is_alive():
-				enemy.obstruido = true
-			else:
-				enemy.obstruido = false
-		else:
-			enemy.obstruido = false
-
-func atualizar_obstrucao_party() -> void:
-	for i in range(party.size()):
-		var player = party[i]
-		if player.position_line == "back":
-			var front_index = i - 2
-			if front_index >= 0 and party[front_index].is_alive():
-				player.obstruido = true
-			else:
-				player.obstruido = false
-		else:
-			player.obstruido = false
-
-func pode_atacar(alvo, atacante, is_ataque_fisico: bool) -> bool:
-	if not is_ataque_fisico:
-		return true  # Magias sempre podem atingir
-		
-	if not alvo.obstruido:
-		return true  # Pode atacar se não estiver obstruído
-	
-	if alvo.obstruido and not atacante.alcance_estendido:
-		return false  # Está atrás de alguém vivo e atacante não tem alcance
-	
-	if alvo.position_line == "front":
-		return true
-
-	return atacante.alcance_estendido
-
-func attempt_steal(user, alvo):
-	var chance_base = 0.2 + (user.DEX + user.LCK) * 0.01
-	var roll = randf()
-	if roll <= chance_base and alvo.loot.size() > 0:
-		var item = alvo.loot.pick_random()
-		hud.show_top_message("%s roubou %s de %s!" % [user.nome, item, alvo.nome])
-		if inventory.has(item):
-			inventory[item] += 1
-		else:
-			inventory[item] = 1
-	else:
-		hud.show_top_message("%s tentou roubar, mas falhou!" % user.nome)
-
-func display_scan_info(alvo):
-	var fraquezas = alvo.get_element_weaknesses() if alvo.has_method("get_element_weaknesses") else []
-	var status = alvo.get_status_descriptions() if alvo.has_method("get_status_descriptions") else []
-	hud.show_top_message("Fraquezas: %s\nStatus: %s" % [", ".join(fraquezas), ", ".join(status)])
-
-func drain_mp(user, alvo):
-	var amount = min(10, alvo.current_mp)
-	alvo.current_mp -= amount
-	user.current_mp += amount
-	hud.show_top_message("%s drenou %d MP de %s!" % [user.nome, amount, alvo.nome])
 
 func restore_saved_party():
 	in_summon_mode = false
@@ -694,7 +310,7 @@ func restore_saved_party():
 			sprite_pos_index = back_index
 
 		var sprite = preload("res://decades/1990s/Battle/PlayerSprite.tscn").instantiate()
-		sprite.set_sprite(class_sprite_paths.get(member.classe_name, ""))
+		sprite.set_sprite(Database1990.class_sprite_paths.get(member.classe_name, ""))
 		sprite.position = get_player_position(sprite_pos_index, is_front)
 		sprite.set_player(member)
 
@@ -712,7 +328,7 @@ func restore_saved_party():
 	# Atualiza turnos e HUD
 	turn_order = party + enemies
 	hud.update_party_info(party)
-	atualizar_obstrucao_party()  # Inclua se for necessário
+	atualizar_obstrucao_party() 
 
 # CRIAÇÃO DE INIMIGOS E PLAYER
 
@@ -728,7 +344,7 @@ func spawn_party(party_data: Array) -> void:
 		player_node.classe_name = classe_name
 		player_node.nome = classe_name
 
-		var stats = class_base_stats.get(classe_name, {})
+		var stats = Database1990.class_base_stats.get(classe_name, {})
 		player_node.STR = stats.get("STR", 0)
 		player_node.DEX = stats.get("DEX", 0)
 		player_node.AGI = stats.get("AGI", 0)
@@ -744,8 +360,8 @@ func spawn_party(party_data: Array) -> void:
 
 
 		unlock_available_spells_and_skills(player_node)
-		player_node.spell_upgrades = class_spell_trees.get(classe_name, {}).get("spell_upgrades", {})
-		player_node.skill_upgrades = class_spell_trees.get(classe_name, {}).get("skill_upgrades", {})
+		player_node.spell_upgrades = Database1990.class_spell_trees.get(classe_name, {}).get("spell_upgrades", {})
+		player_node.skill_upgrades = Database1990.class_spell_trees.get(classe_name, {}).get("skill_upgrades", {})
 
 		# Lógica de posição baseada na presença de Hunter e Paladin
 		if classe_name == "Paladin":
@@ -767,7 +383,15 @@ func spawn_party(party_data: Array) -> void:
 		if classe_name == "Hunter":
 			player_node.alcance_estendido = true
 
-		player_node.spell_slots = class_spell_slots.get(classe_name, {})
+		# Pega os slots base do Database
+		var slots_base = Database1990.class_spell_slots.get(classe_name, {})
+		
+		# Salva a cópia máxima (O "backup")
+		player_node.max_spell_slots = slots_base.duplicate() 
+		
+		# Define os slots atuais
+		player_node.spell_slots = slots_base.duplicate() 
+		
 		print(classe_name)
 		print(player_node.spell_slots)
 		party[i] = player_node
@@ -781,7 +405,7 @@ func spawn_party(party_data: Array) -> void:
 		else:
 			sprite_pos_index = back_index
 		var player_sprite = preload("res://decades/1990s/Battle/PlayerSprite.tscn").instantiate()
-		player_sprite.set_sprite(class_sprite_paths.get(classe_name, ""))
+		player_sprite.set_sprite(Database1990.class_sprite_paths.get(classe_name, ""))
 		player_sprite.position = get_player_position(sprite_pos_index, is_front)
 		player_sprite.set_player(player_node)
 
@@ -815,7 +439,7 @@ func spawn_loaded_party(loaded_party: Array) -> void:
 		else:
 			sprite_pos_index = back_index
 		var player_sprite = preload("res://decades/1990s/Battle/PlayerSprite.tscn").instantiate()
-		player_sprite.set_sprite(class_sprite_paths.get(player_node.classe_name, ""))
+		player_sprite.set_sprite(Database1990.class_sprite_paths.get(player_node.classe_name, ""))
 		player_sprite.position = get_player_position(sprite_pos_index, is_front)
 		player_sprite.set_player(player_node)
 
@@ -845,84 +469,6 @@ func spawn_enemies(enemy_data: Array) -> void:
 		enemies[i] = enemy_info["instance"]  # Substitui no array por instância
 		characters_node.add_child(enemy_sprite)
 
-func generate_enemies() -> Array:
-	var enemies_array = []
-	var party_level = party[0].level if party.size() > 0 else 1
-
-	var enemy_pool = []
-	var enemy_count = 6  # padrão
-
-	match party_level:
-		1:
-			enemy_pool = ["Passaro", "Zumbi"]
-			enemy_count = 6
-		2:
-			enemy_pool = ["Passaro", "Zumbi", "Lobo"]
-			enemy_count = 6
-		3:
-			enemy_pool = ["Passaro", "Zumbi", "Lobo", "Necromante"]
-			enemy_count = 6
-		4:
-			enemy_pool = ["Lobisomen", "Aguia"]
-			enemy_count = 6
-		5:
-			# 2 Oni fixos, + 3 entre Lobisomen e Passaro
-			enemy_pool = []
-			enemy_count = 5
-			for i in range(2):
-				enemy_pool.append("Oni")
-			var pool = ["Lobisomen", "Passaro"]
-			for i in range(3):
-				enemy_pool.append(pool[randi() % pool.size()])
-		6:
-			enemy_pool = ["Dragao", "Oni", "Oni"]
-			enemy_count = 3
-		_:
-			enemy_pool = ["Zumbi"]
-			enemy_count = 3
-
-	for i in range(enemy_count):
-		var rand_type = enemy_pool[i % enemy_pool.size()]
-		var base = enemy_base_stats.get(rand_type)
-
-		if base:
-			var enemy_node := Enemy1990.new()
-			var position_indicator = ""
-			if i >= 3:
-				enemy_node.position_line = "front"
-				position_indicator = " [F]"
-			else:
-				enemy_node.position_line = "back"
-				position_indicator = " [B]"
-			enemy_node.nome = "%s%s" % [rand_type, position_indicator]
-			enemy_node.STR = base["STR"]
-			enemy_node.DEX = base["DEX"]
-			enemy_node.AGI = base["AGI"]
-			enemy_node.CON = base["CON"]
-			enemy_node.MAG = base["MAG"]
-			enemy_node.INT = base["INT"]
-			enemy_node.SPI = base["SPI"]
-			enemy_node.LCK = base["LCK"]
-			enemy_node.xp_value = base["xp_value"]
-			enemy_node.attack_type = base["attack_type"]
-			enemy_node.enemy_type = base["enemy_type"]
-
-			if enemy_node.enemy_type == "Flying":
-				enemy_node.alcance_estendido = true
-
-			var rng = RandomNumberGenerator.new()
-			rng.randomize()
-			enemy_node.id = "%s_%06d" % [rand_type.to_lower(), rng.randi_range(0, 999999)]
-
-			enemy_node.calculate_stats()
-			enemy_node.set_type_resistances()
-
-			enemies_array.append({
-				"instance": enemy_node,
-				"sprite_path": base["sprite_path"]
-			})
-
-	return enemies_array
 
 func find_enemy_by_id(id: String) -> Enemy1990:
 	for enemy in enemies:
@@ -941,6 +487,11 @@ var ready_to_act := []  # fila de personagens com ATB cheio (100)
 var is_executing_turn := false  # controla se alguém está executando/decidindo ação
 
 func _ready():
+	
+	encounter_generator = EncounterGenerator1990.new()
+	enemy_ai = EnemyAi1990.new()
+	action_executor = ActionExecutor1990.new(self)
+	
 	var hud_scene = preload("res://decades/1990s/Battle/CombatHUD1990.tscn")
 	hud = hud_scene.instantiate()
 	add_child(hud)
@@ -972,7 +523,7 @@ func start_battle(party_data: Array = []) -> void:
 	for member in party:
 		sp_values[member] = 0.0
 
-	enemies = generate_enemies()
+	enemies = encounter_generator.generate_enemies(party)
 	spawn_enemies(enemies)
 	atualizar_obstrucao_inimigos()
 	
@@ -1029,7 +580,7 @@ func _process(delta):
 			if actor.active_status_effects.any(func(e): return e.attribute in ["stop", "stun", "paralysis"]):
 				continue
 
-			actor.atb_value += modified_speed * delta
+			actor.atb_value += modified_speed * delta * ATB_GLOBAL_MULTIPLIER
 
 	# Verifica quem está pronto
 	var actors_filled = []
@@ -1105,9 +656,7 @@ func reset_atb(actor):
 	actor.atb_value = 0
 	hud.update_atb_bars({actor: 0})
 
-
 # CRIAÇÃO
-
 
 func create_spell(name: String, data: Dictionary) -> Spell:
 	var s = Spell.new()
@@ -1230,58 +779,13 @@ func create_special(name: String, data: Dictionary) -> Special:
 	s.level = data.get("level", 1)
 	return s
 
-func summon_entity(spell: Spell, caster):
-	if in_summon_mode:
-		hud.show_top_message("Já há uma invocação ativa!")
-		return
-
-	in_summon_mode = true
-
-	saved_party = party.duplicate()
-	for member in saved_party:
-		if member.sprite_ref:
-			member.sprite_ref.queue_free()
-
-	var summon_data = spell.summon_data
-	var sprite_path = summon_data.get("sprite_path", "")
-	var summon = Summon.new()
-	summon.setup(summon_data["nome"], summon_data, sprite_path)
-	
-	# Agora você pode fazer:
-	for spell_name in summon_data.get("spells", []):
-		if spell_database.has(spell_name):
-			var new_spell = create_spell(spell_name, spell_database[spell_name])
-			summon.spells.append(new_spell)
-	
-	current_summon = summon
-	party = [summon]
-
-	# Criação da sprite
-	var summon_sprite = preload("res://decades/1990s/Battle/PlayerSprite.tscn").instantiate()
-	summon_sprite.set_sprite(sprite_path)
-	summon_sprite.position = get_player_position(0, true)
-	summon_sprite.set_player(summon)
-	summon_sprite.scale = Vector2(1.5, 1.5)
-	summon.sprite_ref = summon_sprite
-	characters_node.add_child(summon_sprite)
-
-	turn_order = [summon] + enemies
-	_create_menu()
-	hud.update_party_info(party)
-
-func get_spell_by_name(spells: Array, name: String) -> Spell:
-	for spell in spells:
-		if spell.name == name:
-			return spell
-	return null
-
 func _create_menu() -> void:
 	hud._hide_all_panels()
 	hud.show_action_menu()
 	hud.hide_arrow()
 
 func unlock_available_spells_and_skills(player):
-	var tree = class_spell_trees.get(player.classe_name, {"spells": {}, "skills": {}})
+	var tree = Database1990.class_spell_trees.get(player.classe_name, {"spells": {}, "skills": {}})
 
 	player.spells.clear()
 	player.skills.clear()
@@ -1296,8 +800,8 @@ func unlock_available_spells_and_skills(player):
 		var spi_req = reqs.get("SPI", 0)
 
 		if player.level >= level_req and player.INT >= int_req and player.SPI >= spi_req:
-			if spell_database.has(spell_name):
-				var spell = create_spell(spell_name, spell_database[spell_name])
+			if Database1990.spell_database.has(spell_name):
+				var spell = create_spell(spell_name, Database1990.spell_database[spell_name])
 				player.spells.append(spell)
 
 	# Desbloquear skills
@@ -1315,8 +819,8 @@ func unlock_available_spells_and_skills(player):
 				break
 
 		if player.level >= level_req and stat_req_pass:
-			if skill_database.has(skill_name):
-				var skill = create_skill(skill_name, skill_database[skill_name])
+			if Database1990.skill_database.has(skill_name):
+				var skill = create_skill(skill_name, Database1990.skill_database[skill_name])
 				player.skills.append(skill)
 	
 	# Desbloquear specials
@@ -1333,8 +837,8 @@ func unlock_available_spells_and_skills(player):
 				break
 
 		if player.level >= level_req and stat_req_pass:
-			if special_database.has(special_name):
-				var special = create_special(special_name, special_database[special_name])
+			if Database1990.special_database.has(special_name):
+				var special = create_special(special_name, Database1990.special_database[special_name])
 				player.specials.append(special)
 
 func check_ability_mastery(member, ability_name: String, is_spell: bool) -> void:
@@ -1359,835 +863,19 @@ func check_ability_mastery(member, ability_name: String, is_spell: bool) -> void
 		if data["level"] == 3:
 			if is_spell and ability_name in member.spell_upgrades:
 				var evolved = member.spell_upgrades[ability_name]
-				if evolved in spell_database:
-					var evolved_spell = create_spell(evolved, spell_database[evolved])
+				if evolved in Database1990.spell_database:
+					var evolved_spell = create_spell(evolved, Database1990.spell_database[evolved])
 					member.spells.append(evolved_spell)
 					member.spell_ap[evolved] = {"current": 0, "level": 1}
 					print("%s desbloqueou %s!" % [member.nome, evolved])
 			elif not is_spell and ability_name in member.skill_upgrades:
 				var evolved = member.skill_upgrades[ability_name]  # Corrigido aqui
-				if evolved in skill_database:
+				if evolved in Database1990.skill_database:
 					# Se tiver função create_skill, use ela. Se não, create_spell pode funcionar.
-					var evolved_skill = create_skill(evolved, skill_database[evolved]) 
+					var evolved_skill = create_skill(evolved, Database1990.skill_database[evolved])
 					member.skills.append(evolved_skill)
 					member.skill_ap[evolved] = {"current": 0, "level": 1}
 					print("%s desbloqueou %s!" % [member.nome, evolved])
-
-
-# EXECUTA AÇÃO
-
-
-func aplicar_dano(alvo, atacante, dano: int) -> void:
-	
-	if alvo.has_blink_active():
-		alvo.consume_blink_charge()
-		hud.show_top_message("%s desviou com Blink!" % alvo.nome)
-		return  # Cancela o dano
-
-	alvo.current_hp -= int(dano)
-	if alvo.current_hp < 0:
-		alvo.current_hp = 0
-		alvo.check_if_dead()
-
-	var updated := false
-
-	if is_player(alvo):
-		if alvo.increase_special_charge(dano * 0.75):
-			sp_values[alvo] = alvo.special_charge
-			updated = true
-
-	if is_player(atacante):
-		if atacante.increase_special_charge(dano * 0.5):
-			sp_values[atacante] = atacante.special_charge
-			updated = true
-
-	if updated:
-		hud.update_special_bar(sp_values)
-		
-	atualizar_obstrucao_inimigos()
-	atualizar_obstrucao_party()
-
-func _execute_skill(user, skill, alvo):
-	
-	if user.current_sp < skill.cost:
-		hud.show_top_message("%s não tem SP suficiente para usar %s!" % [user.nome, skill.name])
-		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-		end_turn()
-		return
-	user.current_sp -= skill.cost
-	user.spell_slots[skill.level] -= 1
-	
-	var is_fisico = skill.effect_type == "damage" and skill.effect_type != "magic"
-
-	if not pode_atacar(alvo, user, is_fisico):
-		hud.show_top_message("Alvo fora de alcance!")
-		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-		end_turn()
-		return
-		
-	var hit_roll = randf()
-	if hit_roll > skill.hit_chance:
-		hud.show_top_message("%s errou o uso de %s!" % [user.nome, skill.name])
-		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-		reset_atb(user)
-		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-		end_turn()
-		return  # importante parar aqui
-
-	if skill.effect_type == "damage":
-		var base_dano = skill.power
-		match skill.scaling_stat:
-			"STR": base_dano += user.get_modified_stat(user.STR, "STR")
-			"DEX": base_dano += user.get_modified_stat(user.DEX, "DEX")
-			"INT": base_dano += user.get_modified_stat(user.INT, "INT")
-			"SPI": base_dano += user.get_modified_stat(user.SPI, "SPI")
-			_: base_dano += user.get_modified_stat(user.STR, "STR")
-
-		var defesa_modificada = alvo.get_modified_stat(alvo.defense, "defense")
-		var dano = base_dano - defesa_modificada
-		dano = max(dano, 1)
-
-		dano = ajustar_dano_por_posicao(dano, user, alvo, is_fisico)
-		
-		# Aplicar resistências
-		var element_res = 1.0
-		var attack_type_res = 1.0
-
-		# Só aplicar se skill tiver element e attack_type preenchidos
-		if skill.has_method("element") and skill.element != "":
-			element_res = alvo.element_resistances.get(skill.element.to_lower(), 1.0)
-
-		if skill.has_method("attack_type") and skill.attack_type != "":
-			attack_type_res = alvo.attack_type_resistances.get(skill.attack_type.to_lower(), 1.0)
-		
-		dano = dano * element_res * attack_type_res
-		
-		if alvo.get_meta("protect_active", false):
-			dano *= 0.5
-			hud.show_top_message("%s foi protegido por Protect!" % alvo.nome)
-			
-		# Crítico opcional baseado em LCK
-		var crit_chance = user.LCK * 0.01
-		if randf() < crit_chance:
-			dano *= 2
-			hud.show_top_message("CRÍTICO! %s usou %s e causou %d de dano em %s!" % [user.nome, skill.name, dano, alvo.nome])
-		else:
-			hud.show_top_message("%s usou %s e causou %d de dano em %s!" % [user.nome, skill.name, dano, alvo.nome])
-		
-		var ap_gain = int(10)  # Ganha mais AP se causar mais dano
-		user.gain_ap(skill.name, ap_gain, false)
-		aplicar_dano(alvo, user, dano)
-
-		if alvo.current_hp <= 0:
-			alvo.current_hp = 0
-			if alvo.has_method("check_if_dead"):
-				alvo.check_if_dead()
-		hud.show_floating_number(dano, alvo, "damage")
-
-	elif skill.effect_type == "heal":
-		var cura = skill.power + user.SPI
-		var ap_gain = int(10)  # Ganha mais AP se causar mais dano
-		user.gain_ap(skill.name, ap_gain, false)
-		alvo.current_hp = min(alvo.max_hp, alvo.current_hp + cura)
-		hud.show_top_message("%s usou %s e curou %d HP em %s!" % [user.nome, skill.name, cura, alvo.nome])
-		hud.show_floating_number(cura, alvo, "hp")
-
-	elif skill.effect_type == "buff":
-		var effect = StatusEffect.new()
-		var ap_gain = int(10)  # Ganha mais AP se causar mais dano
-		user.gain_ap(skill.name, ap_gain, false)
-		effect.attribute = skill.scaling_stat
-		effect.amount = skill.amount
-		effect.duration = skill.duration if skill.duration > 0 else 3
-		effect.type = StatusEffect.Type.BUFF
-		alvo.apply_status_effect(effect, (skill.hit_chance * 100))
-		hud.show_top_message("%s aumentou %s de %s com %s!" % [user.nome, effect.attribute, alvo.nome, skill.name])
-	
-	elif skill.effect_type == "special":
-		var ap_gain = int(10)
-		user.gain_ap(skill.name, ap_gain, false)
-		
-		match skill.effect:
-			"steal_item":
-				attempt_steal(user, alvo)
-			"scan_info":
-				display_scan_info(alvo)
-			"mp_drain":
-				drain_mp(user, alvo)
-			_:
-				hud.show_top_message("Efeito especial desconhecido: %s" % skill.effect)
-
-		reset_atb(user)
-		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-		end_turn()
-		return
-
-	if skill.status_inflicted != "":
-		if randf() <= skill.status_chance:
-			var status_effect = StatusEffect.new()
-			status_effect.attribute = skill.status_inflicted
-			status_effect.amount = 0  # para status como "stun", "poison", etc.
-			status_effect.duration = skill.duration if skill.duration > 0 else 2
-			status_effect.type = StatusEffect.Type.DEBUFF
-			alvo.apply_status_effect(status_effect, (skill.hit_chance * 100))
-			hud.show_top_message("%s foi afetado por %s!" % [alvo.nome, skill.status_inflicted])
-
-	reset_atb(user)
-	#hud.update_enemy_info(enemies)
-	hud.update_party_info(party)
-	_create_menu()
-	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-	end_turn()
-
-func _execute_skill_area(user, skill, alvos):
-	
-	if user.current_sp < skill.cost:
-		hud.show_top_message("%s não tem SP suficiente para usar %s!" % [user.nome, skill.name])
-		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-		end_turn()
-		return
-		
-	user.current_sp -= skill.cost
-	user.spell_slots[skill.level] -= 1
-	
-	var is_fisico = skill.effect_type == "damage" and skill.effect_type != "magic"
-
-	for alvo in alvos:
-		if alvo.current_hp <= 0:
-			continue  # Ignora inimigos mortos
-
-		if not pode_atacar(alvo, user, is_fisico):
-			continue  # Pula alvos fora de alcance
-
-		var hit_roll = randf()
-		if hit_roll > skill.hit_chance:
-			hud.show_top_message("%s errou %s em %s!" % [user.nome, skill.name, alvo.nome])
-			continue  # Erro individual por alvo
-
-		if skill.effect_type == "damage":
-			var base_dano = skill.power
-			match skill.scaling_stat:
-				"STR": base_dano += user.get_modified_stat(user.STR, "STR")
-				"DEX": base_dano += user.get_modified_stat(user.DEX, "DEX")
-				"INT": base_dano += user.get_modified_stat(user.INT, "INT")
-				"SPI": base_dano += user.get_modified_stat(user.SPI, "SPI")
-				_: base_dano += user.get_modified_stat(user.STR, "STR")
-
-			var defesa_modificada = alvo.get_modified_stat(alvo.defense, "defense")
-			var dano = base_dano - defesa_modificada
-			dano = max(dano, 1)
-
-			dano = ajustar_dano_por_posicao(dano, user, alvo, is_fisico)
-
-			var element_res = 1.0
-			var attack_type_res = 1.0
-
-			if skill.has_method("element") and skill.element != "":
-				element_res = alvo.element_resistances.get(skill.element.to_lower(), 1.0)
-
-			if skill.has_method("attack_type") and skill.attack_type != "":
-				attack_type_res = alvo.attack_type_resistances.get(skill.attack_type.to_lower(), 1.0)
-
-			dano *= element_res * attack_type_res
-
-			var crit_chance = user.LCK * 0.01
-			var crit = randf() < crit_chance
-			if crit:
-				dano *= 2
-				hud.show_top_message("CRÍTICO! %s usou %s e causou %d de dano em %s!" % [user.nome, skill.name, dano, alvo.nome])
-			else:
-				hud.show_top_message("%s usou %s e causou %d de dano em %s!" % [user.nome, skill.name, dano, alvo.nome])
-
-			user.gain_ap(skill.name, 100, false)
-			aplicar_dano(alvo, user, dano)
-
-			if alvo.current_hp <= 0:
-				alvo.current_hp = 0
-				if alvo.has_method("check_if_dead"):
-					alvo.check_if_dead()
-
-			hud.show_floating_number(dano, alvo, "damage")
-
-		elif skill.effect_type == "heal":
-			var cura = skill.power + user.get_modified_stat(user.SPI, "SPI")
-			user.gain_ap(skill.name, 100, false)
-			alvo.current_hp = min(alvo.max_hp, alvo.current_hp + cura)
-			hud.show_top_message("%s usou %s e curou %d HP em %s!" % [user.nome, skill.name, cura, alvo.nome])
-			hud.show_floating_number(cura, alvo, "hp")
-
-		elif skill.effect_type == "buff":
-			var effect = StatusEffect.new()
-			user.gain_ap(skill.name, 100, false)
-			effect.attribute = skill.scaling_stat
-			effect.amount = skill.amount
-			effect.duration = skill.duration if skill.duration > 0 else 3
-			effect.type = StatusEffect.Type.BUFF
-			alvo.apply_status_effect(effect, (skill.hit_chance * 100))
-			hud.show_top_message("%s aumentou %s de %s com %s!" % [user.nome, effect.attribute, alvo.nome, skill.name])
-
-		# Aplica status secundário se existir
-		if skill.status_inflicted != "":
-			if randf() <= skill.status_chance:
-				var status_effect = StatusEffect.new()
-				status_effect.attribute = skill.status_inflicted
-				status_effect.amount = 0
-				status_effect.duration = skill.duration if skill.duration > 0 else 2
-				status_effect.type = StatusEffect.Type.DEBUFF
-				alvo.apply_status_effect(status_effect, (skill.hit_chance * 100))
-				hud.show_top_message("%s foi afetado por %s!" % [alvo.nome, skill.status_inflicted])
-
-	reset_atb(user)
-	#hud.update_enemy_info(enemies)
-	hud.update_party_info(party)
-	await get_tree().create_timer(0).timeout
-	_create_menu()
-	end_turn()
-
-func _execute_spell_area(caster, spell_name, alvos):
-	var spell = get_spell_by_name(caster.spells, spell_name)
-	if spell == null:
-		hud.show_top_message("Magia não encontrada.")
-		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-		end_turn()
-		return
-
-	if caster.current_mp < spell.cost:
-		hud.show_top_message("%s não tem MP suficiente para usar %s!" % [caster.nome, spell.name])
-		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-		end_turn()
-		return
-
-	if !caster.spell_slots.has(spell.level) or caster.spell_slots[spell.level] <= 0:
-		hud.show_top_message("%s não tem slots de nível %d suficientes para usar %s!" % [caster.nome, spell.level, spell.name])
-		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-		end_turn()
-		return
-
-	caster.current_mp -= spell.cost
-	caster.spell_slots[spell.level] -= 1
-
-	for alvo in alvos:
-		if alvo.current_hp <= 0:
-			continue
-
-		if alvo.has_status("float") and spell.element == "earth":
-			hud.show_top_message("%s flutuou e evitou o ataque!" % alvo.nome)
-			continue
-
-		var tipo = spell.type
-
-		if tipo == "damage":
-			var base_dano = spell.power + caster.get_modified_stat(caster.INT, "INT")
-			var defesa_magica = alvo.get_modified_derived_stat("magic_defense")
-			var dano = base_dano - defesa_magica
-			dano = max(dano, 1)
-
-			var crit_chance = caster.get_modified_stat(caster.LCK, "LCK") * 0.01
-			if randf() < crit_chance:
-				dano *= 2
-				hud.show_top_message("CRÍTICO MÁGICO! %s usou %s e causou %d de dano em %s!" % [caster.nome, spell.name, dano, alvo.nome])
-			else:
-				hud.show_top_message("%s usou %s em %s causando %d de dano!" % [caster.nome, spell.name, alvo.nome, dano])
-
-			var element_res = 1.0
-			var attack_type_res = 1.0
-
-			if spell.element != "":
-				element_res = alvo.element_resistances.get(spell.element.to_lower(), 1.0)
-			if spell.attack_type != "":
-				attack_type_res = alvo.attack_type_resistances.get(spell.attack_type.to_lower(), 1.0)
-
-			dano *= element_res * attack_type_res
-
-			if alvo.get_meta("reflect_active", false):
-				hud.show_top_message("%s refletiu a magia de volta para %s!" % [alvo.nome, caster.nome])
-				aplicar_dano(caster, alvo, dano)
-				hud.show_floating_number(dano, caster, "damage")
-				continue
-
-			if alvo.get_meta("shell_active", false):
-				dano *= 0.5
-				hud.show_top_message("%s foi protegido por Shell!" % alvo.nome)
-
-			caster.gain_ap(spell.name, 100, true)
-			aplicar_dano(alvo, caster, dano)
-
-			if alvo.current_hp <= 0:
-				alvo.current_hp = 0
-				if alvo.has_method("check_if_dead"):
-					alvo.check_if_dead()
-
-			hud.show_floating_number(dano, alvo, "damage")
-
-		elif tipo == "heal":
-			var cura = spell.power + caster.get_modified_stat(caster.SPI, "SPI")
-			caster.gain_ap(spell.name, 100, true)
-			alvo.current_hp = min(alvo.max_hp, alvo.current_hp + cura)
-			hud.show_top_message("%s curado por %s: %d de HP!" % [alvo.nome, spell.name, cura])
-			hud.show_floating_number(cura, alvo, "hp")
-
-		elif tipo == "buff" or tipo == "debuff":
-			var ap_gain = int(100)
-			caster.gain_ap(spell.name, ap_gain, true)
-
-			# Aplicar efeito simples (buffs diretos)
-			if spell.attribute != "":
-				var effect = StatusEffect.new()
-				effect.attribute = spell.attribute
-				effect.amount = spell.amount
-				effect.duration = spell.duration
-				effect.type = StatusEffect.Type.BUFF if spell.type == "buff" else StatusEffect.Type.DEBUFF
-				alvo.apply_status_effect(effect, spell.chance)
-
-				var acao = "aumentado" if spell.type == "buff" else "reduzido"
-				hud.show_top_message("%s teve %s %s por %s!" % [alvo.nome, spell.attribute, acao, spell.name])
-
-			# Aplicar múltiplos status_effects se existirem
-			for entry in spell.status_effects:
-				if randf() * 100 <= entry.get("chance", 100):  # chance de aplicar
-					var extra_effect = StatusEffect.new()
-					extra_effect.attribute = entry.get("attribute", "")
-					extra_effect.amount = entry.get("amount", 0)
-					extra_effect.duration = entry.get("duration", 3)
-					extra_effect.type = StatusEffect.Type.DEBUFF  # sempre debuff nos casos listados
-					alvo.apply_status_effect(extra_effect, spell.chance)
-
-					hud.show_top_message("%s sofreu o efeito %s de %s!" % [alvo.nome, extra_effect.attribute, spell.name])
-		
-		elif tipo == "cure_status":
-			var cured = []
-			for entry in spell.status_effects:
-				var attribute = entry.get("attribute", "")
-				if alvo.has_status(attribute):
-					alvo.remove_status_effect(attribute)
-					cured.append(attribute)
-			if cured.size() > 0:
-				hud.show_top_message("%s foi curado de: %s!" % [alvo.nome, ", ".join(cured)])
-			else:
-				hud.show_top_message("%s não tinha status removíveis com %s." % [alvo.nome, spell.name])
-	reset_atb(caster)
-	#hud.update_enemy_info(enemies)
-	hud.update_party_info(party)
-	await get_tree().create_timer(0).timeout
-	_create_menu()
-	end_turn()
-
-func _execute_spell_single(caster, spell_name, alvo):
-	var spell = get_spell_by_name(caster.spells, spell_name)
-	if spell == null:
-		hud.show_top_message("Magia não encontrada.")
-		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-		end_turn()
-		return
-	
-	if caster.current_mp < spell.cost:
-		hud.show_top_message("%s não tem MP suficiente para usar %s!" % [caster.nome, spell.name])
-		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-		end_turn()
-		return
-
-	if !caster.spell_slots.has(spell.level) or caster.spell_slots[spell.level] <= 0:
-		hud.show_top_message("%s não tem slots de nível %d suficientes para usar %s!" % [caster.nome, spell.level, spell.name])
-		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-		end_turn()
-		return
-
-	caster.current_mp -= spell.cost
-	caster.spell_slots[spell.level] -= 1
-
-	var tipo = spell.type
-
-	# Se for uma invocação, não precisa de alvo
-	if tipo == "summon":
-		summon_entity(spell, caster)
-		reset_atb(caster)
-		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-		end_turn()  # <- Força próximo turno ao invés de end_turn()
-		return
-
-	# Verifica alvo só se necessário
-	if alvo == null:
-		hud.show_top_message("Nenhum alvo válido.")
-		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-		end_turn()
-		return
-
-	# Checa se o alvo evitou o ataque por estar flutuando
-	if alvo.has_status("float") and spell.element == "earth":
-		hud.show_top_message("%s flutuou e evitou o ataque!" % alvo.nome)
-		return
-
-	if tipo == "damage":
-		var base_dano = spell.power + caster.get_modified_stat(caster.INT, "INT")
-		var defesa_magica = alvo.get_modified_derived_stat("magic_defense")
-		var dano = base_dano - defesa_magica
-		dano = max(dano, 1)
-
-		var crit_chance = caster.get_modified_stat(caster.LCK, "LCK") * 0.01
-		if randf() < crit_chance:
-			dano *= 2
-			hud.show_top_message("CRÍTICO MÁGICO! %s usou %s e causou %d de dano em %s!" % [caster.nome, spell.name, dano, alvo.nome])
-		else:
-			hud.show_top_message("%s usou %s em %s causando %d de dano!" % [caster.nome, spell.name, alvo.nome, dano])
-		
-					# Aplicar resistências
-		var element_res = 1.0
-		var attack_type_res = 1.0
-		
-		if spell.element != "":
-			element_res = alvo.element_resistances.get(spell.element.to_lower(), 1.0)
-		else:
-			element_res = 1.0
-
-		if spell.attack_type != "":
-			attack_type_res = alvo.attack_type_resistances.get(spell.attack_type.to_lower(), 1.0)
-		else:
-			attack_type_res = 1.0
-		dano *= element_res * attack_type_res
-		
-		# SHELL — reduz dano mágico
-		if alvo.get_meta("shell_active", false):
-			dano *= 0.5
-			hud.show_top_message("%s foi protegido por Shell!" % alvo.nome)
-			
-		var ap_gain = int(100)  # Ganha mais AP se causar mais dano
-		caster.gain_ap(spell.name, ap_gain, true)
-		aplicar_dano(alvo, caster, dano)
-		
-		if alvo.current_hp <= 0:
-			alvo.current_hp = 0
-			if alvo.has_method("check_if_dead"):
-				alvo.check_if_dead()
-				
-		hud.show_floating_number(dano, alvo, "damage")
-
-	elif tipo == "heal":
-		var cura = spell.power + caster.get_modified_stat(caster.SPI, "SPI")
-		var ap_gain = int(100)  # Ganha mais AP se causar mais dano
-		caster.gain_ap(spell.name, ap_gain, true)
-		alvo.current_hp = min(alvo.max_hp, alvo.current_hp + cura)
-		hud.show_top_message("%s curou %s com %s em %d de HP!" % [caster.nome, alvo.nome, spell.name, cura])
-		hud.show_floating_number(cura, alvo, "hp")
-
-	elif tipo == "buff" or tipo == "debuff":
-		var ap_gain = int(100)
-		caster.gain_ap(spell.name, ap_gain, true)
-
-		# Só aplica efeito direto SE status_effects estiver vazio e spell.attribute existir
-		if spell.status_effects.size() == 0 and spell.attribute != "":
-			var effect = StatusEffect.new()
-			effect.attribute = spell.attribute
-			effect.amount = spell.amount
-			effect.duration = spell.duration
-			effect.type = StatusEffect.Type.BUFF if spell.type == "buff" else StatusEffect.Type.DEBUFF
-			effect.status_type = spell.attribute
-			alvo.apply_status_effect(effect, spell.chance)
-
-			var acao = "aumentado" if spell.type == "buff" else "reduzido"
-			hud.show_top_message("%s teve %s %s por %s!" % [alvo.nome, spell.attribute, acao, spell.name])
-
-		# Agora aplica a lista de status_effects
-		for entry in spell.status_effects:
-			var effect = StatusEffect.new()
-			effect.attribute = entry["attribute"]
-			effect.amount = entry["amount"]
-			effect.duration = entry["duration"]
-			effect.type = StatusEffect.Type.DEBUFF if spell.type == "debuff" else StatusEffect.Type.BUFF
-			effect.status_type = entry["status_type"]
-			effect.chance = entry["chance"]
-
-			if randf() * 100 <= effect.chance:
-				alvo.apply_status_effect(effect)
-				var desc = effect.status_type if effect.status_type != "" else effect.attribute
-				hud.show_top_message("%s sofreu o efeito %s de %s!" % [alvo.nome, desc, spell.name])
-	elif tipo == "cure_status":
-		var cured = []
-		for entry in spell.status_effects:
-			var attribute = entry["attribute"]
-			if alvo.has_status(attribute):
-				alvo.remove_status_effect(attribute)
-				cured.append(attribute)
-		if cured.size() > 0:
-			hud.show_top_message("%s foi curado de: %s!" % [alvo.nome, ", ".join(cured)])
-		else:
-			hud.show_top_message("%s não tinha status removíveis com %s." % [alvo.nome, spell.name])
-
-
-	reset_atb(caster)
-	#hud.update_enemy_info(enemies)
-	hud.update_party_info(party)
-	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-	end_turn()
-
-func perform_attack(attacker, target) -> void:
-	# Verifica se pode atacar (regra de posição/alcance)
-	var is_ataque_fisico = true  # aqui assumimos que este é um ataque físico normal
-	if not pode_atacar(target, attacker, is_ataque_fisico):
-		hud.show_top_message("Alvo fora de alcance!")
-		reset_atb(attacker)
-		hud.update_party_info(party)
-		return
-
-	# Obter stats modificados
-	var attacker_accuracy = attacker.get_modified_stat(attacker.accuracy, "accuracy")
-	var target_evasion = target.get_modified_stat(target.evasion, "evasion")
-	var attacker_str = attacker.get_modified_stat(attacker.STR, "STR")
-	var attacker_dex = attacker.get_modified_stat(attacker.DEX, "DEX")
-	var target_def = target.get_modified_stat(target.defense, "defense")
-	var attacker_lck = attacker.get_modified_stat(attacker.LCK, "LCK")
-	
-	# Calcular chance de acerto
-	var hit_chance = attacker_accuracy / float(attacker_accuracy + target_evasion)
-	var roll = randf()
-	if roll > hit_chance:
-		hud.show_top_message("%s errou o ataque!" % attacker.nome)
-		reset_atb(attacker)
-		hud.update_party_info(party)
-		return
-
-	# Calcular chance de crítico
-	var crit_chance = attacker_lck * 0.01
-	var is_crit = randf() < crit_chance
-	
-		# Tipo de ataque do atacante (deve estar definido no personagem)
-	var attack_type = attacker.attack_type
-
-	# Modificador de defesa baseado no tipo de ataque
-	var defense_modifier = 1.0
-	
-	if attack_type in target.attack_type_resistances:
-		defense_modifier = target.attack_type_resistances[attack_type]
-
-	# Calcular dano base considerando o modificador
-	var damage = attacker_str + int(attacker_dex / 2) - int(target_def * defense_modifier)
-	damage = max(damage, 1)
-	
-	# Ajuste de dano por posição (frente/trás)
-	damage = ajustar_dano_por_posicao(damage, attacker, target, is_ataque_fisico)
-
-	if is_crit:
-		damage *= 2
-		hud.show_top_message("CRÍTICO! %s causou %d de dano!" % [attacker.nome, damage])
-	else:
-		hud.show_top_message("%s causou %d de dano!" % [attacker.nome, damage])
-
-	if target.get_meta("protect_active", false):
-		damage *= 0.5
-		hud.show_top_message("%s foi protegido por Protect!" % target.nome)
-		
-	# Aplicar dano
-	aplicar_dano(target, attacker, damage)
-	hud.show_floating_number(damage, target, "damage")
-
-	# Verifica se morreu
-	if target.current_hp <= 0:
-		target.current_hp = 0
-		if target.has_method("check_if_dead"):
-			target.check_if_dead()
-		hud.show_top_message("%s foi derrotado!" % target.nome)
-
-	# Reset ATB
-	reset_atb(attacker)
-	#hud.update_enemy_info(enemies)
-	hud.update_party_info(party)
-
-func _execute_special_area(caster, special: Special, alvos):
-	for alvo in alvos:
-		if alvo.current_hp <= 0:
-			continue  # Ignorar inimigos mortos
-
-		match special.effect_type:
-			"damage":
-				var dano = special.power + caster.get_modified_stat(caster.STR, "STR")
-				dano = ajustar_dano_por_posicao(dano, caster, alvo, true)
-				aplicar_dano(alvo, caster, dano)
-				hud.show_floating_number(dano, alvo, "damage")
-
-			"heal":
-				var cura = special.power + caster.get_modified_stat(caster.SPI, "SPI")
-				alvo.current_hp = min(alvo.max_hp, alvo.current_hp + cura)
-				hud.show_floating_number(cura, alvo, "hp")
-
-			"buff":
-				var effect = StatusEffect.new()
-				effect.attribute = special.attribute
-				effect.amount = special.amount
-				effect.duration = special.duration
-				effect.type = StatusEffect.Type.BUFF
-				alvo.apply_status_effect(effect)
-
-	hud.show_top_message("%s usou %s!" % [caster.nome, special.name])
-	reset_atb(caster)
-	#hud.update_enemy_info(enemies)
-	hud.update_party_info(party)
-	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-
-	caster.special_charge = 0
-	sp_values[caster] = 0
-	caster.special_ready = false
-	hud.update_special_bar(sp_values)
-
-	_create_menu()
-	end_turn()
-
-func _execute_special_single(user, special, alvo):
-	match special.effect_type:
-		"damage":
-			var dano = special.power + user.get_modified_stat(user.STR, "STR")
-			dano = ajustar_dano_por_posicao(dano, user, alvo, true)
-			aplicar_dano(alvo, user, dano)
-			hud.show_top_message("%s usou %s e causou %d de dano!" % [user.nome, special.name, dano])
-			hud.show_floating_number(dano, alvo, "damage")
-
-		"heal":
-			var cura = special.power + user.get_modified_stat(user.SPI, "SPI")
-			alvo.current_hp = min(alvo.max_hp, alvo.current_hp + cura)
-			hud.show_top_message("%s usou %s e curou %d HP!" % [user.nome, special.name, cura])
-			hud.show_floating_number(cura, alvo, "hp")
-
-		"buff":
-			var effect = StatusEffect.new()
-			effect.attribute = special.attribute
-			effect.amount = special.amount
-			effect.duration = special.duration
-			effect.type = StatusEffect.Type.BUFF
-			alvo.apply_status_effect(effect)
-			hud.show_top_message("%s usou %s e aumentou %s!" % [user.nome, special.name, special.attribute])
-
-	# Pós-ação
-	reset_atb(user)
-	#hud.update_enemy_info(enemies)
-	hud.update_party_info(party)
-	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-
-	# Reset de especial
-	user.special_charge = 0
-	sp_values[user] = 0
-	user.special_ready = false
-	hud.update_special_bar(sp_values)
-
-	_create_menu()
-	end_turn()
-
-func apply_spell_effects(target, spell, caster):
-	for status in spell.get("status_effects", []):
-		if status.has("chance") and randf() * 100 > status["chance"]:
-			continue  # falhou
-		
-		var effect = StatusEffect.new()
-		effect.attribute = status.get("attribute", "")
-		effect.amount = status.get("amount", 0)
-		effect.duration = status.get("duration", 3)
-		effect.status_type = status.get("status_type", "")
-		if status.get("amount", 0) >= 0:
-			effect.type = StatusEffect.Type.BUFF
-		else:
-			effect.type = StatusEffect.Type.DEBUFF
-		target.apply_status_effect(effect, spell.chance)
-
-		var acao = effect.type == StatusEffect.Type.BUFF and "aumentado" or "reduzido"
-		if effect.status_type != "":
-			hud.show_top_message("%s foi afetado por %s!" % [target.nome, effect.status_type])
-		elif effect.attribute != "":
-			hud.show_top_message("%s teve %s %s!" % [target.nome, effect.attribute, acao])
-
-func usar_item_em_alvo(usuario, item_name: String, item_data: Dictionary, target_id) -> void:
-	# Encontrar o personagem da party com o ID correspondente
-	var alvo = null
-	for membro in party:
-		if membro.id == target_id:
-			alvo = membro
-			break
-	
-	if alvo == null:
-		print("Erro: alvo com ID %s não encontrado na party!" % target_id)
-		return
-		
-	match item_data.type:
-		"heal":
-			alvo.current_hp += item_data.power
-			alvo.current_hp = min(alvo.current_hp, alvo.max_hp)
-			hud.show_floating_number(item_data.power, alvo, "hp")
-			hud.show_top_message("%s usou %s em %s!" % [usuario.nome, item_name, alvo.nome])
-
-		"restore_mp":
-			alvo.current_mp += item_data.power
-			alvo.current_mp = min(alvo.current_mp, alvo.max_mp)
-			hud.show_floating_number(item_data.power, alvo, "mp")
-			hud.show_top_message("%s recuperou MP com %s!" % [alvo.nome, item_name])
-			
-		"restore_sp":
-			alvo.current_sp += item_data.power
-			alvo.current_sp = min(alvo.current_mp, alvo.max_sp)
-			hud.show_floating_number(item_data.power, alvo, "sp")
-			hud.show_top_message("%s recuperou MP com %s!" % [alvo.nome, item_name])
-
-		"full_restore":
-			alvo.current_hp = alvo.max_hp
-			alvo.current_mp = alvo.max_mp
-			alvo.current_sp = alvo.max_sp
-			hud.show_floating_number(alvo.max_hp, alvo, "hp")
-			await get_tree().create_timer(1.0).timeout
-			hud.show_floating_number(alvo.max_mp, alvo, "mp")
-			await get_tree().create_timer(1.0).timeout
-			hud.show_floating_number(alvo.max_sp, alvo, "sp")
-			hud.show_top_message("%s foi totalmente restaurado com %s!" % [alvo.nome, item_name])
-
-		"cure_status":
-			alvo.remove_status(item_data.status)
-			hud.show_top_message("%s foi curado de %s!" % [alvo.nome, item_data.status])
-
-	# Remover item do inventário
-	if inventory.has(item_name):
-		inventory[item_name] -= 1
-		if inventory[item_name] <= 0:
-			inventory.erase(item_name)
-
-	# Encerrar turno
-	reset_atb(usuario)
-	hud.update_party_info(party)
-	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-	hud.hide_arrow()
-	end_turn()
-
-func tentar_fugir(actor) -> void:
-	var vivos = party.filter(func(p): return p.is_alive()).size()
-	if vivos == 0:
-		hud.show_top_message("Ninguém pode fugir!")
-		return
-
-	var rng = RandomNumberGenerator.new()
-	rng.randomize()
-
-	var agi_total = 0
-	var lck_total = 0
-	for membro in party:
-		if membro.is_alive():
-			agi_total += membro.AGI
-			lck_total += membro.LCK
-
-	var media_agi = agi_total / vivos
-	var media_lck = lck_total / vivos
-
-	# Fórmula da chance de fuga
-	var chance_fuga = clamp((media_agi * 2 + media_lck) / 3 + rng.randi_range(0, 20), 0, 100)
-
-	var roll = rng.randi_range(0, 100)
-
-	if roll < chance_fuga:
-		hud.show_top_message("%s escapou com sucesso!" % actor.nome)
-		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-		reset_atb(actor)
-		end_battle(false)  # Finaliza a batalha sem vitória
-	else:
-		hud.show_top_message("%s tentou fugir, mas falhou!" % actor.nome)
-		await get_tree().create_timer(0.2).timeout
-	# 🔧 Oculta seta de seleção
-		hud.hide_arrow()
-		reset_atb(actor)
-		hud.set_hud_buttons_enabled(false)
-		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-		end_turn()
 
 
 # SELECIONA AÇÃO
@@ -2205,7 +893,7 @@ func _on_player_action_selected(action_name: String) -> void:
 				var rng = RandomNumberGenerator.new()
 				rng.randomize()
 				var alvo = vivos[rng.randi_range(0, vivos.size() - 1)]
-				await perform_attack(current_actor, alvo)
+				await action_executor.perform_attack(current_actor, alvo)
 				await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 				end_turn()
 				return
@@ -2219,7 +907,7 @@ func _on_player_action_selected(action_name: String) -> void:
 				var rng = RandomNumberGenerator.new()
 				rng.randomize()
 				var alvo = possiveis_alvos[rng.randi_range(0, possiveis_alvos.size() - 1)]
-				await perform_attack(current_actor, alvo)
+				await action_executor.perform_attack(current_actor, alvo)
 				await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 				end_turn()
 				return
@@ -2307,25 +995,36 @@ func _on_player_action_selected(action_name: String) -> void:
 			# Lógica de defesa
 		"Fugir":
 			print("Tentando fugir da batalha")
-			await tentar_fugir(current_actor)
+			await action_executor.tentar_fugir(current_actor)
 			# Lógica de fuga
 		"Especial":
-			var especiais = current_actor.specials
+				# --- TRAVA DE SEGURANÇA 1 ---
+				# Checa se o ator ATUAL tem a variável "specials"
+				if not "specials" in current_actor:
+					await hud.show_top_message("%s não possui habilidades especiais disponíveis." % current_actor.nome)
+					await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+					return # Para a execução aqui
 
-			if especiais.is_empty():
-				await hud.show_top_message("%s não possui habilidades especiais disponíveis." % current_actor.nome)
-				await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-				next_turn()
-				return
+				var especiais = current_actor.specials
 
-			hud.special_selected.connect(_on_special_selected)
-			hud.show_ability_menu(
-				especiais,
-				"Especial",
-				0,
-				{},
-				{ "nome": current_actor.nome }
-			)
+				# --- TRAVA DE SEGURANÇA 2 ---
+				# Checa se a lista de especiais está vazia
+				if especiais.is_empty():
+					await hud.show_top_message("%s não possui habilidades especiais disponíveis." % current_actor.nome)
+					await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+					# Também força o próximo turno
+					next_turn()
+					return # Para a execução aqui
+
+				# Se passou nas duas travas, o menu é mostrado com segurança
+				hud.special_selected.connect(_on_special_selected)
+				hud.show_ability_menu(
+					especiais,
+					"Especial",
+					0,
+					{},
+					{ "nome": current_actor.nome }
+				)
 
 func _on_alvo_ataque_selecionado(alvo_id):
 	if hud.target_selected.is_connected(_on_alvo_ataque_selecionado):
@@ -2334,7 +1033,7 @@ func _on_alvo_ataque_selecionado(alvo_id):
 	var jogador_atual = current_actor
 	var target_enemy = find_enemy_by_id(alvo_id)
 	if target_enemy:
-		await perform_attack(jogador_atual, target_enemy)
+		await action_executor.perform_attack(jogador_atual, target_enemy)
 	else:
 		print("Alvo não encontrado:", alvo_id)
 
@@ -2386,9 +1085,9 @@ func _on_skill_selected(skill_name: String):
 			alvos = enemies.filter(func(e): return e.current_hp > 0)
 
 	if skill.target_type == "self":
-		await _execute_skill(user, skill, user)
+		await action_executor._execute_skill(user, skill, user)
 	elif skill.target_type == "all_enemies":
-		await _execute_skill_area(user, skill, alvos)
+		await action_executor._execute_skill_area(user, skill, alvos)
 	else:
 		# Caso padrão: mostra seleção de alvos
 		if hud.target_selected.is_connected(_on_skill_target_selected):
@@ -2424,7 +1123,7 @@ func _on_magic_selected(spell_name: String):
 	
 	# Se for uma magia de invocação, executa direto e pula o alvo
 	if spell_data.type == "summon":
-		await _execute_spell_single(caster, spell_name, null)
+		await action_executor._execute_spell_single(caster, spell_name, null)
 		return
 	
 	var tipo = spell_data.type
@@ -2448,7 +1147,7 @@ func _on_magic_selected(spell_name: String):
 
 	match target_group:
 		"area":
-			await _execute_spell_area(caster, spell_name, alvos)
+			await action_executor._execute_spell_area(caster, spell_name, alvos)
 
 		"line":
 			# Jogador escolhe "frente" ou "trás"
@@ -2481,7 +1180,7 @@ func _on_magic_line_target_selected(linha: String):
 	elif linha == "trás":
 		linha_alvos = enemies.filter(func(e): return e.current_hp > 0 and e.position_line == "back")
 
-	await _execute_spell_area(caster, spell_name, linha_alvos)
+	await action_executor._execute_spell_area(caster, spell_name, linha_alvos)
 
 func _on_skill_line_target_selected(linha: String):
 	hud.line_target_selected.disconnect(_on_skill_line_target_selected)
@@ -2502,7 +1201,7 @@ func _on_skill_line_target_selected(linha: String):
 	elif linha == "trás":
 		linha_alvos = enemies.filter(func(e): return e.current_hp > 0 and e.position_line == "back")
 
-	await _execute_skill_area(caster, skill, linha_alvos)
+	await action_executor._execute_skill_area(caster, skill, linha_alvos)
 
 func _on_magic_target_selected(alvo):
 	hud.target_selected.disconnect(_on_magic_target_selected)
@@ -2520,7 +1219,7 @@ func _on_magic_target_selected(alvo):
 				break
 
 	if target:
-		await _execute_spell_single(caster, spell_name, target)
+		await action_executor._execute_spell_single(caster, spell_name, target)
 	else:
 		print("Alvo não encontrado:", alvo)
 
@@ -2546,14 +1245,14 @@ func _on_skill_target_selected(target_id):
 				break
 
 	if target:
-		await _execute_skill(user, skill, target)
+		await action_executor._execute_skill(user, skill, target)
 	else:
 		hud.show_top_message("Alvo inválido.")
 		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 		next_turn()
 
 func _on_item_selected(item_name: String) -> void:
-	var item_data = item_database.get(item_name, null)
+	var item_data = Database1990.item_database.get(item_name, null)
 	if item_data == null:
 		hud.show_top_message("Item desconhecido!")
 		return
@@ -2569,7 +1268,7 @@ func _on_item_selected(item_name: String) -> void:
 
 	# Seleção de alvo
 	hud.target_selected.connect(func(target):
-		usar_item_em_alvo(current_actor, item_name, item_data, target)
+		action_executor.usar_item_em_alvo(current_actor, item_name, item_data, target)
 	)
 	hud.show_target_menu(target_list)
 
@@ -2585,13 +1284,13 @@ func _on_special_selected(especial):
 
 	match especial.target_type:
 		"all_enemies":
-			_execute_special_area(current_actor, especial, enemies)
+			action_executor._execute_special_area(current_actor, especial, enemies)
 
 		"ally_party":
-			_execute_special_area(current_actor, especial, party)
+			action_executor._execute_special_area(current_actor, especial, party)
 
 		"self":
-			_execute_special_single(current_actor, especial, current_actor)
+			action_executor._execute_special_single(current_actor, especial, current_actor)
 
 		"enemy":
 			var alvos = []
@@ -2644,7 +1343,7 @@ func _on_special_target_selected(target_id, especial):
 		next_turn()
 		return
 
-	await _execute_special_single(current_actor, especial, alvo)
+	await action_executor._execute_special_single(current_actor, especial, alvo)
 
 func _on_hud_back_pressed():
 	# Desconecta todos os sinais temporários
