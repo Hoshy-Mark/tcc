@@ -22,7 +22,7 @@ func execute_simple_attack(ator: Enemy1990, party: Array, enemies: Array, battle
 	var target = alive_party[rng.randi_range(0, alive_party.size() - 1)]
 	
 	# Chama a função de ataque do BattleManager
-	await battle_manager.perform_attack(ator, target)
+	await battle_manager.action_executor.perform_attack(ator, target)
 	
 	# A IA agora é responsável por finalizar o turno
 	# (Esta lógica estava no fim do seu 'perform_enemy_action' antigo)
