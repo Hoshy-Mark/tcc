@@ -16,6 +16,8 @@ var INT: int = 0
 var SPI: int = 0
 var LCK: int = 0
 
+var ai_behavior: String = "simple_attack"
+
 # Atributos derivados
 var max_hp: int = 0
 var current_hp: int = 0
@@ -220,7 +222,7 @@ func calculate_stats():
 func is_alive():
 	return current_hp > 0
 
-func take_damage(amount):
+func take_damage(amount, attacker: Node = null):
 	current_hp -= int(amount)
 	current_hp = max(current_hp, 0)
 

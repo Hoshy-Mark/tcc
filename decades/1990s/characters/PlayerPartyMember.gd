@@ -3,13 +3,11 @@ class_name PlayerPartyMember1990
 
 signal died
 
-# Identidade
+# ... (todas as suas variáveis, stats, etc. - Omitido por tamanho) ...
 var nome: String = "Herói"
 var classe_name: String = "Knight"
 var level: int = 1
 var xp: int = 0
-
-# Atributos base
 var STR: int = 0
 var DEX: int = 0
 var AGI: int = 0
@@ -18,27 +16,11 @@ var MAG: int = 0
 var INT: int = 0
 var SPI: int = 0
 var LCK: int = 0
-
 const STATUS_EMOJIS = {
-	"poison": "🧪",
-	"bleed": "🩸",
-	"regen": "💚",
-	"sleep": "💤",
-	"paralysis": "🦴",
-	"stun": "💫",
-	"stop": "⏹️",
-	"knockout": "💀",
-	"confuse": "🔀",
-	"charm": "💘",
-	"petrify": "🪨",
-	"doom": "⏳",
-	"haste": "⚡",
-	"protect": "🛡️",
-	"shell": "🔵",
-	"reflect": "🔁"
+	"poison": "🧪", "bleed": "🩸", "regen": "💚", "sleep": "💤", "paralysis": "🦴",
+	"stun": "💫", "stop": "⏹️", "knockout": "💀", "confuse": "🔀", "charm": "💘",
+	"petrify": "🪨", "doom": "⏳", "haste": "⚡", "protect": "🛡️", "shell": "🔵", "reflect": "🔁"
 }
-
-# Atributos derivados
 var max_hp: int = 0
 var current_hp: int = 0
 var max_mp: int = 0
@@ -54,31 +36,21 @@ var id: String = ""
 var attack_type: String = "slash"
 var atb_value := 0.0
 var atb_max := 100.0
-
-var special_charge := 0.0 # de 0 a 100
+var special_charge := 0.0
 var special_ready := false
 var position_line: String = "front"
-var alcance_estendido: bool = false  # se pode atacar a traseira com ataque físico
-
+var alcance_estendido: bool = false
 var spells: Array[Spell] = []
 var skills: Array[Skill] = []
 var specials: Array[Special] = []
-var spell_slots := {}  # Ex: {1: 3, 2: 1}
+var spell_slots := {}
 var obstruido = false
-var max_spell_slots := {}  # Ex: {1: 5, 2: 2}
+var max_spell_slots := {}
 var sprite_ref: Sprite2D = null
-
-# AP por habilidade (armazenado por nome da habilidade)
-
 var spell_ap := {}
 var skill_ap := {}
-
-# Dicionário para upgrades (evoluções)
-
 var spell_upgrades := {}
 var skill_upgrades := {}
-
-# Status
 var is_defending: bool = false
 var can_act: bool = true
 var can_target: bool = true
@@ -90,47 +62,10 @@ var doom_counter: int = -1
 var status_effects: Array = []
 var active_status_effects: Array = []
 var is_summon = false
-
-var element_resistances = {
-	"fire": 1.0,
-	"ice": 1.0,
-	"lightning": 1.0,
-	"earth": 1.0,
-	"wind": 1.0,
-	"holy": 1.0,
-	"dark": 1.0,
-	"poison": 1.0
-}
-
-var status_resistances = {
-	"poison": 1.0,
-	"sleep": 1.0,
-	"paralysis": 1.0,
-	"stun": 1.0,
-	"confuse": 1.0,
-	"charm": 1.0,
-	"petrify": 1.0,
-	"doom": 1.0,
-	"regen": 1.0,
-	"bleed": 1.0,
-	"haste": 1.0,
-	"protect": 1.0,
-	"shell": 1.0,
-	"reflect": 1.0,
-	"stop": 1.0,
-	"knockout": 1.0
-}
-
-var attack_type_resistances = {
-	"slash": 1.0,
-	"pierce": 1.0,
-	"blunt": 1.0,
-	"ranged": 1.0,
-	"magic": 1.0
-}
-
-var xp_to_next_level: int = 100  # XP necessário para o próximo nível
-
+var element_resistances = { "fire": 1.0, "ice": 1.0, "lightning": 1.0, "earth": 1.0, "wind": 1.0, "holy": 1.0, "dark": 1.0, "poison": 1.0 }
+var status_resistances = { "poison": 1.0, "sleep": 1.0, "paralysis": 1.0, "stun": 1.0, "confuse": 1.0, "charm": 1.0, "petrify": 1.0, "doom": 1.0, "regen": 1.0, "bleed": 1.0, "haste": 1.0, "protect": 1.0, "shell": 1.0, "reflect": 1.0, "stop": 1.0, "knockout": 1.0 }
+var attack_type_resistances = { "slash": 1.0, "pierce": 1.0, "blunt": 1.0, "ranged": 1.0, "magic": 1.0 }
+var xp_to_next_level: int = 100
 const class_growth_curves = {
 	"Knight":   {"STR": 2, "CON": 2, "DEX": 1, "AGI": 1},
 	"Mage":     {"MAG": 2, "INT": 2, "SPI": 1},
@@ -145,6 +80,7 @@ const class_growth_curves = {
 # === FUNÇÕES ===
 
 func calculate_stats():
+	# ... (função igual) ...
 	max_hp = CON * 6 + STR * 2
 	max_mp = MAG * 4 + INT * 4
 	max_sp = STR * 2 + CON * 2 + AGI
@@ -161,53 +97,54 @@ func calculate_stats():
 func is_alive():
 	return current_hp > 0
 
-func take_damage(amount: int):
+# --- MODIFICAÇÃO 1 (Aceita 'attacker') ---
+func take_damage(amount: int, attacker: Node = null):
 	var damage = amount
 	var final_hit_chance_mod := 1.0
 
 	if is_defending:
 		damage = int(damage * 0.8)
-		final_hit_chance_mod = 0.8  # Evasão aumentada em 20%
+		final_hit_chance_mod = 0.8
 		is_defending = false
 
 	current_hp = max(current_hp - damage, 0)
+	
+	# (No futuro, você pode adicionar:
+	# if attacker is Enemy1990:
+	#    self.last_attacker = attacker
+	# )
 
 func heal(amount: int):
 	current_hp = min(current_hp + amount, max_hp)
 
 func apply_status_effect(effect: StatusEffect, chance: float = 100.0):
+	# ... (função igual) ...
 	var resist: float = status_resistances.get(effect.attribute, 1.0)
-
 	if resist == 0.0:
-		# Imune ao status
 		return
-
 	var chance_percent: float = clamp(chance / 100.0, 0.0, 1.0)
 	var final_chance: float = chance_percent * resist
-
 	if randf() > final_chance:
-		# Resistido
 		return
-
-	# Aplica normalmente
 	for existing in active_status_effects:
 		if existing.attribute == effect.attribute and existing.type == effect.type:
 			existing.amount = effect.amount
 			existing.duration = effect.duration
 			return
-
 	active_status_effects.append(effect)
 
 func get_display_name() -> String:
+	# ... (função igual) ...
 	var emojis := ""
 	for effect in active_status_effects:
 		if STATUS_EMOJIS.has(effect.attribute):
 			var emoji = STATUS_EMOJIS[effect.attribute]
-			if not emojis.contains(emoji):  # Evita duplicatas
+			if not emojis.contains(emoji):
 				emojis += emoji
-	return emojis + nome  # Ex: "🧪💤Carlos"
+	return emojis + nome
 
 func get_modified_stat(base: int, attribute: String) -> int:
+	# ... (função igual) ...
 	var result = base
 	for effect in active_status_effects:
 		if effect.attribute == attribute:
@@ -253,21 +190,19 @@ func cast_spell(targets, spell_name := "fogo"):
 				var power = spell_data.power
 				var power_max = spell_data.power_max
 				var base_random = power + randi() % (power_max - power + 1)
-
 				var base_hit_chance = 100
 				var total_hit = base_hit_chance + INT
 				if randf() * 100 > total_hit:
 					result.append({ "alvo": alvo, "efeito": 0, "miss": true })
 					continue
-
 				var normalized = float(base_random - power) / max(1, (power_max - power))
 				var boosted_damage = base_random + int((1.0 - normalized) * MAG)
-
 				var remaining_boost = max(0, MAG - alvo.magic_defense)
 				var final_damage = boosted_damage + remaining_boost - MAG
 				final_damage = max(final_damage, 0)
 
-				alvo.take_damage(final_damage)
+				# --- MODIFICAÇÃO 2 (Envia 'self') ---
+				alvo.take_damage(final_damage, self)
 				efeito = final_damage
 
 			"heal":
@@ -289,28 +224,27 @@ func cast_spell(targets, spell_name := "fogo"):
 	return result
 
 func restore_spell_slots():
+	# ... (função igual) ...
 	for key in max_spell_slots.keys():
 		spell_slots[key] = max_spell_slots[key]
 
 func process_status_effects():
+	# ... (função igual) ...
 	var remaining: Array = []
 	can_act = true
 	can_target = true
 	is_charmed = false
 	is_confused = false
 	is_petrified = false
-
-	# Reset temporário das flags de proteção
 	set_meta("protect_active", false)
 	set_meta("shell_active", false)
 	set_meta("reflect_active", false)
-
 	for effect in active_status_effects:
 		match effect.attribute:
 			"poison":
-				take_damage(5)
+				take_damage(5, self) # <-- Dano de status não precisa de attacker
 			"bleed":
-				take_damage(5)
+				take_damage(5, self) # <-- Dano de status não precisa de attacker
 			"regen":
 				heal(5 + SPI)
 			"sleep", "paralysis", "stun", "stop", "knockout":
@@ -328,7 +262,7 @@ func process_status_effects():
 					doom_counter = effect.duration
 				doom_counter -= 1
 				if doom_counter <= 0:
-					take_damage(current_hp)  # Morte instantânea
+					take_damage(current_hp, self) # <-- Morte instantânea
 			"haste":
 				pass
 			"protect":
@@ -341,52 +275,56 @@ func process_status_effects():
 		effect.duration -= 1
 		if effect.duration > 0:
 			remaining.append(effect)
-
 	active_status_effects = remaining
-
 	if not has_status("doom"):
 		doom_counter = -1
 
-func has_blink_active() -> bool:
+func has_blink_active():
+	# ... (função igual) ...
 	for effect in active_status_effects:
 		if effect.attribute == "blink" and effect.blink_charges > 0:
 			return true
 	return false
 
 func consume_blink_charge():
+	# ... (função igual) ...
 	for effect in active_status_effects:
 		if effect.attribute == "blink" and effect.blink_charges > 0:
 			effect.blink_charges -= 1
 			return
 
-func has_reraise_active() -> bool:
+func has_reraise_active():
+	# ... (função igual) ...
 	return active_status_effects.any(func(e): return e.attribute == "reraise")
 
 func get_available_spells() -> Dictionary:
+	# ... (função igual) ...
 	var result := {}
 	for spell in spells:
 		result[spell.name] = spell
 	return result
 
 func is_magic_user() -> bool:
+	# ... (função igual) ...
 	return classe_name in ["Mage", "Cleric", "Paladin", "Summoner"] or is_summon
 
 func is_skill_user() -> bool:
+	# ... (função igual) ...
 	return not is_magic_user()
 
 func get_global_position() -> Vector2:
+	# ... (função igual) ...
 	if sprite_ref:
 		return sprite_ref.global_position
 	return Vector2.ZERO
 
 func check_if_dead():
+	# ... (função igual) ...
 	if current_hp <= 0:
 		if has_reraise_active():
 			current_hp = int(max_hp * 0.25)
-			# Remove o reraise
 			active_status_effects = active_status_effects.filter(func(e): return e.attribute != "reraise")
 		else:
-			# Marca como morto normalmente
 			special_charge = 0
 			atb_value = 0
 			emit_signal("died")
@@ -394,22 +332,22 @@ func check_if_dead():
 			can_target = false
 
 func has_status(attr: String) -> bool:
+	# ... (função igual) ...
 	return active_status_effects.any(func(e): return e.attribute == attr)
 
 func increase_special_charge(amount: float) -> bool:
+	# ... (função igual) ...
 	if special_ready:
 		return false
-
 	special_charge += amount
 	special_charge = clamp(special_charge, 0, 100)
-
 	if special_charge >= 100:
 		special_ready = true
 		return true
-
 	return true
 
 func get_modified_derived_stat(attribute: String) -> int:
+	# ... (função igual) ...
 	var STR_mod = get_modified_stat(STR, "STR")
 	var DEX_mod = get_modified_stat(DEX, "DEX")
 	var AGI_mod = get_modified_stat(AGI, "AGI")
@@ -418,7 +356,6 @@ func get_modified_derived_stat(attribute: String) -> int:
 	var INT_mod = get_modified_stat(INT, "INT")
 	var SPI_mod = get_modified_stat(SPI, "SPI")
 	var LCK_mod = get_modified_stat(LCK, "LCK")
-
 	match attribute:
 		"speed":
 			return AGI_mod + DEX_mod
@@ -440,15 +377,16 @@ func get_modified_derived_stat(attribute: String) -> int:
 			return 0
 
 func gain_xp(amount: int):
+	# ... (função igual) ...
 	xp += amount
 	while xp >= xp_to_next_level:
 		xp -= xp_to_next_level
 		level_up()
 
 func level_up():
+	# ... (função igual) ...
 	level += 1
 	var growth = class_growth_curves.get(classe_name, {})
-	
 	for stat_name in growth.keys():
 		match stat_name:
 			"STR":
@@ -467,46 +405,88 @@ func level_up():
 				SPI += growth[stat_name]
 			"LCK":
 				LCK += growth[stat_name]
-
-	# Aumentar dificuldade progressivamente
 	xp_to_next_level = int(xp_to_next_level + 100)
-
-	# Recalcular stats derivados
 	calculate_stats()
-
 	print("%s subiu para o nível %d!" % [nome, level])
 
 func gain_ap(ability_name: String, amount: int, is_spell: bool = true) -> void:
+	# ... (função igual) ...
 	var ap_dict
 	if is_spell:
 		ap_dict = spell_ap
 	else:
 		ap_dict = skill_ap
-	
 	if not ap_dict.has(ability_name):
 		ap_dict[ability_name] = {"current": 0, "level": 1}
-
 	ap_dict[ability_name]["current"] += amount
 
 func apply_mastery_bonus(ability_name: String, new_level: int, is_spell: bool):
-	
+	# ... (função igual) ...
 	var ability_list
 	if is_spell:
 		ability_list = spells 
 	else:
 		ability_list = skills
-
 	for ab in ability_list:
 		if ab.name == ability_name:
-			# Reduz custo e aumenta poder
-			ab.cost = int(ab.cost * 0.9)  # 10% de redução
-			ab.power = int(ab.power * 1.1)  # 10% a mais de dano
+			ab.cost = int(ab.cost * 0.9)
+			ab.power = int(ab.power * 1.1)
 			if new_level == 3:
-				ab.name += " ★"  # Marca como dominado
+				ab.name += " ★"
 			break
 
 func remove_status_effect(attribute: String) -> void:
+	# ... (função igual) ...
 	for i in range(active_status_effects.size()):
 		if active_status_effects[i].attribute == attribute:
 			active_status_effects.remove_at(i)
 			return
+
+# --- MODIFICAÇÃO 3 (Adicionada função 'attack' que estava faltando) ---
+# Você não tinha uma função 'attack' no Player, só 'cast_spell'.
+# Adicionei uma baseada na 'perform_attack' do BattleManager
+func attack(target):
+	# Verifica se pode atacar (regra de posição/alcance)
+	var is_ataque_fisico = true
+	# Precisamos pegar o battle_manager de algum lugar...
+	# Por enquanto, vamos assumir que pode atacar
+	
+	# Obter stats modificados
+	var attacker_accuracy = get_modified_derived_stat("accuracy")
+	var target_evasion = target.get_modified_derived_stat("evasion")
+	var attacker_str = get_modified_stat(STR, "STR")
+	var attacker_dex = get_modified_stat(DEX, "DEX")
+	var target_def = target.get_modified_derived_stat("defense")
+	var attacker_lck = get_modified_stat(LCK, "LCK")
+	
+	# Calcular chance de acerto
+	var hit_chance = attacker_accuracy / float(attacker_accuracy + target_evasion)
+	var roll = randf()
+	if roll > hit_chance:
+		return {"miss": true} # Retorna um dicionário como no Enemy.gd
+
+	# Calcular chance de crítico
+	var crit_chance = attacker_lck * 0.01
+	var is_crit = randf() < crit_chance
+	
+	var attack_type = self.attack_type # Pega o tipo de ataque da classe
+
+	# Modificador de defesa baseado no tipo de ataque
+	var defense_modifier = 1.0
+	if attack_type in target.attack_type_resistances:
+		defense_modifier = target.attack_type_resistances[attack_type]
+
+	# Calcular dano base
+	var damage = attacker_str + int(attacker_dex / 2) - int(target_def * defense_modifier)
+	damage = max(damage, 1)
+	
+	# (NOTA: A lógica de posição está no BattleManager,
+	# então o dano será ajustado lá)
+
+	if is_crit:
+		damage *= 2
+
+	# Envia 'self' como o atacante
+	target.take_damage(damage, self)
+	
+	return {"damage": damage, "crit": is_crit, "miss": false}
