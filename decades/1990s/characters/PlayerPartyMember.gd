@@ -224,7 +224,6 @@ func cast_spell(targets, spell_name := "fogo"):
 	return result
 
 func restore_spell_slots():
-	# ... (função igual) ...
 	for key in max_spell_slots.keys():
 		spell_slots[key] = max_spell_slots[key]
 
@@ -407,7 +406,9 @@ func level_up():
 				LCK += growth[stat_name]
 	xp_to_next_level = int(xp_to_next_level + 100)
 	calculate_stats()
+	restore_spell_slots()
 	print("%s subiu para o nível %d!" % [nome, level])
+	
 
 func gain_ap(ability_name: String, amount: int, is_spell: bool = true) -> void:
 	# ... (função igual) ...

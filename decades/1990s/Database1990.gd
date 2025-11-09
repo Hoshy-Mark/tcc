@@ -93,19 +93,19 @@ var class_sprite_paths = {
 
 var class_base_stats = {
 	"Knight": {
-		"STR": 10, "DEX": 7, "AGI": 4, "CON": 10, "MAG": 1, "INT": 3, "SPI": 5, "LCK": 5,
+		"STR": 40, "DEX": 7, "AGI": 4, "CON": 10, "MAG": 1, "INT": 3, "SPI": 5, "LCK": 5,
 		"attack_type": "slash"
 	},
 	"Mage": {
-		"STR": 1, "DEX": 4, "AGI": 7, "CON": 3, "MAG": 15, "INT": 13, "SPI": 10, "LCK": 7,
+		"STR": 1, "DEX": 4, "AGI": 7, "CON": 3, "MAG": 20, "INT": 13, "SPI": 10, "LCK": 7,
 		"attack_type": "blunt"
 	},
 	"Thief": {
-		"STR": 5, "DEX": 10, "AGI": 12, "CON": 4, "MAG": 1, "INT": 4, "SPI": 2, "LCK": 12,
+		"STR": 8, "DEX": 12, "AGI": 12, "CON": 4, "MAG": 1, "INT": 4, "SPI": 2, "LCK": 12,
 		"attack_type": "pierce"
 	},
 	"Cleric": {
-		"STR": 3, "DEX": 4, "AGI": 7, "CON": 6, "MAG": 10, "INT": 8, "SPI": 15, "LCK": 7,
+		"STR": 3, "DEX": 4, "AGI": 7, "CON": 10, "MAG": 10, "INT": 8, "SPI": 15, "LCK": 7,
 		"attack_type": "blunt"
 	},
 	"Hunter": {
@@ -113,15 +113,15 @@ var class_base_stats = {
 		"attack_type": "ranged"
 	},
 	"Paladin": {
-		"STR": 8, "DEX": 6, "AGI": 5, "CON": 9, "MAG": 6, "INT": 5, "SPI": 12, "LCK": 9,
+		"STR": 30, "DEX": 6, "AGI": 5, "CON": 9, "MAG": 6, "INT": 5, "SPI": 12, "LCK": 9,
 		"attack_type": "slash"
 	},
 	"Monk": {
-		"STR": 11, "DEX": 8, "AGI": 8, "CON": 9, "MAG": 2, "INT": 3, "SPI": 4, "LCK": 12,
+		"STR": 20, "DEX": 8, "AGI": 8, "CON": 9, "MAG": 2, "INT": 3, "SPI": 4, "LCK": 12,
 		"attack_type": "blunt"
 	},
 	"Summoner": {
-		"STR": 2, "DEX": 10, "AGI": 10, "CON": 4, "MAG": 14, "INT": 12, "SPI": 10, "LCK": 8,
+		"STR": 2, "DEX": 10, "AGI": 10, "CON": 4, "MAG": 20, "INT": 12, "SPI": 10, "LCK": 8,
 		"attack_type": "blunt"
 	},
 }

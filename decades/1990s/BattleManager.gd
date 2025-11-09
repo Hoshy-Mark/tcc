@@ -27,7 +27,7 @@ var inventory := {
 }
 
 const TEMPO_ESPERA_APOS_ACAO = 0.5
-
+const ATB_GLOBAL_MULTIPLIER = 3.0
 # Estado da batalha
 var turn_order := []
 
@@ -114,8 +114,13 @@ func atualizar_obstrucao_party() -> void:
 
 
 func is_player(actor) -> bool:
-	return party.has(actor)
-
+	if actor is PlayerPartyMember1990:
+		return true
+	if actor is Summon: 
+		return true
+	# Se não for nenhum dos dois, é um inimigo.
+	return false
+	
 func get_player_position(index: int, is_front: bool) -> Vector2:
 	var front_positions = [
 		Vector2(1180, 400),  # Jogador 0 front
@@ -265,6 +270,8 @@ func _load_party() -> Array:
 		member.max_sp = member_data["max_sp"]
 		member.spells = member_data.get("spells", [])
 		member.spell_slots = member_data.get("spell_slots", {})
+		member.max_spell_slots = Database1990.class_spell_slots.get(member.classe_name, {})
+		
 		member.skills = member_data.get("skills", [])
 		member.level = member_data.get("level", 1)
 		member.xp = member_data.get("xp", 0)
@@ -376,7 +383,15 @@ func spawn_party(party_data: Array) -> void:
 		if classe_name == "Hunter":
 			player_node.alcance_estendido = true
 
-		player_node.spell_slots = Database1990.class_spell_slots.get(classe_name, {})
+		# Pega os slots base do Database
+		var slots_base = Database1990.class_spell_slots.get(classe_name, {})
+		
+		# Salva a cópia máxima (O "backup")
+		player_node.max_spell_slots = slots_base.duplicate() 
+		
+		# Define os slots atuais
+		player_node.spell_slots = slots_base.duplicate() 
+		
 		print(classe_name)
 		print(player_node.spell_slots)
 		party[i] = player_node
@@ -565,7 +580,7 @@ func _process(delta):
 			if actor.active_status_effects.any(func(e): return e.attribute in ["stop", "stun", "paralysis"]):
 				continue
 
-			actor.atb_value += modified_speed * delta
+			actor.atb_value += modified_speed * delta * ATB_GLOBAL_MULTIPLIER
 
 	# Verifica quem está pronto
 	var actors_filled = []
@@ -983,22 +998,33 @@ func _on_player_action_selected(action_name: String) -> void:
 			await action_executor.tentar_fugir(current_actor)
 			# Lógica de fuga
 		"Especial":
-			var especiais = current_actor.specials
+				# --- TRAVA DE SEGURANÇA 1 ---
+				# Checa se o ator ATUAL tem a variável "specials"
+				if not "specials" in current_actor:
+					await hud.show_top_message("%s não possui habilidades especiais disponíveis." % current_actor.nome)
+					await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+					return # Para a execução aqui
 
-			if especiais.is_empty():
-				await hud.show_top_message("%s não possui habilidades especiais disponíveis." % current_actor.nome)
-				await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-				next_turn()
-				return
+				var especiais = current_actor.specials
 
-			hud.special_selected.connect(_on_special_selected)
-			hud.show_ability_menu(
-				especiais,
-				"Especial",
-				0,
-				{},
-				{ "nome": current_actor.nome }
-			)
+				# --- TRAVA DE SEGURANÇA 2 ---
+				# Checa se a lista de especiais está vazia
+				if especiais.is_empty():
+					await hud.show_top_message("%s não possui habilidades especiais disponíveis." % current_actor.nome)
+					await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+					# Também força o próximo turno
+					next_turn()
+					return # Para a execução aqui
+
+				# Se passou nas duas travas, o menu é mostrado com segurança
+				hud.special_selected.connect(_on_special_selected)
+				hud.show_ability_menu(
+					especiais,
+					"Especial",
+					0,
+					{},
+					{ "nome": current_actor.nome }
+				)
 
 func _on_alvo_ataque_selecionado(alvo_id):
 	if hud.target_selected.is_connected(_on_alvo_ataque_selecionado):
