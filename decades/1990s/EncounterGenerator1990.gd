@@ -22,20 +22,20 @@ func generate_enemies(party: Array) -> Array:
 				enemy_count = 6
 			3:
 				# Nível 3: Introduz os Orcs
-				enemy_pool = ["Goblin", "Goblin", "Lobo", "Lobo", "Orc"]
+				enemy_pool = ["Goblin", "Goblin", "Lobo", "Lobo"]
 				enemy_count = 6
 			4:
 				# Nível 4: Matilhas de Lobos e Orcs
-				enemy_pool = ["Lobo", "Lobo", "Orc", "Orc"]
+				enemy_pool = ["Lobo", "Lobo", "Orc"]
 				enemy_count = 5
 			5:
 				# Nível 5: Introduz o Lobisomem
-				enemy_pool = ["Lobo", "Orc","Orc", "Lobisomen"]
-				enemy_count = 4
+				enemy_pool = ["Lobo", "Orc","Orc"]
+				enemy_count = 6
 			6:
 				# Nível 6: Encontros de elite
-				enemy_pool = ["Lobisomen"]
-				enemy_count = 3
+				enemy_pool = ["Dragão"]
+				enemy_count = 1
 			_:
 				# Default
 				enemy_pool = ["Goblin"]

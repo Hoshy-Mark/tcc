@@ -50,9 +50,9 @@ var enemy_base_stats = {
 		"STR": 8, "DEX": 6, "AGI": 8, "CON": 6, "MAG": 0, "INT": 0, "SPI": 4, "LCK": 6,
 		"xp_value": 50, "sprite_path": "res://assets/Lobo.png", "enemy_type": "Beast", "attack_type": "slash"
 	},
-	"Lobisomen": {
-		"STR": 12, "DEX": 7, "AGI": 8, "CON": 9, "MAG": 0, "INT": 2, "SPI": 2, "LCK": 5,
-		"xp_value": 45, "sprite_path": "res://assets/Lobisomen.png", "enemy_type": "Beast", "attack_type": "slash"
+	"Dragão": {
+		"STR": 32, "DEX": 7, "AGI": 8, "CON": 32, "MAG": 0, "INT": 2, "SPI": 2, "LCK": 5,
+		"xp_value": 45, "sprite_path": "res://assets/Dragão.png", "enemy_type": "Beast", "attack_type": "slash"
 	}
 }
 
