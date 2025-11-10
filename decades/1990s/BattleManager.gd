@@ -941,7 +941,6 @@ func _on_player_action_selected(action_name: String) -> void:
 				if magias.is_empty():
 					hud.show_top_message("%s não possui magias disponíveis." % current_actor.nome)
 					await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-					next_turn()
 					return
 				hud.magic_selected.connect(_on_magic_selected)
 				hud.show_ability_menu(
@@ -960,7 +959,6 @@ func _on_player_action_selected(action_name: String) -> void:
 				if skills.is_empty():
 					hud.show_top_message("%s não possui técnicas disponíveis." % current_actor.nome)
 					await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-					next_turn()
 					return
 				hud.skill_selected.connect(_on_skill_selected)
 				hud.show_ability_menu(

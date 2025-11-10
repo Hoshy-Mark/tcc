@@ -42,41 +42,17 @@ var enemy_base_stats = {
 		"STR": 10, "DEX": 6, "AGI": 20, "CON": 3, "MAG": 1, "INT": 2, "SPI": 2, "LCK": 4,
 		"xp_value": 20, "sprite_path": "res://assets/Goblin.png", "enemy_type": "Beast", "attack_type": "blunt"
 	},
-	"Little Orc": {
+	"Orc": {
 		"STR": 10, "DEX": 4, "AGI": 20, "CON": 6, "MAG": 2, "INT": 3, "SPI": 3, "LCK": 3,
 		"xp_value": 50, "sprite_path": "res://assets/Little Orc.png", "enemy_type": "Beast", "attack_type": "blunt"
-	},
-	"Zumbi": {
-		"STR": 5, "DEX": 15, "AGI": 4, "CON": 3, "MAG": 1, "INT": 1, "SPI": 1, "LCK": 1,
-		"xp_value": 15, "sprite_path": "res://assets/Zumbi.png", "enemy_type": "Undead", "attack_type": "blunt"
-	},
-	"Necromante": {
-		"STR": 5, "DEX": 4, "AGI": 6, "CON": 6, "MAG": 6, "INT": 4, "SPI": 4, "LCK": 4,
-		"xp_value": 50, "sprite_path": "res://assets/Necromante.png", "enemy_type": "Undead", "attack_type": "blunt"
 	},
 	"Lobo": {
 		"STR": 8, "DEX": 6, "AGI": 8, "CON": 6, "MAG": 0, "INT": 0, "SPI": 4, "LCK": 6,
 		"xp_value": 50, "sprite_path": "res://assets/Lobo.png", "enemy_type": "Beast", "attack_type": "slash"
 	},
-	"Passaro": {
-		"STR": 6, "DEX": 7, "AGI": 10, "CON": 3, "MAG": 2, "INT": 2, "SPI": 2, "LCK": 4,
-		"xp_value": 30, "sprite_path": "res://assets/Passaro.png", "enemy_type": "Flying", "attack_type": "ranged"
-	},
-	"Aguia": {
-		"STR": 6, "DEX": 8, "AGI": 12, "CON": 5, "MAG": 0, "INT": 2, "SPI": 3, "LCK": 9,
-		"xp_value": 40, "sprite_path": "res://assets/Aguia.png", "enemy_type": "Flying", "attack_type": "slash"
-	},
 	"Lobisomen": {
 		"STR": 12, "DEX": 7, "AGI": 8, "CON": 9, "MAG": 0, "INT": 2, "SPI": 2, "LCK": 5,
 		"xp_value": 45, "sprite_path": "res://assets/Lobisomen.png", "enemy_type": "Beast", "attack_type": "slash"
-	},
-	"Oni": {
-		"STR": 14, "DEX": 6, "AGI": 6, "CON": 10, "MAG": 4, "INT": 5, "SPI": 6, "LCK": 9,
-		"xp_value": 70, "sprite_path": "res://assets/Oni.png", "enemy_type": "Demon", "attack_type": "blunt"
-	},
-	"Dragao": {
-		"STR": 18, "DEX": 8, "AGI": 8, "CON": 14, "MAG": 8, "INT": 6, "SPI": 6, "LCK": 7,
-		"xp_value": 150, "sprite_path": "res://assets/Dragão.png", "enemy_type": "Dragon", "attack_type": "magic"
 	}
 }
 
