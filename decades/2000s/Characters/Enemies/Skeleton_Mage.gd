@@ -3,7 +3,7 @@ extends "res://decades/2000s/Characters/IAs/EnemeyIA.gd"
 const FIREBALL_COOLDOWN_TIME = 3.0
 
 var state = STATE_IDLE
-var attacker: CombatCharacter = null
+var attacker: CombatCharacter2000 = null
 var fireball_cooldown := FIREBALL_COOLDOWN_TIME
 var is_casting := false  # flag para controlar ataque único
 
@@ -52,7 +52,7 @@ func update_ai(delta):
 		fireball_cooldown = FIREBALL_COOLDOWN_TIME
 		is_casting = false
 
-func _choose_target_based_on_strategy() -> CombatCharacter:
+func _choose_target_based_on_strategy() -> CombatCharacter2000:
 	var manager = get_tree().get_root().get_node("Game2000/BattleManager")
 	if manager == null:
 		return null
@@ -68,7 +68,7 @@ func _choose_target_based_on_strategy() -> CombatCharacter:
 					target = p
 	return target
 
-func _cast_fireball(caster: CombatCharacter, target: CombatCharacter) -> void:
+func _cast_fireball(caster: CombatCharacter2000, target: CombatCharacter2000) -> void:
 	if not target:
 		return
 	is_performing_action = true
@@ -85,7 +85,7 @@ func _cast_fireball(caster: CombatCharacter, target: CombatCharacter) -> void:
 
 	is_performing_action = false
 
-func apply_damage(amount: int, attacker_char: CombatCharacter):
+func apply_damage(amount: int, attacker_char: CombatCharacter2000):
 	super.apply_damage(amount, attacker_char)
 	if is_alive():
 		attacker = attacker_char

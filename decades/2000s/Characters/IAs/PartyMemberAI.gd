@@ -1,8 +1,8 @@
-extends CombatCharacter
+extends CombatCharacter2000
 
 var attack_range := 2.0
 var safe_distance := 1.5
-var target_enemy: CombatCharacter = null
+var target_enemy: CombatCharacter2000 = null
 
 var wait_after_enemy_move := 0.5
 var wait_timer := 1.0
@@ -136,7 +136,7 @@ func _enemy_moved() -> bool:
 		last_enemy_pos = target_enemy.global_position
 	return moved
 
-func _choose_random_enemy() -> CombatCharacter:
+func _choose_random_enemy() -> CombatCharacter2000:
 	var manager = get_tree().get_root().get_node("Game2000/BattleManager")
 	if manager == null:
 		return null
@@ -150,7 +150,7 @@ func _choose_random_enemy() -> CombatCharacter:
 	
 	return alive_enemies[random.randi_range(0, alive_enemies.size() - 1)]
 
-func _attack_target(target: CombatCharacter) -> void:
+func _attack_target(target: CombatCharacter2000) -> void:
 	is_performing_action = true
 
 	if anim:

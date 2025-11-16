@@ -1,6 +1,14 @@
 extends Node
 
 # --- Paths para instanciar personagens e inimigos ---
+
+# --- Referências para HUD, câmera e altura base ---
+var ability_hud: AbilityHUD = null
+var camera: ThirdPersonCamera3D = null
+var hud: CanvasLayer = null
+var base_height := 0.5   # <-- MOVIDO PARA CIMA
+
+# --- Paths para instanciar personagens e inimigos ---
 var party_paths := [
 	preload("res://decades/2000s/Characters/Barbarian3D.tscn"),
 	preload("res://decades/2000s/Characters/Mage3D.tscn"),
@@ -36,16 +44,10 @@ var fixed_positions = [
 	Vector3(20, base_height, -127),
 ]
 
-# --- Referências para HUD, câmera e altura base ---
-var ability_hud: AbilityHUD = null
-var camera: ThirdPersonCamera3D = null
-var hud: CanvasLayer = null
-var base_height := 0.5
-
 # --- Estado do combate ---
-var party_members: Array[CombatCharacter] = []
-var enemies: Array[CombatCharacter] = []
-var player_character: CombatCharacter = null
+var party_members: Array[CombatCharacter2000] = []
+var enemies: Array[CombatCharacter2000] = []
+var player_character: CombatCharacter2000 = null
 
 var is_processing_turn := false
 var is_tactical_pause_active := false
@@ -97,7 +99,7 @@ func _spawn_party():
 	]
 
 	for i in party_paths.size():
-		var char: CombatCharacter = party_paths[i].instantiate()
+		var char: CombatCharacter2000 = party_paths[i].instantiate()
 		add_child(char)
 		char.global_position = Vector3(
 			start_positions[i % start_positions.size()].x,
@@ -119,7 +121,7 @@ func _spawn_new_horde():
 	enemies.clear()
 	for i in range(enemies_per_horde):
 		var enemy_scene = enemy_paths[randi() % enemy_paths.size()]
-		var enemy: CombatCharacter = enemy_scene.instantiate()
+		var enemy: CombatCharacter2000 = enemy_scene.instantiate()
 		add_child(enemy)
 		
 		# Usa a posição fixa correspondente
@@ -193,7 +195,7 @@ func _update_party_members(delta: float) -> void:
 		if not member.manual_control and not member.is_performing_action and member != player_character:
 			
 			# Atualiza ataque de forma assíncrona
-			await member.update_aiassadswasas(delta)
+			await member.update_ai(delta)
 			
 			# Atualiza visão depois do movimento/ataque
 			_update_member_vision(member)
@@ -207,12 +209,12 @@ func _update_party_members(delta: float) -> void:
 			if hud:
 				hud.show_action_menu(member)
 
-func _update_member_vision(member: CombatCharacter) -> void:
+func _update_member_vision(member: CombatCharacter2000) -> void:
 	var closest_enemy = _find_closest_enemy(member)
 	if closest_enemy:
 		member._update_vision_cone(closest_enemy, ATTACK_RANGE)
 
-func _find_closest_enemy(member: CombatCharacter) -> CombatCharacter:
+func _find_closest_enemy(member: CombatCharacter2000) -> CombatCharacter2000:
 	var closest_enemy = null
 	var min_dist := INF
 	for enemy in enemies:
@@ -260,7 +262,7 @@ func _stop_player_auto_attack() -> void:
 
 # --- Funções de combate e ataque ---
 
-func _execute_attack(attacker: CombatCharacter, target: CombatCharacter) -> void:
+func _execute_attack(attacker: CombatCharacter2000, target: CombatCharacter2000) -> void:
 	
 	if target:
 		if attacker.global_position.distance_to(target.global_position) > attacker.attack_range:
@@ -293,19 +295,19 @@ func _execute_attack(attacker: CombatCharacter, target: CombatCharacter) -> void
 	attacker.is_turn_ready = false
 
 # Função auxiliar só para animação
-func _play_attack_animation(character: CombatCharacter) -> void:
+func _play_attack_animation(character: CombatCharacter2000) -> void:
 	if character.anim:
 		character.anim.play("1H_Melee_Attack_Slice_Diagonal")
 		await get_tree().create_timer(1.0).timeout
 
-func _apply_hit(attacker: CombatCharacter, target: CombatCharacter) -> int:
+func _apply_hit(attacker: CombatCharacter2000, target: CombatCharacter2000) -> int:
 	var damage = _calculate_damage(attacker, target)
 	target.apply_damage(damage, attacker) # Aqui entra defesa/esquiva
 	return damage
 
 # --- Funções de morte, recompensas e evolução  ---
 
-func _on_character_death(character: CombatCharacter) -> void:
+func _on_character_death(character: CombatCharacter2000) -> void:
 	print(character.name, "morreu!")
 	if enemies.has(character):
 		enemies.erase(character)
@@ -359,7 +361,7 @@ func _on_player_action_selected(action_name: String):
 
 # --- Cálculos e lógica de combate ---
 
-func _calculate_damage(attacker: CombatCharacter, target: CombatCharacter) -> int:
+func _calculate_damage(attacker: CombatCharacter2000, target: CombatCharacter2000) -> int:
 	var base_damage = attacker.attack_power
 	var defense_factor = max(0.5, 1.0 - (target.defense / 200.0)) # Defesa reduz dano
 	var damage = base_damage * defense_factor
@@ -379,7 +381,7 @@ func _calculate_damage(attacker: CombatCharacter, target: CombatCharacter) -> in
 
 	return int(max(1, damage))
 
-func execute_item_use(user: CombatCharacter, target: CombatCharacter, item: Dictionary):
+func execute_item_use(user: CombatCharacter2000, target: CombatCharacter2000, item: Dictionary):
 	user.is_performing_action = true
 	if target == user:
 		user.anim.play("Use_Item")
@@ -399,13 +401,13 @@ func execute_item_use(user: CombatCharacter, target: CombatCharacter, item: Dict
 
 # --- IA e comportamento dos personagens ---
 
-func _handle_ai_turn(character: CombatCharacter) -> void:
+func _handle_ai_turn(character: CombatCharacter2000) -> void:
 	if character.has_method("update_ai_attack"):
 		await character.update_ai_attack(get_process_delta_time())
 	else:
 		push_error("Character " + character.name + " não tem método update_ai()")
 
-func _handle_party_member_ai_turn(member: CombatCharacter) -> void:
+func _handle_party_member_ai_turn(member: CombatCharacter2000) -> void:
 	var attack_range = 2.0
 	var safe_distance = 5.0
 
@@ -433,7 +435,7 @@ func _handle_party_member_ai_turn(member: CombatCharacter) -> void:
 
 # --- Controle de slots de combate (posicionamento tático) ---
 
-func _ensure_slots_for_target(target: CombatCharacter, slots_count: int = DEFAULT_SLOTS_PER_TARGET) -> void:
+func _ensure_slots_for_target(target: CombatCharacter2000, slots_count: int = DEFAULT_SLOTS_PER_TARGET) -> void:
 	if target == null:
 		return
 	var id = target.get_instance_id()
@@ -442,7 +444,7 @@ func _ensure_slots_for_target(target: CombatCharacter, slots_count: int = DEFAUL
 		for i in range(slots_count):
 			slot_occupancy[id].append({ "agent": null, "reserved_at": 0, "priority": 0 })
 
-func reserve_slot_for(target: CombatCharacter, agent: CombatCharacter, slots_count: int = DEFAULT_SLOTS_PER_TARGET, desired_role: String = "any") -> int:
+func reserve_slot_for(target: CombatCharacter2000, agent: CombatCharacter2000, slots_count: int = DEFAULT_SLOTS_PER_TARGET, desired_role: String = "any") -> int:
 	if target == null or agent == null:
 		return -1
 	_ensure_slots_for_target(target, slots_count)
@@ -510,7 +512,7 @@ func reserve_slot_for(target: CombatCharacter, agent: CombatCharacter, slots_cou
 
 	return -1
 
-func release_slot_for(target: CombatCharacter, agent: CombatCharacter) -> void:
+func release_slot_for(target: CombatCharacter2000, agent: CombatCharacter2000) -> void:
 	if target == null or agent == null:
 		return
 	var id = target.get_instance_id()
@@ -678,11 +680,11 @@ func _handle_tactical_click(mouse_pos: Vector2):
 
 	if result:
 		var clicked_node = result["collider"]
-		if clicked_node and clicked_node is CombatCharacter:
+		if clicked_node and clicked_node is CombatCharacter2000:
 			if clicked_node in party_members:
 				_set_new_player_character(clicked_node)
 
-func _set_new_player_character(new_char: CombatCharacter):
+func _set_new_player_character(new_char: CombatCharacter2000):
 	if new_char == player_character:
 		return  # Já é o personagem ativo
 

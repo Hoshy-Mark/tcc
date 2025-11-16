@@ -96,7 +96,7 @@ func update_ai(delta):
 		is_performing_action = false
 
 
-func _choose_closest_enemy() -> CombatCharacter:
+func _choose_closest_enemy() -> CombatCharacter2000:
 	var manager = get_tree().get_root().get_node("Game2000/BattleManager")
 	var min_dist = 99999
 	var closest_enemy = null

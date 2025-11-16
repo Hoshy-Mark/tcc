@@ -16,7 +16,7 @@ var AttributeEditorScene: PackedScene = preload("res://decades/2000s/UI/Attribut
 var attribute_editor: Node = null
 var InventoryMenuScene: PackedScene = preload("res://decades/2000s/UI/InventoryMenu.tscn")
 var inventory_menu: Node = null
-var current_character: CombatCharacter = null
+var current_character: CombatCharacter2000 = null
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -70,7 +70,7 @@ func _update_buttons_opacity(percent: float) -> void:
 	tween.tween_property(defend_btn, "modulate:a", alpha, 0.3)
 	tween.tween_property(item_btn, "modulate:a", alpha, 0.3)
 
-func show_action_menu(character: CombatCharacter):
+func show_action_menu(character: CombatCharacter2000):
 	current_character = character
 	panel.visible = true
 	_set_buttons_enabled(character.is_turn_ready)

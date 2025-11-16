@@ -15,8 +15,8 @@ var priority: int = 0  # Para ordenação dos gambits
 var description := "Descrição do gambit"
 var target_type := TargetType.SELF
 
-func is_condition_met(character: CombatCharacter) -> bool:
+func is_condition_met(character: CombatCharacter2000) -> bool:
 	return condition.call(character)
 
-func execute_action(character: CombatCharacter) -> void:
+func execute_action(character: CombatCharacter2000) -> void:
 	action.call(character)

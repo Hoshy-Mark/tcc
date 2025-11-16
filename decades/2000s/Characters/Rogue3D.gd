@@ -71,7 +71,7 @@ func update_ai(delta):
 		is_turn_ready = false
 		is_performing_action = false
 
-func _choose_lowest_hp_enemy() -> CombatCharacter:
+func _choose_lowest_hp_enemy() -> CombatCharacter2000:
 	var manager = get_tree().get_root().get_node("Game2000/BattleManager")
 	if manager == null:
 		return null

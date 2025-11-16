@@ -1,0 +1,12 @@
+[gd_scene load_steps=3 format=3 uid="uid://cgdgun6xg1u3e"]
+
+[ext_resource type="Script" uid="uid://cd2vuulvkigd7" path="res://decades/2010s/BattleManager2010.gd" id="1_3bxxp"]
+[ext_resource type="Script" uid="uid://ctbbfqx20w4et" path="res://decades/2010s/Game2010.gd" id="1_4frcm"]
+
+[node name="Game2010" type="Node3D"]
+script = ExtResource("1_4frcm")
+
+[node name="BattleManager2010" type="Node" parent="."]
+script = ExtResource("1_3bxxp")
+
+[node name="UI" type="CanvasLayer" parent="."]

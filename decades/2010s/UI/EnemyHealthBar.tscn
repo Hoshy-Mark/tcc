@@ -1,0 +1,12 @@
+[gd_scene load_steps=2 format=3 uid="uid://brcc8wq7m838o"]
+
+[ext_resource type="Script" uid="uid://btp586ix4h23g" path="res://decades/2010s/UI/EnemyHealthBar.gd" id="1_lolh5"]
+
+[node name="EnemyHealthBar" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_lolh5")
+
+[node name="Bar" type="ProgressBar" parent="."]
+offset_right = 4.0
+offset_bottom = 27.0

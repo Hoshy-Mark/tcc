@@ -1,7 +1,7 @@
 extends RigidBody3D
 
 @export var speed := 60.0
-var target: CombatCharacter
+var target: CombatCharacter2000
 
 func _ready():
 	# Visual (esfera simples, pode trocar por partícula depois)
