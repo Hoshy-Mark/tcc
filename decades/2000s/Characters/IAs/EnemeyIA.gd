@@ -1,10 +1,10 @@
-extends CombatCharacter
+extends CombatCharacter2000
 
 var random = RandomNumberGenerator.new()
 var attack_range := 2.0
 var reached_player_time := 0.0
 var wait_after_reaching := 0.5 # Delay antes de perseguir de novo
-var aggro_target: CombatCharacter = null
+var aggro_target: CombatCharacter2000 = null
 var aggro_range := 10.0  # Distância de visão
 var priority := 1        # Prioridade da IA
 var aggro_update_timer := 0.3
@@ -83,7 +83,7 @@ func _update_health_bar_ui():
 		health_bar.set_health(hp, max_hp)
 		health_bar.set_turn_charge(turn_charge, turn_threshold)
 
-func _choose_random_player() -> CombatCharacter:
+func _choose_random_player() -> CombatCharacter2000:
 	var manager = get_tree().get_root().get_node("Game2000/BattleManager")
 	if manager == null:
 		return null
@@ -98,7 +98,7 @@ func _choose_random_player() -> CombatCharacter:
 	
 	return alive_party_members[random.randi_range(0, alive_party_members.size() - 1)]
 
-func _choose_closest_player() -> CombatCharacter:
+func _choose_closest_player() -> CombatCharacter2000:
 	var manager = get_tree().get_root().get_node("Game2000/BattleManager")
 	if manager == null:
 		return null
@@ -150,7 +150,7 @@ func _update_aggro():
 		release_slot_of_target(aggro_target)
 		aggro_target = closest
 
-func receive_damage(amount: int, attacker: CombatCharacter) -> void:
+func receive_damage(amount: int, attacker: CombatCharacter2000) -> void:
 	hp = max(hp - amount, 0)
 	print(name, " recebeu ", amount, " de dano! HP atual: ", hp)
 
@@ -183,6 +183,6 @@ func _stop_moving():
 	is_moving = false
 	anim.play("Idle")
 
-func _face_target(target: CombatCharacter):
+func _face_target(target: CombatCharacter2000):
 	var direction = (target.global_position - global_position).normalized()
 	rotation.y = atan2(direction.x, direction.z)

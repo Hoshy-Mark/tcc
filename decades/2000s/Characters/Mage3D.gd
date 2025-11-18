@@ -154,7 +154,7 @@ func _find_safe_point_away_from_all(enemies, desired_distance: float) -> Vector3
 	return Vector3.ZERO
 
 
-func _cast_fireball(caster: CombatCharacter):
+func _cast_fireball(caster: CombatCharacter2000):
 	if not caster.current_target:
 		return
 	caster.is_performing_action = true
@@ -180,7 +180,7 @@ func _cast_fireball(caster: CombatCharacter):
 func _cast_ability_0():
 	_cast_fireball(self)
 
-func _choose_target_based_on_strategy() -> CombatCharacter:
+func _choose_target_based_on_strategy() -> CombatCharacter2000:
 	var manager = get_tree().get_root().get_node("Game2000/BattleManager")
 	if manager == null:
 		return null
@@ -193,7 +193,7 @@ func _choose_target_based_on_strategy() -> CombatCharacter:
 			target = enemy
 	return target
 
-func _find_reposition_point_away_from(target: CombatCharacter, desired_distance: float) -> Vector3:
+func _find_reposition_point_away_from(target: CombatCharacter2000, desired_distance: float) -> Vector3:
 	if target == null:
 		return Vector3.ZERO  # Retorno consistente com Vector3
 

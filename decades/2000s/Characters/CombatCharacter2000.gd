@@ -1,5 +1,5 @@
 extends CharacterBody3D
-class_name CombatCharacter
+class_name CombatCharacter2000
 
 @onready var nav_agent: NavigationAgent3D = $NavigationAgent3D
 @onready var vision_cone: MeshInstance3D = $VisionCone
@@ -25,7 +25,7 @@ var turn_charge := 0.0
 var turn_threshold := 100.0
 var charge_speed := 20.0
 var is_turn_ready := false
-var current_target: CombatCharacter = null
+var current_target: CombatCharacter2000 = null
 var has_shield: bool = false
 var is_attacking: bool = false
 var is_defending: bool = false
@@ -146,19 +146,19 @@ func _recalculate_stats():
 		block_chance += 15.0  # Escudo aumenta chance de defesa
 
 # ------------------ Threat / Aggro helpers ------------------
-func add_threat(by: CombatCharacter, amount: float) -> void:
+func add_threat(by: CombatCharacter2000, amount: float) -> void:
 	if by == null:
 		return
 	if not threat_table.has(by):
 		threat_table[by] = 0.0
 	threat_table[by] += amount
 
-func get_top_threat() -> CombatCharacter:
+func get_top_threat() -> CombatCharacter2000:
 
 	if threat_table.size() == 0:
 		return null
 
-	var best: CombatCharacter = null
+	var best: CombatCharacter2000 = null
 	var best_val := -INF
 	for attacker in threat_table.keys():
 		var v = threat_table[attacker]
@@ -182,7 +182,7 @@ func clear_threats():
 # ------------------ Slotting / engagement point ------------------
 # Calcula uma posição (slot) ao redor do target para evitar empilhamento
 
-func get_slot_position_around_target(self_char: CombatCharacter, target: CombatCharacter, allies: Array, slot_distance: float = 1.8) -> Vector3:
+func get_slot_position_around_target(self_char: CombatCharacter2000, target: CombatCharacter2000, allies: Array, slot_distance: float = 1.8) -> Vector3:
 	if target == null:
 		return global_position
 
@@ -229,7 +229,7 @@ func get_slot_position_around_target(self_char: CombatCharacter, target: CombatC
 		var offset = Vector3(sin(angle), 0, cos(angle)) * radius
 		return target.global_position + offset
 
-func release_slot_of_target(target: CombatCharacter) -> void:
+func release_slot_of_target(target: CombatCharacter2000) -> void:
 	if target == null:
 		return
 	var manager = get_tree().get_root().get_node("Game2000/BattleManager")
@@ -334,7 +334,7 @@ func take_turn():
 		var battle_manager = get_tree().get_root().get_node("Game2000/BattleManager")
 		battle_manager._execute_attack(self, current_target)
 
-func apply_damage(amount: int, attacker: CombatCharacter):
+func apply_damage(amount: int, attacker: CombatCharacter2000):
 	# Se tentar esquivar
 	if randi_range(1, 100) <= dodge_chance:
 		print("%s esquivou do ataque!" % name)
@@ -413,7 +413,7 @@ func update_ai(_delta: float) -> void:
 	# IA desativada, ataques automáticos serão tratados no BattleManager
 	pass
 
-func _update_vision_cone(target: CombatCharacter, attack_range: float):
+func _update_vision_cone(target: CombatCharacter2000, attack_range: float):
 	if not vision_cone_material or not target:
 		return
 

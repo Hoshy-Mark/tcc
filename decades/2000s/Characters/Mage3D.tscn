@@ -31453,7 +31453,7 @@ bones/46/rotation = Quaternion(-0.758253, -1.82539e-07, 0.651961, -1.11759e-08)
 bones/46/scale = Vector3(1, 1, 1)
 
 [node name="1H_Wand" type="BoneAttachment3D" parent="Mage/Rig/Skeleton3D"]
-transform = Transform3D(4.9623e-08, -0.149894, 0.988702, 0.999999, -8.91263e-07, -1.2219e-06, 1.51411e-06, 0.988701, 0.149894, -0.49106, 0.64103, 0.106596)
+transform = Transform3D(-9.98167e-09, -0.149894, 0.988701, 0.999999, -9.50867e-07, -1.13249e-06, 1.42471e-06, 0.988701, 0.149893, -0.49106, 0.64103, 0.106596)
 bone_name = "1H_Wand"
 bone_idx = 16
 
@@ -31462,7 +31462,7 @@ mesh = SubResource("ArrayMesh_8n7i2")
 skeleton = NodePath("")
 
 [node name="2H_Staff" type="BoneAttachment3D" parent="Mage/Rig/Skeleton3D"]
-transform = Transform3D(4.9623e-08, -0.149894, 0.988702, 0.999999, -8.91263e-07, -1.2219e-06, 1.51411e-06, 0.988701, 0.149894, -0.49106, 0.64103, 0.106596)
+transform = Transform3D(-9.98167e-09, -0.149894, 0.988701, 0.999999, -9.50867e-07, -1.13249e-06, 1.42471e-06, 0.988701, 0.149893, -0.49106, 0.64103, 0.106596)
 bone_name = "2H_Staff"
 bone_idx = 17
 

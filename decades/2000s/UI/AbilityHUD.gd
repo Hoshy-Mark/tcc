@@ -10,7 +10,7 @@ signal ability_selected(ability_index)
 	$PanelContainer/MarginContainer/GrldContainer/Ability4Button
 ]
 
-var current_character: CombatCharacter = null
+var current_character: CombatCharacter2000 = null
 
 # Cooldowns (em segundos)
 var cooldown_times := [5.0, 10.0, 15.0, 20.0]
@@ -43,7 +43,7 @@ func _process(delta):
 				btns[i].text = _get_ability_name(i)
 				btns[i].disabled = false
 
-func show_abilities_for(character: CombatCharacter):
+func show_abilities_for(character: CombatCharacter2000):
 	current_character = character
 
 func _on_ability_pressed(index: int):

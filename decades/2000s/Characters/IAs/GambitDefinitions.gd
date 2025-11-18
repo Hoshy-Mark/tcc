@@ -28,13 +28,13 @@ func get_default_gambits() -> Array:
 
 	return gambits
 # Utilitários de busca (simples)
-func get_allies(char: CombatCharacter) -> Array:
+func get_allies(char: CombatCharacter2000) -> Array:
 	var bm = get_tree().get_root().get_node("Game2000/BattleManager")
 	if bm == null:
 		return []
 	return bm.party_members if char in bm.party_members else bm.enemies
 
-func get_enemies(char: CombatCharacter) -> Array:
+func get_enemies(char: CombatCharacter2000) -> Array:
 	var bm = get_tree().get_root().get_node("Game2000/BattleManager")
 	if bm == null:
 		return []

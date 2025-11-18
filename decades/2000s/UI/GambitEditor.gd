@@ -12,7 +12,7 @@ signal editor_closed
 @onready var btn_cancel = $BackgroundPanel/HBoxContainer/Panel/CancelButton
 @onready var party_list = $BackgroundPanel/HBoxContainer/PartyList
 
-var current_character: CombatCharacter = null
+var current_character: CombatCharacter2000 = null
 var available_gambits: Array = []  # Referências para Gambits
 var active_gambits: Array = []
 var party_members: Array = []
@@ -32,7 +32,7 @@ func _ready():
 	panel.add_theme_stylebox_override("panel", style)
 	background_panel.add_theme_stylebox_override("panel", style)  # <- Aplica também aqui
 
-func open_for_character(character: CombatCharacter):
+func open_for_character(character: CombatCharacter2000):
 	current_character = character
 	available_gambits = GambitDefinitions.get_default_gambits()
 	if character.has_meta("gambits"):

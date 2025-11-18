@@ -35,7 +35,7 @@ signal editor_closed
 }
 
 var party_members: Array = []
-var current_character: CombatCharacter = null
+var current_character: CombatCharacter2000 = null
 var points_left: int = 0
 var temp_allocations = {} # Ex: {"strength": 0, "dexterity": 0, ...}
 var battle_manager = null
@@ -76,7 +76,7 @@ func open_for_party(party: Array, BattleManager):
 
 	show()
 
-func open_for_character(character: CombatCharacter):
+func open_for_character(character: CombatCharacter2000):
 	current_character = character
 	label_title.text = "Atributos de: %s (Nível %d)" % [character.name, character.level]
 
