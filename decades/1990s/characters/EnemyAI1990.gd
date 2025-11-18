@@ -1,9 +1,7 @@
-
 extends Node
 class_name EnemyAi1990
 
 # --- IA Padrão: Ataque Aleatório ---
-# Esta é a lógica que copiamos e limpamos do seu BattleManager
 func execute_simple_attack(ator: Enemy1990, party: Array, enemies: Array, battle_manager):
 	
 	var rng = RandomNumberGenerator.new()
@@ -24,7 +22,5 @@ func execute_simple_attack(ator: Enemy1990, party: Array, enemies: Array, battle
 	# Chama a função de ataque do BattleManager
 	await battle_manager.action_executor.perform_attack(ator, target)
 	
-	# A IA agora é responsável por finalizar o turno
-	# (Esta lógica estava no fim do seu 'perform_enemy_action' antigo)
 	await battle_manager.get_tree().create_timer(battle_manager.TEMPO_ESPERA_APOS_ACAO).timeout
 	battle_manager.end_turn()
