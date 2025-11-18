@@ -43,7 +43,7 @@ func generate_enemies(party: Array) -> Array:
 
 	for i in range(enemy_count):
 		var rand_type = enemy_pool[randi() % enemy_pool.size()]
-		# Chama a função _create_enemy_by_type (aqui embaixo)
+
 		var enemy_data = _create_enemy_by_type(rand_type, i) 
 		enemies_array.append(enemy_data)
 
@@ -51,19 +51,17 @@ func generate_enemies(party: Array) -> Array:
 
 # Esta função agora mora aqui e é chamada pelo generate_enemies
 func _create_enemy_by_type(nome: String, index: int) -> Dictionary:
-	# Agora ele lê do Database1990
 	var base = Database1990.enemy_base_stats.get(nome) 
-
+	
 	if base:
 		var enemy_node := Enemy1990.new()
 		var position_indicator = ""
 		
-		# Lógica de Posição (Corrigida)
 		if index < 3:
-			enemy_node.position_line = "back" # Posições 0,1,2 são ATRÁS (X=250)
+			enemy_node.position_line = "back" 
 			position_indicator = " [B]"
 		else:
-			enemy_node.position_line = "front" # Posições 3,4,5 são FRENTE (X=530)
+			enemy_node.position_line = "front" 
 			position_indicator = " [F]"
 
 		enemy_node.nome = "%s%s" % [nome, position_indicator]
@@ -79,7 +77,9 @@ func _create_enemy_by_type(nome: String, index: int) -> Dictionary:
 		enemy_node.attack_type = base["attack_type"]
 		enemy_node.enemy_type = base["enemy_type"]
 
-		if enemy_node.enemy_type == "Flying":
+		if base.has("alcance_estendido"):
+			enemy_node.alcance_estendido = base.get("alcance_estendido")
+		elif enemy_node.enemy_type == "Flying":
 			enemy_node.alcance_estendido = true
 
 		var rng = RandomNumberGenerator.new()
@@ -89,11 +89,12 @@ func _create_enemy_by_type(nome: String, index: int) -> Dictionary:
 		enemy_node.calculate_stats()
 		enemy_node.set_type_resistances()
 		
-		enemy_node.ai_behavior = "simple_attack"
-
+		enemy_node.ai_behavior = base.get("ai_behavior", "simple_attack")
+		enemy_node.skill_base_cooldowns = base.get("base_cooldowns", {})
+		enemy_node.skill_cooldowns = base.get("base_cooldowns", {}).duplicate()
 		return {
 			"instance": enemy_node,
 			"sprite_path": base["sprite_path"]
 		}
 	
-	return {} # Retorna vazio se o inimigo não for encontrado
+	return {}

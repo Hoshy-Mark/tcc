@@ -40,19 +40,28 @@ var item_database = {
 var enemy_base_stats = {
 	"Goblin": {
 		"STR": 10, "DEX": 6, "AGI": 20, "CON": 3, "MAG": 1, "INT": 2, "SPI": 2, "LCK": 4,
-		"xp_value": 20, "sprite_path": "res://assets/Goblin.png", "enemy_type": "Beast", "attack_type": "blunt"
+		"xp_value": 20, "sprite_path": "res://assets/Goblin.png", "enemy_type": "Beast", "attack_type": "blunt",
+		"ai_behavior": "goblin_oportunista",
+		"alcance_estendido": false
 	},
 	"Orc": {
 		"STR": 10, "DEX": 4, "AGI": 20, "CON": 6, "MAG": 2, "INT": 3, "SPI": 3, "LCK": 3,
-		"xp_value": 50, "sprite_path": "res://assets/Little Orc.png", "enemy_type": "Beast", "attack_type": "blunt"
+		"xp_value": 50, "sprite_path": "res://assets/Little Orc.png", "enemy_type": "Beast", "attack_type": "blunt",
+		"ai_behavior": "orc_brutamontes",
+		"alcance_estendido": false
 	},
 	"Lobo": {
 		"STR": 8, "DEX": 6, "AGI": 8, "CON": 6, "MAG": 0, "INT": 0, "SPI": 4, "LCK": 6,
-		"xp_value": 50, "sprite_path": "res://assets/Lobo.png", "enemy_type": "Beast", "attack_type": "slash"
+		"xp_value": 50, "sprite_path": "res://assets/Lobo.png", "enemy_type": "Beast", "attack_type": "slash",
+		"ai_behavior": "lobo_cacador",
+		"alcance_estendido": false
 	},
 	"Dragão": {
 		"STR": 32, "DEX": 7, "AGI": 8, "CON": 32, "MAG": 0, "INT": 2, "SPI": 2, "LCK": 5,
-		"xp_value": 45, "sprite_path": "res://assets/Dragão.png", "enemy_type": "Beast", "attack_type": "slash"
+		"xp_value": 45, "sprite_path": "res://assets/Dragão.png", "enemy_type": "Beast", "attack_type": "slash",
+		"ai_behavior": "dragao_tatico",
+		"alcance_estendido": true,
+		"base_cooldowns": { "fire_breath": 3 }
 	}
 }
 
@@ -69,7 +78,7 @@ var class_sprite_paths = {
 
 var class_base_stats = {
 	"Knight": {
-		"STR": 40, "DEX": 7, "AGI": 4, "CON": 10, "MAG": 1, "INT": 3, "SPI": 5, "LCK": 5,
+		"STR": 40, "DEX": 8, "AGI": 4, "CON": 10, "MAG": 1, "INT": 3, "SPI": 5, "LCK": 5,
 		"attack_type": "slash"
 	},
 	"Mage": {
@@ -89,7 +98,7 @@ var class_base_stats = {
 		"attack_type": "ranged"
 	},
 	"Paladin": {
-		"STR": 30, "DEX": 6, "AGI": 5, "CON": 9, "MAG": 6, "INT": 5, "SPI": 12, "LCK": 9,
+		"STR": 30, "DEX": 8, "AGI": 5, "CON": 9, "MAG": 6, "INT": 5, "SPI": 12, "LCK": 9,
 		"attack_type": "slash"
 	},
 	"Monk": {

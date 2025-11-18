@@ -35,10 +35,12 @@ var sp_values := {}
 var current_turn_index := 0
 
 # FLUXO DO JOGO
+
 func perform_enemy_action(enemy_actor: Enemy1990) -> void:
 	var rng = RandomNumberGenerator.new()
 	rng.randomize()
 
+	# --- Lógica de Status (Perfeita, não mude) ---
 	if enemy_actor.is_charmed:
 		print("Status: Charm ativo para", enemy_actor.name)
 		var allies = enemies.filter(func(e): return e.is_alive())
@@ -66,14 +68,8 @@ func perform_enemy_action(enemy_actor: Enemy1990) -> void:
 		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 		end_turn()
 		return
-
-	# Se o inimigo está OK, ele usa a própria IA
-	match enemy_actor.ai_behavior:
-		"simple_attack":
-			enemy_ai.execute_simple_attack(enemy_actor, party, enemies, self)
-		_:
-			enemy_ai.execute_simple_attack(enemy_actor, party, enemies, self)
-
+	enemy_ai.execute_turn(enemy_actor, party, enemies, self)
+	
 func atualizar_obstrucao_inimigos() -> void:
 	for i in range(enemies.size()):
 		var enemy = enemies[i]
