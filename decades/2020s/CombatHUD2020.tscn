@@ -1,0 +1,87 @@
+[gd_scene load_steps=2 format=3 uid="uid://1y1ssaj3qokc"]
+
+[ext_resource type="Script" uid="uid://dqc6qc0rrm1dd" path="res://decades/2020s/CombatHUD2020.gd" id="1_g16qr"]
+
+[node name="CombatHud2020" type="CanvasLayer"]
+script = ExtResource("1_g16qr")
+
+[node name="ActionPanel" type="Panel" parent="."]
+offset_left = 581.0
+offset_top = 802.0
+offset_right = 1192.0
+offset_bottom = 899.0
+
+[node name="AttackButton" type="Button" parent="ActionPanel"]
+layout_mode = 0
+offset_left = 45.0
+offset_top = 27.0
+offset_right = 149.0
+offset_bottom = 73.0
+text = "Ataque"
+
+[node name="DefendButton" type="Button" parent="ActionPanel"]
+layout_mode = 0
+offset_left = 179.0
+offset_top = 27.0
+offset_right = 278.0
+offset_bottom = 75.0
+text = "Defenda"
+
+[node name="EndTurnButton" type="Button" parent="ActionPanel"]
+layout_mode = 0
+offset_left = 436.0
+offset_top = 20.0
+offset_right = 591.0
+offset_bottom = 74.0
+text = "Terminar Turno"
+
+[node name="MoveButton" type="Button" parent="ActionPanel"]
+layout_mode = 0
+offset_left = 303.0
+offset_top = 23.0
+offset_right = 407.0
+offset_bottom = 69.0
+text = "Mover"
+
+[node name="TargetSelector" type="OptionButton" parent="."]
+offset_left = 1267.0
+offset_top = 839.0
+offset_right = 1391.0
+offset_bottom = 879.0
+
+[node name="TurnOrderPanel" type="VBoxContainer" parent="."]
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Label Title" type="Label" parent="TurnOrderPanel"]
+layout_mode = 2
+text = "Turn Order"
+
+[node name="OrderList" type="VBoxContainer" parent="TurnOrderPanel"]
+layout_mode = 2
+
+[node name="TurnInfoPanel" type="Control" parent="."]
+layout_mode = 3
+anchor_top = 1.0
+anchor_right = 0.234
+anchor_bottom = 1.0
+offset_left = 126.0
+offset_top = -302.0
+offset_right = -103.568
+offset_bottom = -262.0
+grow_vertical = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="TurnInfoPanel"]
+layout_mode = 0
+offset_left = -77.0
+offset_top = 152.0
+offset_right = 89.0
+offset_bottom = 202.0
+
+[node name="ActionInfoLabel" type="Label" parent="TurnInfoPanel/VBoxContainer"]
+layout_mode = 2
+text = "Action Info"
+
+[node name="MoveInfoLabel" type="Label" parent="TurnInfoPanel/VBoxContainer"]
+layout_mode = 2
+text = "Move Info"
