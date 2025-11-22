@@ -12,9 +12,9 @@ var player: CombatCharacter = null
 var battle_manager
 
 func _ready():
-	super._ready()
+	show_healthbar = true
 	manual_control = false
-
+	super._ready()
 	# tenta grupo "player" primeiro (mais seguro)
 	player = get_tree().get_first_node_in_group("player")
 	# fallback para um BattleManager que cria o player

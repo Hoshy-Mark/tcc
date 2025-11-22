@@ -2,6 +2,7 @@ extends CharacterBody3D
 class_name CombatCharacter
 
 signal died(character)
+@export var show_healthbar := false
 
 # --- Nodos / refs ---
 var anim: AnimationPlayer = null
@@ -11,7 +12,8 @@ var model: Node3D = null
 # --- Atributos ---
 var max_hp: int = 100
 var hp: int = 100
-
+var healthbar_scene := preload("res://decades/2010s/UI/HealthBar2010.tscn")
+var healthbar: Control = null
 var max_stamina: float = 100.0
 var stamina: float = 100.0
 var stamina_regen_idle: float = 12.0   # souls-like: regen mais lento
@@ -84,7 +86,13 @@ func _ready() -> void:
 		anim.play("Idle")
 	else:
 		push_error("AnimationPlayer não encontrado em " + str(self))
-
+		
+	if show_healthbar:
+		var ui_layer := get_tree().get_root().get_node("Game2010/UI")
+		if ui_layer:
+			healthbar = healthbar_scene.instantiate()
+			ui_layer.add_child(healthbar)
+			healthbar.set_target(self)
 
 		  # dura metade do tempo
 
@@ -493,7 +501,9 @@ func die() -> void:
 
 	if anim:
 		anim.play("Death_A")
-
+		
+	if healthbar:
+		healthbar.queue_free()
 	emit_signal("died", self)
 
 	# espera animação terminar automaticamente (0.5s)

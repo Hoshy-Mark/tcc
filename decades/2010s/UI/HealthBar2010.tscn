@@ -1,0 +1,27 @@
+[gd_scene load_steps=2 format=3 uid="uid://brcc8wq7m838o"]
+
+[ext_resource type="Script" uid="uid://btp586ix4h23g" path="res://decades/2010s/UI/HealthBar2010.gd" id="1_lolh5"]
+
+[node name="EnemyHealthBar" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_lolh5")
+
+[node name="HealthBar" type="Control" parent="."]
+anchors_preset = 0
+offset_left = -65.0
+offset_right = 16.0
+offset_bottom = 14.0
+
+[node name="RedBar" type="ColorRect" parent="HealthBar"]
+offset_left = 23.0
+offset_right = 107.0
+offset_bottom = 14.0
+color = Color(1, 0, 0, 1)
+
+[node name="GreenBar" type="ColorRect" parent="HealthBar"]
+layout_mode = 0
+offset_left = 23.0
+offset_right = 107.0
+offset_bottom = 14.0
+color = Color(0, 1, 0, 1)
