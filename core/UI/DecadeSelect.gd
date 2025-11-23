@@ -5,6 +5,7 @@ func _ready():
 	$VBoxContainer/GridContainer/Button1990.pressed.connect(_on_1990_pressed)
 	$VBoxContainer/GridContainer/Button2000.pressed.connect(_on_2000_pressed)
 	$VBoxContainer/GridContainer/Button2010.pressed.connect(_on_2010_pressed)
+	$VBoxContainer/GridContainer/Button2020.pressed.connect(_on_2020_pressed)
 	$VBoxContainer/ButtonVoltar.pressed.connect(_on_voltar_pressed)
 
 func _on_1980_pressed():
@@ -21,6 +22,10 @@ func _on_2000_pressed():
 	
 func _on_2010_pressed():
 	DecadeManager.select_decade(2010)
+	DecadeManager.load_selected_decade_scene()
+	
+func _on_2020_pressed():
+	DecadeManager.select_decade(2020)
 	DecadeManager.load_selected_decade_scene()
 	
 func _on_voltar_pressed():

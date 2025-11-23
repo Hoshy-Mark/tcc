@@ -1,0 +1,12 @@
+[gd_scene load_steps=3 format=3 uid="uid://d13lauvowknye"]
+
+[ext_resource type="Script" uid="uid://crut0awvyaa3b" path="res://decades/2020s/BattleManager.gd" id="1_jfdu2"]
+[ext_resource type="Script" uid="uid://cmtufpti3is1f" path="res://decades/2020s/Game2020.gd" id="1_mbut1"]
+
+[node name="Game2020" type="Node3D"]
+script = ExtResource("1_mbut1")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="BattleManager2020" type="Node3D" parent="."]
+script = ExtResource("1_jfdu2")

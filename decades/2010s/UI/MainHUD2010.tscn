@@ -49,6 +49,7 @@ offset_right = 98.0
 offset_bottom = 39.0
 
 [node name="StaminaFill" type="ColorRect" parent="StaminaBar"]
+layout_mode = 0
 offset_left = -51.0
 offset_top = 49.0
 offset_right = 379.0
