@@ -195,7 +195,7 @@ func _find_target_by_role(party: Array, ator, role: String):
 		return null
 
  # classes q curam, se adiconar mais tenq colocar aqui
-	var healer_classes = ["White Mage", "Cleric", "Paladin"]
+	var healer_classes = ["Cleric", "Paladin"]
 	for p in valid_targets: 
 		if p.classe_name in healer_classes:
 			return p 
