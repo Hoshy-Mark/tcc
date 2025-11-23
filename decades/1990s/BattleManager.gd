@@ -11,7 +11,7 @@ var action_executor: ActionExecutor1990
 # Dados do combate
 var party := []
 var enemies := []
-var enemy_sprites = {}  # id -> EnemySprite
+var enemy_sprites = {}  
 var current_actor = null
 var ready_queue := []
 var battle_active := false 
@@ -28,11 +28,10 @@ var inventory := {
 
 const TEMPO_ESPERA_APOS_ACAO = 0.5
 const ATB_GLOBAL_MULTIPLIER = 3.0
+
 # Estado da batalha
 var turn_order := []
-
 var sp_values := {} 
-
 var current_turn_index := 0
 
 # FLUXO DO JOGO
@@ -41,7 +40,7 @@ func perform_enemy_action(enemy_actor: Enemy1990) -> void:
 	var rng = RandomNumberGenerator.new()
 	rng.randomize()
 
-	# 1. O BattleManager (Juiz) ainda checa status
+	# --- Lógica de Status (Perfeita, não mude) ---
 	if enemy_actor.is_charmed:
 		print("Status: Charm ativo para", enemy_actor.name)
 		var allies = enemies.filter(func(e): return e.is_alive())
@@ -50,7 +49,6 @@ func perform_enemy_action(enemy_actor: Enemy1990) -> void:
 			return
 		var target = allies[rng.randi_range(0, allies.size() - 1)]
 		
-		# Manda o EXECUTOR fazer o ataque
 		await action_executor.perform_attack(enemy_actor, target)
 
 		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
@@ -65,24 +63,14 @@ func perform_enemy_action(enemy_actor: Enemy1990) -> void:
 			return
 		var target = all_targets[rng.randi_range(0, all_targets.size() - 1)]
 
-		# Manda o EXECUTOR fazer o ataque
 		await action_executor.perform_attack(enemy_actor, target)
 		
 		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 		end_turn()
 		return
-
-	# 2. Se o inimigo está OK, ele usa a própria IA
-	match enemy_actor.ai_behavior:
-		"simple_attack":
-			# A IA vai chamar o executor
-			enemy_ai.execute_simple_attack(enemy_actor, party, enemies, self)
-		_:
-			enemy_ai.execute_simple_attack(enemy_actor, party, enemies, self)
-
-func atualizar_obstrucao_inimigos() -> void:
-
+	enemy_ai.execute_turn(enemy_actor, party, enemies, self)
 	
+func atualizar_obstrucao_inimigos() -> void:
 	for i in range(enemies.size()):
 		var enemy = enemies[i]
 		if enemies.size() <= 3:
@@ -99,8 +87,6 @@ func atualizar_obstrucao_inimigos() -> void:
 			enemy.obstruido = false
 
 func atualizar_obstrucao_party() -> void:
-
-
 	for i in range(party.size()):
 		var player = party[i]
 		if player.position_line == "back":
@@ -111,7 +97,6 @@ func atualizar_obstrucao_party() -> void:
 				player.obstruido = false
 		else:
 			player.obstruido = false
-
 
 func is_player(actor) -> bool:
 	if actor is PlayerPartyMember1990:
@@ -158,13 +143,13 @@ func get_enemy_position(index: int) -> Vector2:
 
 func check_battle_state() -> bool:
 	# Verifica se todos os inimigos estão mortos
-	
 	var all_enemies_dead = enemies.all(func(e): return not e.is_alive())
 
 	if all_enemies_dead:
 		hud.show_top_message("Vitória! Todos os inimigos foram derrotados.")
 		end_battle(true)
 		return true
+
 	# Verifica se todos os jogadores estão mortos
 	var all_players_dead = party.all(func(p): return not p.is_alive())
 
@@ -172,6 +157,7 @@ func check_battle_state() -> bool:
 		hud.show_top_message("Derrota! Todos os heróis caíram.")
 		end_battle(false)
 		return true
+
 		# Checa se o summon morreu
 	if in_summon_mode and (not current_summon or not current_summon.is_alive()):
 		restore_saved_party()
@@ -332,7 +318,6 @@ func restore_saved_party():
 
 # CRIAÇÃO DE INIMIGOS E PLAYER
 
-
 func spawn_party(party_data: Array) -> void:
 	var has_paladin = "Paladin" in party_data
 	var has_hunter = "Hunter" in party_data
@@ -430,7 +415,7 @@ func spawn_loaded_party(loaded_party: Array) -> void:
 		var player_node = loaded_party[i]
 		player_node.restore_spell_slots()
 
-				#Define posição do sprite com base na linha
+		#Define posição do sprite com base na linha
 		var is_front = player_node.position_line == "front"
 		var sprite_pos_index = 0
 		
@@ -496,7 +481,6 @@ func _ready():
 	hud = hud_scene.instantiate()
 	add_child(hud)
 
-	# 🔧 Conecte o sinal aqui
 	hud.action_selected.connect(_on_player_action_selected)
 	hud.back_pressed.connect(_on_hud_back_pressed)
 
@@ -880,7 +864,6 @@ func check_ability_mastery(member, ability_name: String, is_spell: bool) -> void
 
 # SELECIONA AÇÃO
 
-
 func _on_player_action_selected(action_name: String) -> void:
 	match action_name:
 		"Atacar":
@@ -941,7 +924,6 @@ func _on_player_action_selected(action_name: String) -> void:
 				if magias.is_empty():
 					hud.show_top_message("%s não possui magias disponíveis." % current_actor.nome)
 					await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-					next_turn()
 					return
 				hud.magic_selected.connect(_on_magic_selected)
 				hud.show_ability_menu(
@@ -960,7 +942,6 @@ func _on_player_action_selected(action_name: String) -> void:
 				if skills.is_empty():
 					hud.show_top_message("%s não possui técnicas disponíveis." % current_actor.nome)
 					await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
-					next_turn()
 					return
 				hud.skill_selected.connect(_on_skill_selected)
 				hud.show_ability_menu(
@@ -1037,16 +1018,12 @@ func _on_alvo_ataque_selecionado(alvo_id):
 	else:
 		print("Alvo não encontrado:", alvo_id)
 
-	# 🔧 Oculta seta de seleção
 	hud.hide_arrow()
 	
-	# 🔧 Atualiza barras de ATB visualmente
 	hud.update_atb_bars(atb_values)
 
-	# 🔧 Desabilita HUD
 	hud.set_hud_buttons_enabled(false)
 
-	# 🔧 Espera e finaliza turno
 	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 	end_turn()
 

@@ -911,19 +911,74 @@ func summon_entity(spell: Spell, caster):
 	battle_manager.hud.update_party_info(battle_manager.party)
 
 
+
+# Esta função é ESPECÍFICA para a skill Sopro de Fogo do Dragão
+func perform_dragon_fire_breath(attacker, targets: Array):
+	
+	# --- ANIMAÇÃO DE PULINHO ---
+	var can_animate = attacker.has_method("get_global_position") and attacker.sprite_ref != null
+	if can_animate:
+		var original_local_pos_y = attacker.sprite_ref.position.y
+		var tween_jump = battle_manager.create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT_IN)
+		tween_jump.tween_property(attacker.sprite_ref, "position:y", original_local_pos_y - 20, 0.15)
+		tween_jump.tween_property(attacker.sprite_ref, "position:y", original_local_pos_y, 0.15).set_delay(0.15)
+		await tween_jump.finished
+	# --- FIM DA ANIMAÇÃO ---
+	
+	var skill_power = 25 # <-- Defina o dano base do Sopro de Fogo aqui
+	var skill_element = "fire"
+	
+	# Itera em todos os alvos vivos
+	for alvo in targets:
+		if not alvo.is_alive():
+			continue
+		
+		# (Lógica de dano mágico copiada da sua _execute_spell_area)
+		var base_dano = skill_power + attacker.get_modified_stat(attacker.INT, "INT")
+		var defesa_magica = alvo.get_modified_derived_stat("magic_defense")
+		var dano = base_dano - defesa_magica
+		dano = max(dano, 1)
+		
+		# Aplica resistência ao Fogo
+		var element_res = alvo.element_resistances.get(skill_element, 1.0)
+		dano *= element_res
+		dano = int(dano)
+		
+		# Mostra a mensagem de dano
+		if element_res > 1.0:
+			battle_manager.hud.show_top_message("Vulnerável! %d de dano em %s!" % [dano, alvo.nome])
+		elif element_res < 1.0:
+			battle_manager.hud.show_top_message("Resistiu! %d de dano em %s!" % [dano, alvo.nome])
+		else:
+			battle_manager.hud.show_top_message("%s causou %d de dano em %s!" % [attacker.nome, dano, alvo.nome])
+		
+		# Aplica o dano
+		aplicar_dano(alvo, attacker, dano)
+		battle_manager.hud.show_floating_number(dano, alvo, "damage")
+		
+		# Checa se o alvo morreu
+		if alvo.current_hp <= 0:
+			alvo.current_hp = 0
+			if alvo.has_method("check_if_dead"):
+				alvo.check_if_dead()
+
+	# Espera o delay da ação
+	await battle_manager.get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+
+
 # ============================================
 # FUNÇÕES "AJUDANTES" DAS AÇÕES
 # ============================================
 
 func get_spell_by_name(spells: Array, name: String) -> Spell:
-	# ... (código original)
+
 	for spell in spells:
 		if spell.name == name:
 			return spell
 	return null
 
 func aplicar_dano(alvo, atacante, dano: int) -> void:
-	# ... (código original)
+
 	if alvo.has_blink_active():
 		alvo.consume_blink_charge()
 		battle_manager.hud.show_top_message("%s desviou com Blink!" % alvo.nome)
@@ -947,7 +1002,7 @@ func aplicar_dano(alvo, atacante, dano: int) -> void:
 	battle_manager.atualizar_obstrucao_party()
 
 func ajustar_dano_por_posicao(dano: int, atacante, alvo, is_ataque_fisico: bool) -> int:
-	# ... (código original)
+
 	if not is_ataque_fisico:
 		return dano
 	if atacante.position_line == "back":
@@ -957,7 +1012,7 @@ func ajustar_dano_por_posicao(dano: int, atacante, alvo, is_ataque_fisico: bool)
 	return int(dano)
 
 func pode_atacar(alvo, atacante, is_ataque_fisico: bool) -> bool:
-	# ... (código original)
+
 	if not is_ataque_fisico:
 		return true
 	if not alvo.obstruido:
@@ -969,7 +1024,7 @@ func pode_atacar(alvo, atacante, is_ataque_fisico: bool) -> bool:
 	return atacante.alcance_estendido
 
 func attempt_steal(user, alvo):
-	# ... (código original)
+
 	var chance_base = 0.2 + (user.DEX + user.LCK) * 0.01
 	var roll = randf()
 	if roll <= chance_base and alvo.loot.size() > 0:
@@ -983,20 +1038,20 @@ func attempt_steal(user, alvo):
 		battle_manager.hud.show_top_message("%s tentou roubar, mas falhou!" % user.nome)
 
 func display_scan_info(alvo):
-	# ... (código original)
+
 	var fraquezas = alvo.get_element_weaknesses() if alvo.has_method("get_element_weaknesses") else []
 	var status = alvo.get_status_descriptions() if alvo.has_method("get_status_descriptions") else []
 	battle_manager.hud.show_top_message("Fraquezas: %s\nStatus: %s" % [", ".join(fraquezas), ", ".join(status)])
 
 func drain_mp(user, alvo):
-	# ... (código original)
+
 	var amount = min(10, alvo.current_mp)
 	alvo.current_mp -= amount
 	user.current_mp += amount
 	battle_manager.hud.show_top_message("%s drenou %d MP de %s!" % [user.nome, amount, alvo.nome])
 
 func apply_spell_effects(target, spell, caster):
-	# ... (código original)
+
 	for status in spell.get("status_effects", []):
 		if status.has("chance") and randf() * 100 > status["chance"]:
 			continue
