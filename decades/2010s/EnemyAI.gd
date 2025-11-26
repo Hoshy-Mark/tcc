@@ -283,3 +283,4 @@ func _find_mesh_recursive(node: Node) -> MeshInstance3D:
 		var found = _find_mesh_recursive(child)
 		if found: return found
 	return null
+	#
