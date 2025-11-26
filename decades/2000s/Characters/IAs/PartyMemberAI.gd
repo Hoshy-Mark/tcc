@@ -1,6 +1,6 @@
 extends CombatCharacter2000
 
-var attack_range := 2.0
+
 var safe_distance := 1.5
 var target_enemy: CombatCharacter2000 = null
 

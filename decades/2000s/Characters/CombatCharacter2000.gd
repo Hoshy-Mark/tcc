@@ -11,10 +11,14 @@ var progress_bar: ProgressBar = null
 var vision_cone_material: StandardMaterial3D = null
 # Atributos
 var move_speed := 4.0
+var attack_range := 2.0
+var vision_range := 15.0
 var hp := 100
 var max_hp := 100
 var camera: Camera3D = null
 
+# Gravidade
+var gravity = ProjectSettings.get_setting("physics/3d/default_gravity")
 # Controle
 var is_moving := false
 var manual_control := false
@@ -64,6 +68,10 @@ var reserved_target_id := 0
 var slot_renew_timer := 0.0
 const SLOT_RENEW_INTERVAL := 0.4
 
+#taunt
+var active_statuses := {} 
+var taunt_source: Node = null
+
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	if vision_cone:
@@ -105,6 +113,7 @@ func _ready():
 
 	if health_bar:
 		health_bar.set_health(hp, max_hp)
+	
 
 func _recalculate_stats():
 	# Dano físico base
@@ -252,6 +261,8 @@ func _process(delta):
 
 	decay_threat(delta)
 
+	_update_statuses(delta)
+
 	if not health_bar or not model:
 		return
 
@@ -284,17 +295,19 @@ func _physics_process(delta: float) -> void:
 	_handle_movement(delta)
 
 func _handle_movement(delta):
-	
-	if manual_control and Input.is_action_pressed("move_forward") or Input.is_action_pressed("move_backward") or Input.is_action_pressed("move_left") or Input.is_action_pressed("move_right"):
-		var bm = get_tree().get_root().get_node("Game2000/BattleManager")
-		if bm:
-			bm.player_auto_attacking = false
-	
-	if is_performing_action:
-		velocity = Vector3.ZERO
-		move_and_slide()
-		return
+	# 1. GRAVIDADE (Mantemos isso, senão eles voam)
+	if not is_on_floor():
+		velocity.y -= gravity * delta
 
+	# 2. SE ESTIVER OCUPADO (Atacando/Skill)
+	if is_performing_action:
+		# Para suavemente o movimento horizontal
+		velocity.x = move_toward(velocity.x, 0, move_speed)
+		velocity.z = move_toward(velocity.z, 0, move_speed)
+		move_and_slide()
+		return 
+
+	# 3. MOVIMENTO MANUAL (Jogador)
 	if manual_control:
 		var input_dir = Vector2(
 			Input.get_action_strength("move_left") - Input.get_action_strength("move_right"),
@@ -303,31 +316,50 @@ func _handle_movement(delta):
 
 		if input_dir.length() > 0.01:
 			var direction = Vector3(input_dir.x, 0, input_dir.y).normalized()
-			velocity = direction * move_speed
-			move_and_slide()
-
+			
+			# Aplica velocidade direta
+			velocity.x = direction.x * move_speed
+			velocity.z = direction.z * move_speed
+			
+			# Rotação
 			var target_yaw = atan2(direction.x, direction.z)
 			rotation.y = lerp_angle(rotation.y, target_yaw, 0.1)
-
-			anim.play("Walking_A")
+			
+			if anim and anim.current_animation != "Walking_A":
+				anim.play("Walking_A")
 		else:
-			velocity = Vector3.ZERO
-			move_and_slide()
-			anim.play("Idle")
+			# Parar
+			velocity.x = move_toward(velocity.x, 0, move_speed)
+			velocity.z = move_toward(velocity.z, 0, move_speed)
+			if anim and anim.current_animation != "Idle":
+				anim.play("Idle")
+	
+	# 4. MOVIMENTO IA (Inimigos) - VOLTA AO SIMPLES
 	else:
 		if is_moving:
 			var next_pos = nav_agent.get_next_path_position()
 			var direction = (next_pos - global_position).normalized()
-			velocity = direction * move_speed
-			rotation.y = lerp_angle(rotation.y, atan2(direction.x, direction.z), 0.1)
-			move_and_slide()
+			
+			# APLICAÇÃO DIRETA (Sem NavAgent.set_velocity)
+			velocity.x = direction.x * move_speed
+			velocity.z = direction.z * move_speed
+			
+			# Rotação
+			if direction.length() > 0.01:
+				var target_yaw = atan2(direction.x, direction.z)
+				rotation.y = lerp_angle(rotation.y, target_yaw, 0.1)
+			
 			if anim and anim.current_animation != "Walking_A":
 				anim.play("Walking_A")
 		else:
-			velocity = Vector3.ZERO
-			move_and_slide()
+			# Parar
+			velocity.x = move_toward(velocity.x, 0, move_speed)
+			velocity.z = move_toward(velocity.z, 0, move_speed)
 			if anim and anim.current_animation != "Idle":
 				anim.play("Idle")
+
+	# 5. APLICA O MOVIMENTO FINAL
+	move_and_slide()
 
 func take_turn():
 	if current_target and current_target.is_alive():
@@ -475,3 +507,71 @@ func _cast_ability_2():
 func _cast_ability_3():
 	# Código da habilidade 3 aqui
 	pass
+
+# Aplica um status (usado pelos ataques)
+func apply_status(status_name: String, duration: float, source: Node = null):
+	active_statuses[status_name] = duration
+	if status_name == "taunted":
+		taunt_source = source
+		print("!!! %s foi PROVOCADO por %s !!!" % [name, source.name])
+		# Força visual ou mudança de cor poderia vir aqui
+	else:
+		print("%s recebeu status: %s (%.1fs)" % [name, status_name, duration])
+
+# Checa se tem o status (usado pela IA)
+func has_status(status_name: String) -> bool:
+	return active_statuses.has(status_name) and active_statuses[status_name] > 0
+
+# Atualiza os timers (Chamar no _process)
+func _update_statuses(delta: float):
+	var to_remove = []
+	for s in active_statuses:
+		active_statuses[s] -= delta
+		if active_statuses[s] <= 0:
+			to_remove.append(s)
+	
+	for s in to_remove:
+		active_statuses.erase(s)
+		if s == "taunted":
+			taunt_source = null
+			print("%s não está mais provocado." % name)
+# --- Adicione no final de CombatCharacter2000.gd ---
+
+# Configura o NavAgent para ir até o destino
+func _move_towards(target_pos: Vector3):
+	if nav_agent:
+		nav_agent.target_position = target_pos
+		is_moving = true
+		# O seu _physics_process já cuida de mover se is_moving for true
+
+# Para o movimento imediatamente
+func _stop_moving():
+	is_moving = false
+	velocity = Vector3.ZERO
+	if anim and anim.has_animation("Idle") and anim.current_animation != "Idle":
+		anim.play("Idle")
+
+# Vira o personagem instantaneamente (ou suavemente) para o alvo
+func _face_target(target: Node3D):
+	if target == null: return
+	if is_performing_action: return
+	
+	var direction = (target.global_position - global_position).normalized()
+	direction.y = 0 # Mantém no chão
+	
+	if direction != Vector3.ZERO:
+		# Calcula o ângulo Y (yaw)
+		var target_yaw = atan2(direction.x, direction.z)
+		rotation.y = target_yaw
+
+func _on_nav_velocity_computed(safe_velocity: Vector3):
+	# 1. Guardamos a força da gravidade atual
+	var current_gravity = velocity.y
+	
+	# 2. velocidade sugerida pelo agente
+	velocity = safe_velocity
+	
+	# 3. gravidade
+	velocity.y = current_gravity
+	
+	move_and_slide()
