@@ -6,7 +6,7 @@ extends Node
 var ability_hud: AbilityHUD = null
 var camera: ThirdPersonCamera3D = null
 var hud: CanvasLayer = null
-var base_height := 0.5   # <-- MOVIDO PARA CIMA
+var base_height := 0.5  
 
 # --- Paths para instanciar personagens e inimigos ---
 var party_paths := [
@@ -17,31 +17,35 @@ var party_paths := [
 ]
 
 var enemy_paths := [
-	preload("res://decades/2000s/Characters/Enemies/Skeleton_Minion.tscn"),
-	preload("res://decades/2000s/Characters/Enemies/Skeleton_Mage.tscn")
+	preload("res://decades/2000s/Characters/Enemies/EnemyKnight.tscn"),
+	preload("res://decades/2000s/Characters/Enemies/EnemyMage.tscn"),
+	preload("res://decades/2000s/Characters/Enemies/EnemyRogue.tscn"),
+	preload("res://decades/2000s/Characters/Enemies/EnemyArcher.tscn"),
+	preload("res://decades/2000s/Characters/Enemies/EnemyBarbarian.tscn")
 ]
 
 var fixed_positions = [
 	Vector3(6, base_height, 6),
-	Vector3(-6, base_height, 0),
-	Vector3(6, base_height, -12),
-	Vector3(0, base_height, -22),
-	Vector3(-36, base_height, 6),
-	Vector3(-22, base_height, -22),
-	Vector3(-22, base_height, -6),
-	Vector3(-22, base_height, -59),
-	Vector3(-32, base_height, -71),
-	Vector3(-22, base_height, -83),
-	Vector3(-6, base_height, -79),
-	Vector3(-40, base_height, -79),
-	Vector3(24, base_height, -71),
-	Vector3(12, base_height, -75),
-	Vector3(16, base_height, -119),
-	Vector3(24, base_height, -115),
-	Vector3(6, base_height, -111),
-	Vector3(24, base_height, -103),
-	Vector3(6, base_height, -95),
-	Vector3(20, base_height, -127),
+	#removi para teste, pode colocar se quiser
+	#Vector3(-6, base_height, 0),
+	#Vector3(6, base_height, -12),
+	#Vector3(0, base_height, -22),
+	#Vector3(-36, base_height, 6),
+	#Vector3(-22, base_height, -22),
+	#Vector3(-22, base_height, -6),
+	#Vector3(-22, base_height, -59),
+	#Vector3(-32, base_height, -71),
+	#Vector3(-22, base_height, -83),
+	#Vector3(-6, base_height, -79),
+	#Vector3(-40, base_height, -79),
+	#Vector3(24, base_height, -71),
+	#Vector3(12, base_height, -75),
+	#Vector3(16, base_height, -119),
+	#Vector3(24, base_height, -115),
+	#Vector3(6, base_height, -111),
+	#Vector3(24, base_height, -103),
+	#Vector3(6, base_height, -95),
+	#Vector3(20, base_height, -127),
 ]
 
 # --- Estado do combate ---
@@ -60,7 +64,9 @@ var group_xp: int = 0
 var xp_per_enemy: int = 20
 var hordes_defeated: int = 0
 var max_hordes: int = 2
-var enemies_per_horde: int = 20
+
+# mudei para teste pode mudar de volta se quiser
+var enemies_per_horde: int = 4
 
 # --- Controle de slots de posicionamento ---
 var slot_occupancy := {}
@@ -68,7 +74,7 @@ const DEFAULT_SLOTS_PER_TARGET := 12
 const SLOT_LEASE_MS := 1200  # tempo até expirar se não renovado
 
 # --- Constantes de jogo ---
-const ATTACK_RANGE := 2.0
+const ATTACK_RANGE := 2.2
 
 # --- Funções de inicialização e setup ---
 
@@ -112,6 +118,13 @@ func _spawn_party():
 		if i == 3:
 			char.manual_control = true
 			player_character = char
+				# --- MODO IMORTAL (GOD MODE para teste) ---
+				#char.constitution = 5000 # Aumenta defesa e HP base
+				#char.max_hp = 99999
+				#char.hp = 99999
+				#char._recalculate_stats() # Aplica os status absurdos
+				#print("🛡️ MODO IMORTAL ATIVADO PARA O CAVALEIRO")
+				# -------------------------------
 		else:
 			char.manual_control = false  # IA futura
 
@@ -119,10 +132,22 @@ func _spawn_party():
 
 func _spawn_new_horde():
 	enemies.clear()
+	var roles_pool = ["Knight", "Barbarian", "Rogue", "Archer", "Mage"]
+	
 	for i in range(enemies_per_horde):
-		var enemy_scene = enemy_paths[randi() % enemy_paths.size()]
+		# Instancia o inimigo genérico
+		# (Certifique-se que enemy_paths tem a cena do seu inimigo base)
+		var enemy_scene = enemy_paths[0] 
 		var enemy: CombatCharacter2000 = enemy_scene.instantiate()
+		
 		add_child(enemy)
+		
+		# Sorteia um papel e configura o inimigo
+		var random_role = roles_pool.pick_random()
+		
+		# Verifica se o script é o EnemyUnit2000 antes de chamar
+		if enemy.has_method("setup_enemy"):
+			enemy.setup_enemy(random_role)
 		
 		# Usa a posição fixa correspondente
 		if i < fixed_positions.size():
@@ -184,7 +209,9 @@ func _update_enemies(delta: float) -> void:
 		enemy._update_turn_charge(delta)
 		if enemy.has_method("update_ai_movement"):
 			enemy.update_ai_movement(delta)
-		enemy._update_vision_cone(player_character, ATTACK_RANGE)
+		# Só atualiza o cone se o player existir E estiver vivo na memória
+		if player_character and is_instance_valid(player_character) and player_character.is_alive():
+			enemy._update_vision_cone(player_character, ATTACK_RANGE)
 		if enemy.is_turn_ready and not enemy.is_performing_action:
 			await _handle_ai_turn(enemy)
 
@@ -407,33 +434,55 @@ func _handle_ai_turn(character: CombatCharacter2000) -> void:
 	else:
 		push_error("Character " + character.name + " não tem método update_ai()")
 
-func _handle_party_member_ai_turn(member: CombatCharacter2000) -> void:
-	var attack_range = 2.0
-	var safe_distance = 5.0
 
+func _handle_party_member_ai_turn(member: CombatCharacter2000) -> void:
+	# Filtra apenas inimigos vivos
 	var possible_targets = enemies.filter(func(e): return e.is_alive())
-	if possible_targets.size() == 0:
+	if possible_targets.is_empty():
 		return
 
-	var target = possible_targets[randi() % possible_targets.size()]
+	# --- 1. BUSCA ALVO MAIS PRÓXIMO DENTRO DA VISÃO ---
+	var target = null
+	var min_dist = INF
+	
+	# Usa a visão do próprio membro (definida no CombatCharacter2000)
+	var my_vision = member.vision_range 
+	
+	for enemy in possible_targets:
+		var d = member.global_position.distance_to(enemy.global_position)
+		
+		# SÓ PEGA SE ESTIVER DENTRO DA VISÃO
+		if d <= my_vision and d < min_dist:
+			min_dist = d
+			target = enemy
+	
+	# --- 2. SE NÃO TIVER NINGUÉM PERTO ---
+	if target == null:
+		# Se quiser que ele siga o Player Líder quando não tiver inimigo:
+		if player_character and member != player_character:
+			var dist_to_player = member.global_position.distance_to(player_character.global_position)
+			if dist_to_player > 3.0:
+				member._move_towards(player_character.global_position)
+			else:
+				member._stop_moving()
+		else:
+			member._stop_moving()
+		return # Sai da função, não ataca ninguém longe
+	
+	# --- 3. SE ACHOU ALVO, ENTRA EM COMBATE ---
 	var dist = member.global_position.distance_to(target.global_position)
+	var my_range = member.attack_range
 
-	if member.turn_charge < member.turn_threshold * 0.5:
-		var direction_away = (member.global_position - target.global_position).normalized()
-		var desired_pos = target.global_position + direction_away * safe_distance
-		member.nav_agent.target_position = desired_pos
-		member.is_moving = true
-	elif dist <= attack_range:
-		member.is_moving = false
-		member.velocity = Vector3.ZERO
-		var dir_to_target = (target.global_position - member.global_position).normalized()
-		member.rotation.y = atan2(dir_to_target.x, dir_to_target.z)
-		await member._attack_target(target)
+	if dist <= my_range:
+		# Está no alcance: Para e Ataca
+		member._stop_moving()
+		member._face_target(target)
+		
+		# Usa a função de ataque do próprio BattleManager
+		await _execute_attack(member, target)
 	else:
-		member.nav_agent.target_position = target.global_position
-		member.is_moving = true
-
-# --- Controle de slots de combate (posicionamento tático) ---
+		# Fora de alcance: Persegue
+		member._move_towards(target.global_position)
 
 func _ensure_slots_for_target(target: CombatCharacter2000, slots_count: int = DEFAULT_SLOTS_PER_TARGET) -> void:
 	if target == null:
