@@ -11,6 +11,9 @@ class_name CombatCharacter2020
 @export var crit_chance := 5 # %
 @export var attack_range := 2.0
 @export var is_player_controlled := false
+
+var current_status: String = "" # Ex: "Wet"
+
 # --- Movement / navigation ---
 @onready var nav_agent: NavigationAgent3D = $NavigationAgent3D
 var remaining_movement := 0.0
@@ -383,3 +386,75 @@ func perform_defend():
 	is_defending = true
 	_set_anim_state(AnimState.DEFENDING)
 	defense += 5
+
+func apply_status(new_status: String) -> void:
+	if current_status == new_status:
+		return
+	
+	current_status = new_status
+	print(">>> %s recebeu status: %s <<<" % [name, new_status])
+	
+	# Feedback Visual Simples (Muda a cor para azulado se for molhado)
+	# Se você tiver um MeshInstance3D, pode pintar ele aqui.
+	# Exemplo genérico:
+	var mesh = find_child("MeshInstance3D", true, false) # Tenta achar a malha
+	if mesh and new_status == "Wet":
+		# Isso é só um exemplo, se tiver material override
+		var mat = StandardMaterial3D.new()
+		mat.albedo_color = Color(0.5, 0.5, 1.0) # Azul
+		mesh.material_override = mat
+
+# Skill do MAGO (Chama a poça no BattleManager)
+func cast_rain_skill(manager: Node, target_char: Node3D) -> void:
+	print("%s conjura POÇA D'ÁGUA em %s!" % [name, target_char.name])
+	
+	is_performing_action = true
+	
+	# Vira para o alvo
+	var look_target = Vector3(target_char.global_position.x, global_position.y, target_char.global_position.z)
+	look_at(look_target, Vector3.UP)
+	
+	# Usa animação de ataque como "Cast"
+	_set_anim_state(AnimState.ATTACKING)
+	
+	await get_tree().create_timer(1.0).timeout # Tempo da magia
+	
+	# Cria a poça visual e lógica via Manager
+	if manager.has_method("spawn_water_puddle"):
+		manager.spawn_water_puddle(target_char.global_position, 3.0)
+	else:
+		print("ERRO: BattleManager não tem spawn_water_puddle!")
+		
+	is_performing_action = false
+	has_action = false
+	_set_anim_state(AnimState.IDLE)
+
+# Skill do ARQUEIRO (Dano extra em molhados)
+func perform_lightning_arrow(target: CombatCharacter2020) -> void:
+	print("%s dispara FLECHA DE RAIO em %s!" % [name, target.name])
+	
+	is_performing_action = true
+	
+	# Vira para o alvo
+	var look_target = Vector3(target.global_position.x, global_position.y, target.global_position.z)
+	look_at(look_target, Vector3.UP)
+	
+	_set_anim_state(AnimState.ATTACKING)
+	
+	await get_tree().create_timer(0.5).timeout
+	
+	var damage = attack_power * 1.5 # Dano base da skill maior
+	
+	# --- COMBO CHECK ---
+	if target.current_status == "Wet":
+		damage *= 2.0 # Dobro de dano!
+		print(">>> COMBO! Eletrocutado (Dano: %d) <<<" % damage)
+		# Se quiser, toque um som de trovão aqui
+	else:
+		print("Dano normal de raio: %d" % damage)
+	
+	target.apply_damage(int(damage), self)
+	
+	is_performing_action = false
+	has_action = false
+	_set_anim_state(AnimState.IDLE)

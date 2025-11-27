@@ -65,8 +65,8 @@ func _ready():
 
 	# Inimigos
 	e1.global_position = get_ground_position(Vector3(3, 0, -2))
-	e2.global_position = get_ground_position(Vector3(4, 0, 0)) # Lobo mais atrás
-	e3.global_position = get_ground_position(Vector3(6, 0, -2)) # Arqueiro longe
+	e2.global_position = get_ground_position(Vector3(3, 0, 0)) # Lobo mais atrás
+	e3.global_position = get_ground_position(Vector3(6, 0, 1)) # Arqueiro longe
 	e4.global_position = get_ground_position(Vector3(6, 0, 2))  # Mago longe
 
 	add_child(p1)

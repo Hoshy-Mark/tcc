@@ -69844,6 +69844,7 @@ _data = {
 
 [node name="SkeletonMinion" type="CharacterBody3D"]
 script = ExtResource("1_o1hsu")
+attack_range = 10.0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.16888, 0)
@@ -70188,3 +70189,4 @@ libraries = {
 
 [node name="EnemyAI" type="Node" parent="."]
 script = ExtResource("3_tde5r")
+ai_behavior = 2

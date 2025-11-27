@@ -70189,4 +70189,4 @@ libraries = {
 
 [node name="EnemyAI" type="Node" parent="."]
 script = ExtResource("3_fxwq4")
-ai_behavior = 2
+ai_behavior = 3

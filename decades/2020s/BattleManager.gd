@@ -41,6 +41,7 @@ var initiative_rng_seeded := false
 # UI extras
 var attack_range_indicator: Node3D = null
 
+
 # -----------------------
 # _ready / initialize
 # -----------------------
@@ -504,3 +505,35 @@ func _get_current_actor():
 		return null
 	var idx = current_turn_index % turn_order.size()
 	return turn_order[idx] if idx >= 0 and idx < turn_order.size() else null
+	
+	
+
+# Cria uma poça visual e aplica status em quem estiver dentro
+func spawn_water_puddle(center_pos: Vector3, radius: float = 3.0) -> void:
+	print("[BattleManager] POÇA DE ÁGUA criada em: ", center_pos)
+	
+	# 1. Visual (Cilindro Achatado Azul)
+	var puddle = CSGCylinder3D.new()
+	puddle.radius = radius
+	puddle.height = 0.1
+	puddle.sides = 16
+	var material = StandardMaterial3D.new()
+	material.albedo_color = Color(0.0, 0.5, 1.0, 0.5) # Azul piscina
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	puddle.material = material
+	
+	add_child(puddle)
+	puddle.global_position = Vector3(center_pos.x, 0.05, center_pos.z) # No chão
+	
+	# 2. Lógica (Quem foi atingido?)
+	# Verifica todos os personagens (Player e Inimigos)
+	var all_chars = party_members + enemies
+	for c in all_chars:
+		if is_instance_valid(c) and c.is_alive():
+			var dist = c.global_position.distance_to(center_pos)
+			
+			# Se estiver dentro do raio da poça (desconta um pouco a altura)
+			var dist_2d = Vector2(c.global_position.x, c.global_position.z).distance_to(Vector2(center_pos.x, center_pos.z))
+			
+			if dist_2d <= radius:
+				c.apply_status("Wet")
