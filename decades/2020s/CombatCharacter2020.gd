@@ -92,27 +92,56 @@ func on_combat_end() -> void:
 # ---------------------------
 # Movement API (para player e AI)
 # ---------------------------
+
 func move_towards(target_position: Vector3, manager: Node) -> bool:
 	if nav_agent == null:
 		push_error("No nav_agent on %s" % [name])
 		return false
+		
 	var from = global_position
 	var distance = from.distance_to(target_position)
+	
 	if not manager.can_move_character(self, from, target_position, distance):
 		return false
+
+	# 1. Configura destino
 	nav_agent.target_position = target_position
 	remaining_movement = max(0.0, remaining_movement - distance)
 	is_performing_action = true
 
-	# Faz o personagem olhar para a direção do destino imediatamente (bom para feedback)
-	var dir = (target_position - global_position)
-	if dir.length() > 0.001:
-		# preserva rotação apenas no eixo Y
-		var look_target = global_position + Vector3(dir.x, 0, dir.z)
+	# 2. Vira o boneco (Feedback visual instantâneo)
+	var dir_look = (target_position - global_position)
+	if dir_look.length() > 0.001:
+		var look_target = global_position + Vector3(dir_look.x, 0, dir_look.z)
 		look_at(look_target, Vector3.UP)
 
-	# AGORA aguardamos corretamente até chegar
-	await yield_to_arrival()
+	
+	var time_elapsed = 0.0
+	var timeout_limit = 3.0 # SE FICAR ANDANDO POR MAIS DE 3 SEGUNDOS, ELE DESISTE
+	
+	# Espera o servidor de física calcular a rota inicial
+	await get_tree().physics_frame
+
+	# Loop: Enquanto não chegou ao destino...
+	while not nav_agent.is_navigation_finished():
+		
+		# Move o boneco (Simples, sem detecção de travamento complexa)
+		var next_pos = nav_agent.get_next_path_position()
+		var move_dir = (next_pos - global_position).normalized()
+		velocity = move_dir * 2.0 # Velocidade fixa 
+		move_and_slide()
+		
+		time_elapsed += get_physics_process_delta_time()
+		
+		# O "IF" QUE VOCÊ PEDIU:
+		if time_elapsed > timeout_limit:
+			print("[%s] Timeout! Demorou demais (%ss), parando movimento." % [name, timeout_limit])
+			break # Quebra o loop e segue a vida (passa o turno)
+			
+		await get_tree().physics_frame
+
+
+	velocity = Vector3.ZERO # Garante que parou
 	is_performing_action = false
 
 	return true
