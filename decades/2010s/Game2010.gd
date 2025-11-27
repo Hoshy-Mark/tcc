@@ -7,7 +7,7 @@ var enemy_healthbar_scene := preload("res://decades/2010s/UI/EnemyHealthBar.tscn
 
 @onready var battle_manager := $BattleManager2010
 @onready var ui_layer := $UI
-
+#
 func _ready():
 	var arena = arena_scene.instantiate()
 	add_child(arena)

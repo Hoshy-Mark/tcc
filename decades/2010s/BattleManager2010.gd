@@ -48,18 +48,36 @@ func _spawn_player() -> void:
 	player_character.connect("died", Callable(self, "_on_character_death"))
 	emit_signal("player_spawned", player_character)
 
-
 func _spawn_enemies(count: int) -> void:
-	for i in range(count):
-		var scene = enemy_paths[randi() % enemy_paths.size()]
+	# Definição fixa do esquadrão para demonstrar a IA
+	var squad_roles = ["Tank", "Healer", "DPS"]
+	
+	# Limpa lista anterior
+	enemies.clear()
+	
+	for i in range(min(count, squad_roles.size())):
+
+		var scene = enemy_paths[0] 
 		var enemy = scene.instantiate()
+		
 		add_child(enemy)
 		enemy.global_position = spawn_positions[i % spawn_positions.size()]
 		enemy.manual_control = false
+		
+		# CONFIGURA O ROLE
+		if enemy is EnemyAI:
+			enemy.role = squad_roles[i]
+			enemy.name = "Enemy_" + squad_roles[i] # Ex: Enemy_Tank
+			print("Spawnando Inimigo: " + enemy.role)
+		
 		enemies.append(enemy)
 		enemy.connect("died", Callable(self, "_on_character_death"))
 		emit_signal("enemy_spawned", enemy)
-
+		
+	# Atualiza a lista dpara o Healer saber quem curar
+	for enemy in enemies:
+		if enemy is EnemyAI:
+			enemy.squad_mates = enemies
 
 func _input(event) -> void:
 	if not player_character:

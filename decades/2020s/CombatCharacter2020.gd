@@ -11,6 +11,9 @@ class_name CombatCharacter2020
 @export var crit_chance := 5 # %
 @export var attack_range := 2.0
 @export var is_player_controlled := false
+
+var current_status: String = "" # Ex: "Wet"
+
 # --- Movement / navigation ---
 @onready var nav_agent: NavigationAgent3D = $NavigationAgent3D
 var remaining_movement := 0.0
@@ -92,27 +95,56 @@ func on_combat_end() -> void:
 # ---------------------------
 # Movement API (para player e AI)
 # ---------------------------
+
 func move_towards(target_position: Vector3, manager: Node) -> bool:
 	if nav_agent == null:
 		push_error("No nav_agent on %s" % [name])
 		return false
+		
 	var from = global_position
 	var distance = from.distance_to(target_position)
+	
 	if not manager.can_move_character(self, from, target_position, distance):
 		return false
+
+	# 1. Configura destino
 	nav_agent.target_position = target_position
 	remaining_movement = max(0.0, remaining_movement - distance)
 	is_performing_action = true
 
-	# Faz o personagem olhar para a direção do destino imediatamente (bom para feedback)
-	var dir = (target_position - global_position)
-	if dir.length() > 0.001:
-		# preserva rotação apenas no eixo Y
-		var look_target = global_position + Vector3(dir.x, 0, dir.z)
+	# 2. Vira o boneco (Feedback visual instantâneo)
+	var dir_look = (target_position - global_position)
+	if dir_look.length() > 0.001:
+		var look_target = global_position + Vector3(dir_look.x, 0, dir_look.z)
 		look_at(look_target, Vector3.UP)
 
-	# AGORA aguardamos corretamente até chegar
-	await yield_to_arrival()
+	
+	var time_elapsed = 0.0
+	var timeout_limit = 3.0 # SE FICAR ANDANDO POR MAIS DE 3 SEGUNDOS, ELE DESISTE
+	
+	# Espera o servidor de física calcular a rota inicial
+	await get_tree().physics_frame
+
+	# Loop: Enquanto não chegou ao destino...
+	while not nav_agent.is_navigation_finished():
+		
+		# Move o boneco (Simples, sem detecção de travamento complexa)
+		var next_pos = nav_agent.get_next_path_position()
+		var move_dir = (next_pos - global_position).normalized()
+		velocity = move_dir * 2.0 # Velocidade fixa 
+		move_and_slide()
+		
+		time_elapsed += get_physics_process_delta_time()
+		
+		# O "IF" QUE VOCÊ PEDIU:
+		if time_elapsed > timeout_limit:
+			print("[%s] Timeout! Demorou demais (%ss), parando movimento." % [name, timeout_limit])
+			break # Quebra o loop e segue a vida (passa o turno)
+			
+		await get_tree().physics_frame
+
+
+	velocity = Vector3.ZERO # Garante que parou
 	is_performing_action = false
 
 	return true
@@ -354,3 +386,111 @@ func perform_defend():
 	is_defending = true
 	_set_anim_state(AnimState.DEFENDING)
 	defense += 5
+
+func apply_status(new_status: String) -> void:
+	if current_status == new_status:
+		return
+	
+	current_status = new_status
+	print(">>> %s recebeu status: %s <<<" % [name, new_status])
+	
+	# Feedback Visual Simples (Muda a cor para azulado se for molhado)
+	# Se você tiver um MeshInstance3D, pode pintar ele aqui.
+	# Exemplo genérico:
+	var mesh = find_child("MeshInstance3D", true, false) # Tenta achar a malha
+	if mesh and new_status == "Wet":
+		# Isso é só um exemplo, se tiver material override
+		var mat = StandardMaterial3D.new()
+		mat.albedo_color = Color(0.5, 0.5, 1.0) # Azul
+		mesh.material_override = mat
+
+# Skill do MAGO (Chama a poça no BattleManager)
+func cast_rain_skill(manager: Node, target_char: Node3D) -> void:
+	print("%s conjura POÇA D'ÁGUA em %s!" % [name, target_char.name])
+	
+	is_performing_action = true
+	
+	# Vira para o alvo
+	var look_target = Vector3(target_char.global_position.x, global_position.y, target_char.global_position.z)
+	look_at(look_target, Vector3.UP)
+	
+	# Usa animação de ataque como "Cast"
+	_set_anim_state(AnimState.ATTACKING)
+	
+	await get_tree().create_timer(1.0).timeout # Tempo da magia
+	
+	# Cria a poça visual e lógica via Manager
+	if manager.has_method("spawn_water_puddle"):
+		manager.spawn_water_puddle(target_char.global_position, 3.0)
+	else:
+		print("ERRO: BattleManager não tem spawn_water_puddle!")
+		
+	is_performing_action = false
+	has_action = false
+	_set_anim_state(AnimState.IDLE)
+
+# Skill do ARQUEIRO (Dano extra em molhados)
+func perform_lightning_arrow(target: CombatCharacter2020) -> void:
+	print("%s dispara FLECHA DE RAIO em %s!" % [name, target.name])
+	
+	is_performing_action = true
+	
+	var look_target = Vector3(target.global_position.x, global_position.y, target.global_position.z)
+	look_at(look_target, Vector3.UP)
+	_set_anim_state(AnimState.ATTACKING)
+	
+	await get_tree().create_timer(0.5).timeout
+	
+	# --- VISUAL NOVO ---
+	# Desenha um raio Amarelo (se for combo) ou Branco (se for normal)
+	if target.current_status == "Wet":
+		create_visual_beam(target.global_position, Color(1, 1, 0)) # Amarelo Ouro
+	else:
+		create_visual_beam(target.global_position, Color(0.8, 0.8, 1.0)) # Azulado fraco
+	# -------------------
+
+	var damage = attack_power * 1.5 
+	if target.current_status == "Wet":
+		damage *= 2.0 
+		print(">>> COMBO! Eletrocutado (Dano: %d) <<<" % damage)
+	
+	target.apply_damage(int(damage), self)
+	
+	is_performing_action = false
+	has_action = false
+	_set_anim_state(AnimState.IDLE)
+
+func create_visual_beam(target_pos: Vector3, color: Color) -> void:
+	# Cria o objeto do raio
+	var beam = MeshInstance3D.new()
+	var mesh = BoxMesh.new()
+	
+	# Calcula a distância até o alvo
+	var start_pos = global_position + Vector3(0, 1.0, 0) # Sai do peito do personagem
+	var end_pos = target_pos + Vector3(0, 1.0, 0)       # Vai no peito do alvo
+	var dist = start_pos.distance_to(end_pos)
+	
+	# Configura o tamanho (Comprimento = distancia, Espessura = 0.1)
+	mesh.size = Vector3(0.1, 0.1, dist)
+	
+	# Configura a cor (Brilhante)
+	var mat = StandardMaterial3D.new()
+	mat.albedo_color = color
+	mat.emission_enabled = true
+	mat.emission = color
+	mat.emission_energy_multiplier = 5.0 # Brilho forte
+	mesh.material = mat
+	beam.mesh = mesh
+	
+	# Adiciona na cena
+	get_parent().add_child(beam)
+	
+	# Posiciona no meio do caminho
+	beam.global_position = (start_pos + end_pos) / 2.0
+	
+	# Aponta para o alvo
+	beam.look_at(end_pos, Vector3.UP)
+	
+	# O Raio pisca e some rápido
+	await get_tree().create_timer(0.2).timeout
+	beam.queue_free()

@@ -1,7 +1,8 @@
-[gd_scene load_steps=112 format=4 uid="uid://bsojt2edma5cc"]
+[gd_scene load_steps=113 format=4 uid="uid://d33ntx0bhy8wq"]
 
-[ext_resource type="Script" uid="uid://b3hfl62y4ina7" path="res://decades/2020s/EnemyCharacter2020.gd" id="1_8r6gr"]
-[ext_resource type="Texture2D" uid="uid://wnh22ew4tyee" path="res://assets/Models/Enemies/Skeleton_Minion_skeleton_texture.png" id="2_y0dwg"]
+[ext_resource type="Script" uid="uid://b3hfl62y4ina7" path="res://decades/2020s/EnemyCharacter2020.gd" id="1_o1hsu"]
+[ext_resource type="Texture2D" uid="uid://wnh22ew4tyee" path="res://assets/Models/Enemies/Skeleton_Minion_skeleton_texture.png" id="2_p0xm3"]
+[ext_resource type="Script" uid="uid://0jc3yoxgp2ar" path="res://decades/2020s/EnemyAI.gd" id="3_tde5r"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_ppkbm"]
 radius = 0.632112
@@ -9,7 +10,7 @@ height = 2.51494
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0ufpu"]
 resource_name = "skeleton"
-albedo_texture = ExtResource("2_y0dwg")
+albedo_texture = ExtResource("2_p0xm3")
 roughness = 0.5
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_02cw4"]
@@ -69842,13 +69843,15 @@ _data = {
 }
 
 [node name="SkeletonMinion" type="CharacterBody3D"]
-script = ExtResource("1_8r6gr")
+script = ExtResource("1_o1hsu")
+attack_range = 10.0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.16888, 0)
 shape = SubResource("CapsuleShape3D_ppkbm")
 
 [node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+target_desired_distance = 0.2
 
 [node name="Skeleton_Minion" type="Node3D" parent="."]
 
@@ -70183,3 +70186,7 @@ skin = SubResource("Skin_b328l")
 libraries = {
 &"": SubResource("AnimationLibrary_47pcu")
 }
+
+[node name="EnemyAI" type="Node" parent="."]
+script = ExtResource("3_tde5r")
+ai_behavior = 2

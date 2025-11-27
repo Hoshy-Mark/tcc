@@ -8,6 +8,15 @@ var anim: AnimationPlayer = null
 var model: Node3D = null
 @onready var nav_agent: NavigationAgent3D = $NavigationAgent3D if has_node("NavigationAgent3D") else null
 
+
+var health_bar: Control = null 
+var health_bar_scene := preload("res://decades/2010s/UI/EnemyHealthBar.tscn") 
+
+# pra ia ------------------------------
+var last_attacker: CombatCharacter = null
+var time_since_last_hit: float = 0.0
+# -----------------------------------
+
 # --- Atributos ---
 var max_hp: int = 100
 var hp: int = 100
@@ -18,7 +27,7 @@ var stamina_regen_idle: float = 12.0   # souls-like: regen mais lento
 var stamina_regen_walk: float = 6.0
 var stamina_regen_run: float = 0.0
 
-var attack_power: int = 20
+var attack_power: int = 200
 var defense_rating: float = 20.0
 
 # Movimento
@@ -104,6 +113,11 @@ func _process(delta: float) -> void:
 		regen = stamina_regen_idle
 
 	stamina = clamp(stamina + regen * delta, 0.0, max_stamina)
+	
+	if last_attacker:
+		time_since_last_hit += delta
+		if time_since_last_hit > 5.0: # Esquece o agressor depois de 5s
+			last_attacker = null
 
 
 func _physics_process(delta: float) -> void:
@@ -296,9 +310,22 @@ func _finish_attack():
 	anim.play("Idle")
 
 func _apply_attack_hit(is_heavy: bool):
+	
+	print("--- DEBUG ATAQUE ---")
+	print("Atacante: ", name)
+	print("Range configurado: ", attack_range)
+	
+	# Calcula onde começa e onde termina o golpe
 	var from = global_transform.origin + Vector3(0, 1.2, 0)
-	var forward = global_transform.basis.z.normalized()
+	var forward = global_transform.basis.z.normalized() # Verifica se isso aponta pra frente ou pra trás
 	var to = from + forward * attack_range
+	
+	# Se tiver um alvo atual, vamos ver a distância real
+	if current_target:
+		var dist = global_position.distance_to(current_target.global_position)
+		print("Distância real até o alvo: ", dist)
+	
+	print("Sweep vai de ", from, " até ", to)
 
 	var swe = _perform_attack_sweep(from, to, 0.6)
 
@@ -336,6 +363,11 @@ func _on_attack_anim_finished(anim_name):
 
 # receive_hit agora recebe opcional hitstop_duration
 func receive_hit(incoming: int, attacker: CombatCharacter, hit_pos: Vector3, hit_normal: Vector3, hitstop_duration: float = 0.5) -> void:
+	
+	if attacker:
+		last_attacker = attacker
+		time_since_last_hit = 0.0
+	
 	# se estiver em dodge com iframes, evita tudo
 	if state == State.DODGING:
 		return
@@ -378,6 +410,7 @@ func receive_hit(incoming: int, attacker: CombatCharacter, hit_pos: Vector3, hit
 			anim.play("Hit_B")
 			anim.speed_scale = 2.0
 		hp -= final
+		print("🩸 [DANO] %s tomou %d de dano! (HP Restante: %d/%d)" % [name, final, hp, max_hp])
 		var dir = global_position - attacker.global_position
 		dir.y = 0
 		if dir.length() > 0.001:
@@ -507,3 +540,15 @@ func is_alive() -> bool:
 
 func set_camera(cam: ThirdPersonCamera3D):
 	camera = cam
+
+# --- FUNÇÃO DE CURA ---
+func apply_heal(amount: int, healer_name: String = "Alguém"):
+	var old_hp = hp
+	hp = min(hp + amount, max_hp)
+	var healed_amount = hp - old_hp
+	
+	print("💚 [CURA] %s foi curado por %s (+%d)! (HP: %d/%d)" % [name, healer_name, healed_amount, hp, max_hp])
+	
+	# Se tiver barra de vida, atualiza
+	if health_bar:
+		health_bar.set_health(hp, max_hp)
