@@ -1,5 +1,5 @@
 extends CombatCharacter
-class_name EnemyAI
+class_name EnemyAI2010
 
 # Define o papel do inimigo no grupo
 @export_enum("Tank", "Healer", "DPS") var role: String = "DPS"
