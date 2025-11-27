@@ -65,7 +65,7 @@ func _spawn_enemies(count: int) -> void:
 		enemy.manual_control = false
 		
 		# CONFIGURA O ROLE
-		if enemy is EnemyAI:
+		if enemy is EnemyAI2010:
 			enemy.role = squad_roles[i]
 			enemy.name = "Enemy_" + squad_roles[i] # Ex: Enemy_Tank
 			print("Spawnando Inimigo: " + enemy.role)
@@ -76,7 +76,7 @@ func _spawn_enemies(count: int) -> void:
 		
 	# Atualiza a lista dpara o Healer saber quem curar
 	for enemy in enemies:
-		if enemy is EnemyAI:
+		if enemy is EnemyAI2010:
 			enemy.squad_mates = enemies
 
 func _input(event) -> void:
