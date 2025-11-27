@@ -435,26 +435,62 @@ func perform_lightning_arrow(target: CombatCharacter2020) -> void:
 	
 	is_performing_action = true
 	
-	# Vira para o alvo
 	var look_target = Vector3(target.global_position.x, global_position.y, target.global_position.z)
 	look_at(look_target, Vector3.UP)
-	
 	_set_anim_state(AnimState.ATTACKING)
 	
 	await get_tree().create_timer(0.5).timeout
 	
-	var damage = attack_power * 1.5 # Dano base da skill maior
-	
-	# --- COMBO CHECK ---
+	# --- VISUAL NOVO ---
+	# Desenha um raio Amarelo (se for combo) ou Branco (se for normal)
 	if target.current_status == "Wet":
-		damage *= 2.0 # Dobro de dano!
-		print(">>> COMBO! Eletrocutado (Dano: %d) <<<" % damage)
-		# Se quiser, toque um som de trovão aqui
+		create_visual_beam(target.global_position, Color(1, 1, 0)) # Amarelo Ouro
 	else:
-		print("Dano normal de raio: %d" % damage)
+		create_visual_beam(target.global_position, Color(0.8, 0.8, 1.0)) # Azulado fraco
+	# -------------------
+
+	var damage = attack_power * 1.5 
+	if target.current_status == "Wet":
+		damage *= 2.0 
+		print(">>> COMBO! Eletrocutado (Dano: %d) <<<" % damage)
 	
 	target.apply_damage(int(damage), self)
 	
 	is_performing_action = false
 	has_action = false
 	_set_anim_state(AnimState.IDLE)
+
+func create_visual_beam(target_pos: Vector3, color: Color) -> void:
+	# Cria o objeto do raio
+	var beam = MeshInstance3D.new()
+	var mesh = BoxMesh.new()
+	
+	# Calcula a distância até o alvo
+	var start_pos = global_position + Vector3(0, 1.0, 0) # Sai do peito do personagem
+	var end_pos = target_pos + Vector3(0, 1.0, 0)       # Vai no peito do alvo
+	var dist = start_pos.distance_to(end_pos)
+	
+	# Configura o tamanho (Comprimento = distancia, Espessura = 0.1)
+	mesh.size = Vector3(0.1, 0.1, dist)
+	
+	# Configura a cor (Brilhante)
+	var mat = StandardMaterial3D.new()
+	mat.albedo_color = color
+	mat.emission_enabled = true
+	mat.emission = color
+	mat.emission_energy_multiplier = 5.0 # Brilho forte
+	mesh.material = mat
+	beam.mesh = mesh
+	
+	# Adiciona na cena
+	get_parent().add_child(beam)
+	
+	# Posiciona no meio do caminho
+	beam.global_position = (start_pos + end_pos) / 2.0
+	
+	# Aponta para o alvo
+	beam.look_at(end_pos, Vector3.UP)
+	
+	# O Raio pisca e some rápido
+	await get_tree().create_timer(0.2).timeout
+	beam.queue_free()
