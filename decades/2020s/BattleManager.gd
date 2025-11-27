@@ -510,30 +510,41 @@ func _get_current_actor():
 
 # Cria uma poça visual e aplica status em quem estiver dentro
 func spawn_water_puddle(center_pos: Vector3, radius: float = 3.0) -> void:
-	print("[BattleManager] POÇA DE ÁGUA criada em: ", center_pos)
+	print("[BattleManager] CRIANDO VISUAL DA POÇA em: ", center_pos)
 	
-	# 1. Visual (Cilindro Achatado Azul)
-	var puddle = CSGCylinder3D.new()
-	puddle.radius = radius
-	puddle.height = 0.1
-	puddle.sides = 16
+	# 1. Visual (Usando MeshInstance3D que é mais confiável)
+	var puddle_node = MeshInstance3D.new()
+	var mesh = CylinderMesh.new()
+	
+	# Configurações da forma
+	mesh.top_radius = radius
+	mesh.bottom_radius = radius
+	mesh.height = 0.2 # Um pouco mais grossa pra garantir que aparece
+	
+	# Configurações da cor (Material)
 	var material = StandardMaterial3D.new()
-	material.albedo_color = Color(0.0, 0.5, 1.0, 0.5) # Azul piscina
+	material.albedo_color = Color(0.0, 0.5, 1.0, 0.7) # Azul bem visível
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	puddle.material = material
+	material.emission_enabled = true 
+	material.emission = Color(0.0, 0.2, 0.8) # Faz brilhar um pouco pra destacar
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED # Renderiza dos dois lados
 	
-	add_child(puddle)
-	puddle.global_position = Vector3(center_pos.x, 0.05, center_pos.z) # No chão
+	mesh.material = material
+	puddle_node.mesh = mesh
 	
-	# 2. Lógica (Quem foi atingido?)
-	# Verifica todos os personagens (Player e Inimigos)
+	# Adiciona na cena
+	add_child(puddle_node)
+	
+	# Posiciona levemente acima do chão para não misturar com o piso
+	puddle_node.global_position = Vector3(center_pos.x, 1.0, center_pos.z)
+	
+	# 2. Lógica (Aplica o status Molhado em quem estiver perto)
 	var all_chars = party_members + enemies
 	for c in all_chars:
 		if is_instance_valid(c) and c.is_alive():
-			var dist = c.global_position.distance_to(center_pos)
+			# Calcula distância ignorando altura (2D)
+			var pos_char = Vector2(c.global_position.x, c.global_position.z)
+			var pos_puddle = Vector2(center_pos.x, center_pos.z)
 			
-			# Se estiver dentro do raio da poça (desconta um pouco a altura)
-			var dist_2d = Vector2(c.global_position.x, c.global_position.z).distance_to(Vector2(center_pos.x, center_pos.z))
-			
-			if dist_2d <= radius:
+			if pos_char.distance_to(pos_puddle) <= (radius + 0.5): # +0.5 de margem
 				c.apply_status("Wet")
