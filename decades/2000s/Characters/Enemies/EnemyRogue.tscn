@@ -1,18 +1,18 @@
-[gd_scene load_steps=112 format=4 uid="uid://bsojt2edma5cc"]
+[gd_scene load_steps=114 format=4 uid="uid://e0hxdovt5lud"]
 
-[ext_resource type="Script" uid="uid://b3hfl62y4ina7" path="res://decades/2020s/EnemyCharacter2020.gd" id="1_8r6gr"]
-[ext_resource type="Texture2D" uid="uid://wnh22ew4tyee" path="res://assets/Models/Enemies/Skeleton_Minion_skeleton_texture.png" id="2_y0dwg"]
+[ext_resource type="Script" uid="uid://cn83soa6lgpmi" path="res://decades/2000s/Characters/Enemies/EnemyUnit2000.gd" id="1_67ryd"]
+[ext_resource type="Texture2D" uid="uid://wnh22ew4tyee" path="res://assets/Models/Enemies/Skeleton_Minion_skeleton_texture.png" id="2_05vef"]
 
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_ppkbm"]
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_7g1it"]
 radius = 0.632112
 height = 2.51494
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0ufpu"]
 resource_name = "skeleton"
-albedo_texture = ExtResource("2_y0dwg")
+albedo_texture = ExtResource("2_05vef")
 roughness = 0.5
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_02cw4"]
+[sub_resource type="ArrayMesh" id="ArrayMesh_65ic5"]
 resource_name = "Skeleton_Minion_Skeleton_Minion_ArmLeft"
 _surfaces = [{
 "aabb": AABB(0.136023, 1.00492, -0.0894205, 0.833069, 0.197241, 0.178845),
@@ -32,7 +32,7 @@ _surfaces = [{
 }]
 blend_shape_mode = 0
 
-[sub_resource type="Skin" id="Skin_b328l"]
+[sub_resource type="Skin" id="Skin_awhia"]
 resource_name = "Skin"
 bind_count = 41
 bind/0/name = &"root"
@@ -159,7 +159,7 @@ bind/40/name = &"handIK.r"
 bind/40/bone = -1
 bind/40/pose = Transform3D(-2.84217e-14, 7.5498e-08, -1, -1, 3.78925e-15, 8.52651e-14, 2.14578e-21, 1, 7.5498e-08, 1.32019e-09, -0.713182, -1.10676)
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_riol2"]
+[sub_resource type="ArrayMesh" id="ArrayMesh_y23hx"]
 resource_name = "Skeleton_Minion_Skeleton_Minion_ArmRight"
 _surfaces = [{
 "aabb": AABB(-0.969092, 1.00492, -0.0894205, 0.833069, 0.197241, 0.178845),
@@ -179,7 +179,7 @@ _surfaces = [{
 }]
 blend_shape_mode = 0
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_5n6hy"]
+[sub_resource type="ArrayMesh" id="ArrayMesh_65yyp"]
 resource_name = "Skeleton_Minion_Skeleton_Minion_Body"
 _surfaces = [{
 "aabb": AABB(-0.368774, 0.3764, -0.34143, 0.737629, 1.04823, 0.688008),
@@ -199,7 +199,7 @@ _surfaces = [{
 }]
 blend_shape_mode = 0
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_ku7hm"]
+[sub_resource type="ArrayMesh" id="ArrayMesh_o33qj"]
 resource_name = "Skeleton_Minion_Skeleton_Minion_Cloak"
 _surfaces = [{
 "aabb": AABB(-0.435662, 0.797562, -0.358233, 0.871323, 0.514167, 0.744846),
@@ -225,7 +225,7 @@ metallic = 1.0
 emission_enabled = true
 emission = Color(1, 1, 0.468168, 1)
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_sfonp"]
+[sub_resource type="ArrayMesh" id="ArrayMesh_6oy0n"]
 resource_name = "Skeleton_Minion_Skeleton_Minion_Eyes"
 _surfaces = [{
 "aabb": AABB(-0.229777, 1.57773, 0.222439, 0.459573, 0.126404, 0.0755217),
@@ -245,7 +245,7 @@ _surfaces = [{
 }]
 blend_shape_mode = 0
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_1kajb"]
+[sub_resource type="ArrayMesh" id="ArrayMesh_adk5m"]
 resource_name = "Skeleton_Minion_Skeleton_Minion_Head"
 _surfaces = [{
 "aabb": AABB(-0.435429, 1.31384, -0.45842, 0.870857, 0.852244, 0.912233),
@@ -265,7 +265,7 @@ _surfaces = [{
 }]
 blend_shape_mode = 0
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_suuuj"]
+[sub_resource type="ArrayMesh" id="ArrayMesh_eai66"]
 resource_name = "Skeleton_Minion_Skeleton_Minion_Jaw"
 _surfaces = [{
 "aabb": AABB(-0.22748, 1.19329, -0.0838439, 0.454979, 0.32313, 0.398563),
@@ -284,7 +284,7 @@ _surfaces = [{
 }]
 blend_shape_mode = 0
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_s044s"]
+[sub_resource type="ArrayMesh" id="ArrayMesh_2b7fe"]
 resource_name = "Skeleton_Minion_Skeleton_Minion_LegLeft"
 _surfaces = [{
 "aabb": AABB(0.0495432, -2.64585e-05, -0.130807, 0.238214, 0.529221, 0.388934),
@@ -304,7 +304,7 @@ _surfaces = [{
 }]
 blend_shape_mode = 0
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_kjqbb"]
+[sub_resource type="ArrayMesh" id="ArrayMesh_qvs1g"]
 resource_name = "Skeleton_Minion_Skeleton_Minion_LegRight"
 _surfaces = [{
 "aabb": AABB(-0.287757, -2.64585e-05, -0.130807, 0.238214, 0.529221, 0.388934),
@@ -46315,10 +46315,129 @@ tracks/85/keys = PackedFloat32Array(0, 1, -6.31128e-09, 0.16565, 1.36608e-09)
 tracks/86/type = "rotation_3d"
 tracks/86/imported = true
 tracks/86/enabled = true
-tracks/86/path = NodePath("")
+tracks/86/path = NodePath("Rig/Skeleton3D:heelIK.r")
 tracks/86/interp = 1
 tracks/86/loop_wrap = true
-tracks/86/keys = PackedFloat32Array()
+tracks/86/keys = PackedFloat32Array(0, 1, -0.391084, -6.71587e-08, -6.34937e-08, 0.920355)
+tracks/87/type = "scale_3d"
+tracks/87/imported = true
+tracks/87/enabled = true
+tracks/87/path = NodePath("Rig/Skeleton3D:heelIK.r")
+tracks/87/interp = 1
+tracks/87/loop_wrap = true
+tracks/87/keys = PackedFloat32Array(0, 1, 1, 1, 1)
+tracks/88/type = "rotation_3d"
+tracks/88/imported = true
+tracks/88/enabled = true
+tracks/88/path = NodePath("Rig/Skeleton3D:IK-foot.r")
+tracks/88/interp = 1
+tracks/88/loop_wrap = true
+tracks/88/keys = PackedFloat32Array(0, 1, -1, 3.7031e-09, -1.94661e-07, 7.21021e-16, 0.766667, 1, -1, -3.45408e-09, -1.9487e-07, -7.14014e-09, 0.8, 1, 1, 3.76526e-09, 1.94879e-07, 7.45058e-09)
+tracks/89/type = "scale_3d"
+tracks/89/imported = true
+tracks/89/enabled = true
+tracks/89/path = NodePath("Rig/Skeleton3D:IK-foot.r")
+tracks/89/interp = 1
+tracks/89/loop_wrap = true
+tracks/89/keys = PackedFloat32Array(0, 1, 1, 1, 1)
+tracks/90/type = "rotation_3d"
+tracks/90/imported = true
+tracks/90/enabled = true
+tracks/90/path = NodePath("Rig/Skeleton3D:IK-toe.r")
+tracks/90/interp = 1
+tracks/90/loop_wrap = true
+tracks/90/keys = PackedFloat32Array(0, 1, 8.99737e-16, 5.93744e-10, -1.62611e-08, 1)
+tracks/91/type = "scale_3d"
+tracks/91/imported = true
+tracks/91/enabled = true
+tracks/91/path = NodePath("Rig/Skeleton3D:IK-toe.r")
+tracks/91/interp = 1
+tracks/91/loop_wrap = true
+tracks/91/keys = PackedFloat32Array(0, 1, 1, 1, 1)
+tracks/92/type = "position_3d"
+tracks/92/imported = true
+tracks/92/enabled = true
+tracks/92/path = NodePath("Rig/Skeleton3D:elbowIK.l")
+tracks/92/interp = 1
+tracks/92/loop_wrap = true
+tracks/92/keys = PackedFloat32Array(0, 1, 1.34279, 1.06752, -0.926714, 0.0333333, 1, 1.33829, 1.06772, -0.925003, 0.0666667, 1, 1.3253, 1.0683, -0.920066, 0.1, 1, 1.30458, 1.06921, -0.912197, 0.133333, 1, 1.27692, 1.07043, -0.901688, 0.166667, 1, 1.24308, 1.07192, -0.888832, 0.2, 1, 1.20384, 1.07366, -0.873924, 0.233333, 1, 1.15997, 1.07559, -0.857256, 0.266667, 1, 1.11224, 1.0777, -0.839122, 0.3, 1, 1.06142, 1.07994, -0.819815, 0.333333, 1, 1.00828, 1.08228, -0.799627, 0.366667, 1, 0.953602, 1.0847, -0.778854, 0.433333, 1, 0.842698, 1.08959, -0.73672, 0.466667, 1, 0.788019, 1.092, -0.715946, 0.5, 1, 0.734883, 1.09435, -0.695759, 0.533333, 1, 0.684063, 1.09659, -0.676451, 0.566667, 1, 0.636331, 1.09869, -0.658317, 0.6, 1, 0.592458, 1.10063, -0.641649, 0.633333, 1, 0.553218, 1.10236, -0.626741, 0.666667, 1, 0.51938, 1.10385, -0.613886, 0.7, 1, 0.491719, 1.10508, -0.603377, 0.733333, 1, 0.471005, 1.10599, -0.595507, 0.766667, 1, 0.458011, 1.10656, -0.59057, 0.8, 1, 0.453507, 1.10676, -0.588859)
+tracks/93/type = "rotation_3d"
+tracks/93/imported = true
+tracks/93/enabled = true
+tracks/93/path = NodePath("Rig/Skeleton3D:elbowIK.l")
+tracks/93/interp = 1
+tracks/93/loop_wrap = true
+tracks/93/keys = PackedFloat32Array(0, 1, -0.707107, -7.27951e-08, -7.27951e-08, 0.707107)
+tracks/94/type = "scale_3d"
+tracks/94/imported = true
+tracks/94/enabled = true
+tracks/94/path = NodePath("Rig/Skeleton3D:elbowIK.l")
+tracks/94/interp = 1
+tracks/94/loop_wrap = true
+tracks/94/keys = PackedFloat32Array(0, 1, 1, 1, 1)
+tracks/95/type = "position_3d"
+tracks/95/imported = true
+tracks/95/enabled = true
+tracks/95/path = NodePath("Rig/Skeleton3D:handIK.l")
+tracks/95/interp = 1
+tracks/95/loop_wrap = true
+tracks/95/keys = PackedFloat32Array(0, 1, 0.46357, 0.852489, -0.312663, 0.0333333, 1, 0.465471, 0.853609, -0.306551, 0.0666667, 1, 0.470629, 0.856648, -0.289826, 0.1, 1, 0.478232, 0.861127, -0.264903, 0.133333, 1, 0.487463, 0.866565, -0.234199, 0.166667, 1, 0.497509, 0.872483, -0.200129, 0.2, 1, 0.507554, 0.878402, -0.165112, 0.233333, 1, 0.516786, 0.88384, -0.131561, 0.266667, 1, 0.524388, 0.888319, -0.101894, 0.3, 1, 0.529547, 0.891358, -0.0785275, 0.333333, 1, 0.531447, 0.892477, -0.0638765, 0.366667, 1, 0.531293, 0.882748, -0.0558822, 0.4, 1, 0.53086, 0.858424, -0.0505235, 0.466667, 1, 0.529344, 0.795181, -0.045604, 0.5, 1, 0.528355, 0.770857, -0.044989, 0.533333, 1, 0.527273, 0.761127, -0.0449012, 0.566667, 1, 0.526144, 0.762296, -0.0454484, 0.6, 1, 0.525015, 0.765375, -0.0468912, 0.633333, 1, 0.523933, 0.769729, -0.048931, 0.7, 1, 0.522093, 0.779711, -0.0536075, 0.733333, 1, 0.521428, 0.784065, -0.0556473, 0.766667, 1, 0.520995, 0.787144, -0.0570901, 0.8, 1, 0.520841, 0.788312, -0.0576373)
+tracks/96/type = "rotation_3d"
+tracks/96/imported = true
+tracks/96/enabled = true
+tracks/96/path = NodePath("Rig/Skeleton3D:handIK.l")
+tracks/96/interp = 1
+tracks/96/loop_wrap = true
+tracks/96/keys = PackedFloat32Array(0, 1, 0.530302, 0.193971, 0.775151, 0.283363, 0.0333333, 1, 0.533535, 0.200493, 0.770538, 0.285332, 0.0666667, 1, 0.542407, 0.218108, 0.757556, 0.290401, 0.1, 1, 0.555549, 0.243863, 0.737254, 0.297241, 0.133333, 1, 0.571542, 0.274682, 0.71076, 0.304482, 0.166667, 1, 0.589076, 0.307368, 0.679644, 0.310803, 0.2, 1, 0.607116, 0.338728, 0.646083, 0.31504, 0.233333, 1, 0.625029, 0.365747, 0.61282, 0.316258, 0.266667, 1, 0.642611, 0.385714, 0.582953, 0.313754, 0.3, 1, 0.659979, 0.396182, 0.559682, 0.306957, 0.333333, 1, 0.677334, 0.394749, 0.54609, 0.295259, 0.366667, 1, 0.695189, 0.382303, 0.541125, 0.27882, 0.4, 1, 0.713584, 0.362099, 0.541104, 0.258629, 0.433333, 1, 0.731737, 0.335101, 0.544938, 0.235183, 0.466667, 1, 0.748787, 0.302385, 0.551517, 0.20907, 0.5, 1, 0.763909, 0.265228, 0.559756, 0.181027, 0.566667, 1, 0.785954, 0.183817, 0.577407, 0.122836, 0.6, 1, 0.792397, 0.143066, 0.58537, 0.0947691, 0.633333, 1, 0.79602, 0.104661, 0.592171, 0.0687885, 0.666667, 1, 0.797358, 0.0702566, 0.597647, 0.0458528, 0.7, 1, 0.797128, 0.0413277, 0.601798, 0.0268019, 0.733333, 1, 0.796117, 0.0191784, 0.604713, 0.0123661, 0.766667, 1, 0.795076, 0.00500499, 0.60648, 0.00321021, 0.8, 1, -0.794627, 9.80973e-08, -0.607098, 8.14761e-08)
+tracks/97/type = "scale_3d"
+tracks/97/imported = true
+tracks/97/enabled = true
+tracks/97/path = NodePath("Rig/Skeleton3D:handIK.l")
+tracks/97/interp = 1
+tracks/97/loop_wrap = true
+tracks/97/keys = PackedFloat32Array(0, 1, 1, 1, 1)
+tracks/98/type = "position_3d"
+tracks/98/imported = true
+tracks/98/enabled = true
+tracks/98/path = NodePath("Rig/Skeleton3D:elbowIK.r")
+tracks/98/interp = 1
+tracks/98/loop_wrap = true
+tracks/98/keys = PackedFloat32Array(0, 1, -0.883338, 0.906864, -0.926714, 0.0333333, 1, -0.881162, 0.907876, -0.925004, 0.0666667, 1, -0.874881, 0.910797, -0.920067, 0.1, 1, -0.864869, 0.915453, -0.912197, 0.133333, 1, -0.851499, 0.921671, -0.901688, 0.166667, 1, -0.835144, 0.929277, -0.888833, 0.2, 1, -0.816177, 0.938098, -0.873925, 0.233333, 1, -0.794972, 0.947959, -0.857257, 0.266667, 1, -0.771901, 0.958689, -0.839122, 0.3, 1, -0.747337, 0.970112, -0.819815, 0.333333, 1, -0.721654, 0.982056, -0.799628, 0.366667, 1, -0.695225, 0.994348, -0.778854, 0.433333, 1, -0.641621, 1.01928, -0.73672, 0.466667, 1, -0.615191, 1.03157, -0.715946, 0.5, 1, -0.589508, 1.04351, -0.695759, 0.533333, 1, -0.564945, 1.05494, -0.676452, 0.566667, 1, -0.541874, 1.06567, -0.658317, 0.6, 1, -0.520668, 1.07553, -0.641649, 0.633333, 1, -0.501701, 1.08435, -0.626741, 0.666667, 1, -0.485347, 1.09195, -0.613886, 0.7, 1, -0.471977, 1.09817, -0.603377, 0.733333, 1, -0.461964, 1.10283, -0.595507, 0.766667, 1, -0.455684, 1.10575, -0.59057, 0.8, 1, -0.453507, 1.10676, -0.58886)
+tracks/99/type = "rotation_3d"
+tracks/99/imported = true
+tracks/99/enabled = true
+tracks/99/path = NodePath("Rig/Skeleton3D:elbowIK.r")
+tracks/99/interp = 1
+tracks/99/loop_wrap = true
+tracks/99/keys = PackedFloat32Array(0, 1, -0.707107, -7.27951e-08, -7.27951e-08, 0.707107)
+tracks/100/type = "scale_3d"
+tracks/100/imported = true
+tracks/100/enabled = true
+tracks/100/path = NodePath("Rig/Skeleton3D:elbowIK.r")
+tracks/100/interp = 1
+tracks/100/loop_wrap = true
+tracks/100/keys = PackedFloat32Array(0, 1, 1, 1, 1)
+tracks/101/type = "position_3d"
+tracks/101/imported = true
+tracks/101/enabled = true
+tracks/101/path = NodePath("Rig/Skeleton3D:handIK.r")
+tracks/101/interp = 1
+tracks/101/loop_wrap = true
+tracks/101/keys = PackedFloat32Array(0, 1, -0.418362, 0.861552, -0.316895, 0.0333333, 1, -0.422012, 0.862634, -0.311594, 0.0666667, 1, -0.431919, 0.86557, -0.296783, 0.1, 1, -0.446518, 0.869898, -0.274102, 0.133333, 1, -0.464246, 0.875152, -0.245191, 0.166667, 1, -0.483538, 0.880871, -0.211689, 0.233333, 1, -0.520558, 0.891843, -0.13747, 0.266667, 1, -0.535158, 0.896171, -0.100032, 0.3, 1, -0.545064, 0.899107, -0.0645615, 0.333333, 1, -0.548714, 0.900189, -0.0326978, 0.366667, 1, -0.548162, 0.890234, -0.00577726, 0.4, 1, -0.546616, 0.865348, 0.0160758, 0.433333, 1, -0.544243, 0.832996, 0.0330401, 0.466667, 1, -0.541206, 0.800644, 0.0452947, 0.5, 1, -0.537673, 0.775758, 0.0530184, 0.533333, 1, -0.533809, 0.765804, 0.0563899, 0.566667, 1, -0.529779, 0.766771, 0.0574947, 0.6, 1, -0.525749, 0.769321, 0.0583249, 0.633333, 1, -0.521885, 0.772925, 0.0589198, 0.666667, 1, -0.518352, 0.777058, 0.0593185, 0.7, 1, -0.515315, 0.78119, 0.0595604, 0.733333, 1, -0.512941, 0.784795, 0.0596846, 0.766667, 1, -0.511396, 0.787345, 0.0597304, 0.8, 1, -0.510844, 0.788312, 0.0597369)
+tracks/102/type = "rotation_3d"
+tracks/102/imported = true
+tracks/102/enabled = true
+tracks/102/path = NodePath("Rig/Skeleton3D:handIK.r")
+tracks/102/interp = 1
+tracks/102/loop_wrap = true
+tracks/102/keys = PackedFloat32Array(0, 1, 0.229297, -0.384624, -0.875717, 0.180577, 0.0333333, 1, 0.235776, -0.389021, -0.87092, 0.18593, 0.0666667, 1, 0.253833, -0.400573, -0.857301, 0.200362, 0.1, 1, 0.281377, -0.416681, -0.835575, 0.221399, 0.133333, 1, 0.316185, -0.434598, -0.80649, 0.246427, 0.166667, 1, 0.355868, -0.451561, -0.771426, 0.272677, 0.2, 1, 0.398015, -0.465024, -0.73274, 0.29737, 0.233333, 1, 0.440455, -0.472871, -0.693768, 0.317928, 0.266667, 1, 0.481485, -0.473495, -0.658535, 0.332123, 0.3, 1, 0.519934, -0.465624, -0.631349, 0.338027, 0.333333, 1, 0.554947, -0.447914, -0.616467, 0.333729, 0.366667, 1, 0.587844, -0.421498, -0.611718, 0.320281, 0.4, 1, 0.619938, -0.389136, -0.611445, 0.30064, 0.433333, 1, 0.650229, -0.351691, -0.61446, 0.275599, 0.466667, 1, 0.677693, -0.31028, -0.619568, 0.246159, 0.533333, 1, 0.720883, -0.22135, -0.631839, 0.179197, 0.566667, 1, 0.735795, -0.177133, -0.63743, 0.144614, 0.6, 1, 0.746368, -0.135287, -0.642065, 0.111286, 0.633333, 1, 0.753137, -0.0972664, -0.645627, 0.0805547, 0.666667, 1, 0.756869, -0.0642806, -0.648189, 0.0535636, 0.7, 1, 0.758436, -0.037297, -0.649928, 0.0312528, 0.733333, 1, 0.758703, -0.017106, -0.651052, 0.014407, 0.766667, 1, 0.75844, -0.00442083, -0.651717, 0.00374098, 0.8, 1, 0.758253, 2.06327e-07, -0.651961, 2.6433e-08)
+tracks/103/type = "scale_3d"
+tracks/103/imported = true
+tracks/103/enabled = true
+tracks/103/path = NodePath("Rig/Skeleton3D:handIK.r")
+tracks/103/interp = 1
+tracks/103/loop_wrap = true
+tracks/103/keys = PackedFloat32Array(0, 1, 1, 1, 1)
 
 [sub_resource type="Animation" id="Animation_eqsc5"]
 resource_name = "Sit_Floor_Down"
@@ -69841,14 +69960,22 @@ _data = {
 &"Walking_D_Skeletons": SubResource("Animation_yc8bq")
 }
 
+[sub_resource type="CylinderMesh" id="CylinderMesh_difns"]
+top_radius = 0.0
+radial_segments = 16
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_difns"]
+
 [node name="SkeletonMinion" type="CharacterBody3D"]
-script = ExtResource("1_8r6gr")
+script = ExtResource("1_67ryd")
+metadata/_custom_type_script = "uid://bxi2boc7n01ti"
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+avoidance_enabled = true
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.16888, 0)
-shape = SubResource("CapsuleShape3D_ppkbm")
-
-[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+shape = SubResource("CapsuleShape3D_7g1it")
 
 [node name="Skeleton_Minion" type="Node3D" parent="."]
 
@@ -70144,42 +70271,46 @@ bones/40/rotation = Quaternion(-0.758253, -1.82539e-07, 0.651961, -1.11759e-08)
 bones/40/scale = Vector3(1, 1, 1)
 
 [node name="Skeleton_Minion_ArmLeft" type="MeshInstance3D" parent="Skeleton_Minion/Rig/Skeleton3D"]
-mesh = SubResource("ArrayMesh_02cw4")
-skin = SubResource("Skin_b328l")
+mesh = SubResource("ArrayMesh_65ic5")
+skin = SubResource("Skin_awhia")
 
 [node name="Skeleton_Minion_ArmRight" type="MeshInstance3D" parent="Skeleton_Minion/Rig/Skeleton3D"]
-mesh = SubResource("ArrayMesh_riol2")
-skin = SubResource("Skin_b328l")
+mesh = SubResource("ArrayMesh_y23hx")
+skin = SubResource("Skin_awhia")
 
 [node name="Skeleton_Minion_Body" type="MeshInstance3D" parent="Skeleton_Minion/Rig/Skeleton3D"]
-mesh = SubResource("ArrayMesh_5n6hy")
-skin = SubResource("Skin_b328l")
+mesh = SubResource("ArrayMesh_65yyp")
+skin = SubResource("Skin_awhia")
 
 [node name="Skeleton_Minion_Cloak" type="MeshInstance3D" parent="Skeleton_Minion/Rig/Skeleton3D"]
-mesh = SubResource("ArrayMesh_ku7hm")
-skin = SubResource("Skin_b328l")
+mesh = SubResource("ArrayMesh_o33qj")
+skin = SubResource("Skin_awhia")
 
 [node name="Skeleton_Minion_Eyes" type="MeshInstance3D" parent="Skeleton_Minion/Rig/Skeleton3D"]
-mesh = SubResource("ArrayMesh_sfonp")
-skin = SubResource("Skin_b328l")
+mesh = SubResource("ArrayMesh_6oy0n")
+skin = SubResource("Skin_awhia")
 
 [node name="Skeleton_Minion_Head" type="MeshInstance3D" parent="Skeleton_Minion/Rig/Skeleton3D"]
-mesh = SubResource("ArrayMesh_1kajb")
-skin = SubResource("Skin_b328l")
+mesh = SubResource("ArrayMesh_adk5m")
+skin = SubResource("Skin_awhia")
 
 [node name="Skeleton_Minion_Jaw" type="MeshInstance3D" parent="Skeleton_Minion/Rig/Skeleton3D"]
-mesh = SubResource("ArrayMesh_suuuj")
-skin = SubResource("Skin_b328l")
+mesh = SubResource("ArrayMesh_eai66")
+skin = SubResource("Skin_awhia")
 
 [node name="Skeleton_Minion_LegLeft" type="MeshInstance3D" parent="Skeleton_Minion/Rig/Skeleton3D"]
-mesh = SubResource("ArrayMesh_s044s")
-skin = SubResource("Skin_b328l")
+mesh = SubResource("ArrayMesh_2b7fe")
+skin = SubResource("Skin_awhia")
 
 [node name="Skeleton_Minion_LegRight" type="MeshInstance3D" parent="Skeleton_Minion/Rig/Skeleton3D"]
-mesh = SubResource("ArrayMesh_kjqbb")
-skin = SubResource("Skin_b328l")
+mesh = SubResource("ArrayMesh_qvs1g")
+skin = SubResource("Skin_awhia")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="Skeleton_Minion"]
 libraries = {
 &"": SubResource("AnimationLibrary_47pcu")
 }
+
+[node name="VisionCone" type="MeshInstance3D" parent="."]
+mesh = SubResource("CylinderMesh_difns")
+surface_material_override/0 = SubResource("StandardMaterial3D_difns")

@@ -1,15 +1,22 @@
 extends CombatCharacter2020
 class_name EnemyCharacter2020
 
+# Referência para o Cérebro (Node filho ou injetado)
+@onready var ai_brain: EnemyAI = $EnemyAI
+
 func _ready() -> void:
 	super._ready()
 	is_player_controlled = false
-	# Se quiser animação específica de inimigo:
-	# anim = get_node("AnimationPlayer")
+	
+	# Fallback de segurança: Se esqueceu de adicionar o nó no editor, cria via código
+	if not ai_brain:
+		ai_brain = EnemyAI.new()
+		ai_brain.name = "FallbackAI"
+		add_child(ai_brain)
 
-# A IA básica já está implementada em CombatCharacter2020.take_turn().
-# Podemos só sobrepor se quisermos log ou comportamento diferente:
 func take_turn(manager: Node) -> void:
-	print("[Enemy] Iniciando turno do inimigo: %s" % name)
-	await super.take_turn(manager)
-	print("[Enemy] Turno finalizado: %s" % name)
+	# Delega a inteligência para a classe EnemyIA
+	if ai_brain:
+		await ai_brain.execute_turn(self, manager)
+	else:
+		print("ERRO: Inimigo sem IA!")

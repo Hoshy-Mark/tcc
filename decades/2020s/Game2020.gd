@@ -13,7 +13,11 @@ var player_2 := preload("res://decades/2020s/Rogue3D.tscn")
 var player_3 := preload("res://decades/2020s/Knight3D.tscn")
 
 # Inimigos
-var enemy_scene := preload("res://decades/2020s/Skeleton_Minion.tscn")
+var skeleton_scene := preload("res://decades/2020s/EnemySkeleton.tscn")
+var mage_scene     := preload("res://decades/2020s/EnemyMage.tscn")
+var wolf_scene     := preload("res://decades/2020s/EnemyWolf.tscn")
+var archer_scene   := preload("res://decades/2020s/EnemyArcher.tscn")
+
 
 #
 # NÓS DA CENA ATUAL
@@ -45,20 +49,25 @@ func _ready():
 	p2.is_player_controlled = true
 	var p3 = player_3.instantiate()
 	p3.is_player_controlled = true
-	var e1 = enemy_scene.instantiate()
-	var e2 = enemy_scene.instantiate()
-	var e3 = enemy_scene.instantiate()
-
-
+	
+	var e1 = skeleton_scene.instantiate() # O Esqueleto
+	e1.name = "Esqueleto"
+	var e2 = wolf_scene.instantiate()     # O Lobo
+	e2.name = "Lobo"
+	var e3 = archer_scene.instantiate()   # O Arqueiro
+	e3.name = "Arqueiro"
+	var e4 = mage_scene.instantiate()     # O Mago 
+	e4.name = "Mago"
 	
 	p1.global_position = get_ground_position(Vector3(-3, -1, -1))
 	p2.global_position = get_ground_position(Vector3(-3, 0, 0))
 	p3.global_position = get_ground_position(Vector3(-3, 1, 1))
 
 	# Inimigos
-	e1.global_position = get_ground_position(Vector3(3, -1, -1))
-	e2.global_position = get_ground_position(Vector3(3, 0, 0))
-	e3.global_position = get_ground_position(Vector3(3, 1, 1))
+	e1.global_position = get_ground_position(Vector3(3, 0, -2))
+	e2.global_position = get_ground_position(Vector3(3, 0, 0)) # Lobo mais atrás
+	e3.global_position = get_ground_position(Vector3(6, 0, 1)) # Arqueiro longe
+	e4.global_position = get_ground_position(Vector3(6, 0, 2))  # Mago longe
 
 	add_child(p1)
 	party.append(p1)
@@ -72,6 +81,8 @@ func _ready():
 	enemies.append(e2)
 	add_child(e3)
 	enemies.append(e3)
+	add_child(e4)
+	enemies.append(e4)
 	
 	battle_manager.start_combat(party, enemies)
 

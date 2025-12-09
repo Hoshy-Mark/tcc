@@ -50,6 +50,9 @@ var alcance_estendido: bool = false
 var obstruido := false
 var loot: Array[String] = []
 
+var skill_base_cooldowns: Dictionary = {}
+var skill_cooldowns: Dictionary = {}
+
 # Status
 var status_effects: Array = []
 var active_status_effects: Array = []
@@ -213,7 +216,7 @@ func calculate_stats():
 	max_mp = MAG * 5 + INT * 3
 	defense = CON + floor(STR * 0.5)
 	magic_defense = SPI + floor(INT * 0.5)
-	accuracy = DEX * 2 + floor(LCK * 0.5)
+	accuracy = DEX * 2 + floor(LCK * 0.5) + 5
 	evasion = AGI * 2 + floor(LCK * 0.3)
 	speed = AGI * 2
 	current_hp = max_hp
@@ -398,4 +401,34 @@ func get_status_descriptions() -> Array:
 	for effect in active_status_effects:
 		descricoes.append(effect.attribute.capitalize())
 	return descricoes
+
+# ============================================
+# FUNÇÕES DE COOLDOWN DE SKILL (PARA IA)
+# ============================================
+
+# Chamado pela IA (EnemyAi1990) no início do turno do inimigo
+func update_cooldowns():
+	# "Passa o tempo" (diminui em 1) para todas as skills em cooldown
+	for skill_name in skill_cooldowns.keys():
+		if skill_cooldowns[skill_name] > 0:
+			skill_cooldowns[skill_name] -= 1
+			# (Print para debug, pode apagar depois)
+			print("DEBUG: Cooldown do %s para %s agora é %d" % [nome, skill_name, skill_cooldowns[skill_name]])
+
+# Chamado pela IA para checar se uma skill pode ser usada
+func is_skill_ready(skill_name: String) -> bool:
+	# Se a skill nem está no nosso timer, ela está pronta (não tem cooldown)
+	if not skill_cooldowns.has(skill_name):
+		return true 
 	
+	# Se ela ESTÁ no timer, ela só está pronta se o timer for 0 ou menos
+	return skill_cooldowns[skill_name] <= 0
+
+# Chamado pela IA DEPOIS que a skill é usada
+func use_skill(skill_name: String):
+	# "Reseta" o timer da skill para o valor base
+	if skill_base_cooldowns.has(skill_name):
+		var cooldown_duration = skill_base_cooldowns[skill_name]
+		skill_cooldowns[skill_name] = cooldown_duration
+		# (Print para debug)
+		print("DEBUG: %s usou %s! Cooldown resetado para %d turnos." % [nome, skill_name, cooldown_duration])

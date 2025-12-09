@@ -6,7 +6,7 @@ var hud_scene := preload("res://decades/2010s/UI/MainHUD2010.tscn") # vida + sta
 
 @onready var battle_manager := $BattleManager2010
 @onready var ui_layer := $UI
-
+#
 func _ready():
 	var arena = arena_scene.instantiate()
 	add_child(arena)

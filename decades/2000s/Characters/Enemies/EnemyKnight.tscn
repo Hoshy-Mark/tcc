@@ -1,7 +1,7 @@
 [gd_scene load_steps=114 format=4 uid="uid://b2ndpaed3j6ig"]
 
-[ext_resource type="Script" uid="uid://cn83soa6lgpmi" path="res://decades/2000s/Characters/Enemies/Skeleto_Minion.gd" id="1_difns"]
-[ext_resource type="Texture2D" uid="uid://wnh22ew4tyee" path="res://assets/Models/Enemies/Skeleton_Minion_skeleton_texture.png" id="2_5fkp8"]
+[ext_resource type="Script" uid="uid://cn83soa6lgpmi" path="res://decades/2000s/Characters/Enemies/EnemyUnit2000.gd" id="1_5nfiv"]
+[ext_resource type="Texture2D" uid="uid://wnh22ew4tyee" path="res://assets/Models/Enemies/Skeleton_Minion_skeleton_texture.png" id="2_i2jtg"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_7g1it"]
 radius = 0.632112
@@ -9,7 +9,7 @@ height = 2.51494
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0ufpu"]
 resource_name = "skeleton"
-albedo_texture = ExtResource("2_5fkp8")
+albedo_texture = ExtResource("2_i2jtg")
 roughness = 0.5
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_65ic5"]
@@ -69967,10 +69967,11 @@ radial_segments = 16
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_difns"]
 
 [node name="SkeletonMinion" type="CharacterBody3D"]
-script = ExtResource("1_difns")
+script = ExtResource("1_5nfiv")
 metadata/_custom_type_script = "uid://bxi2boc7n01ti"
 
 [node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+avoidance_enabled = true
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.16888, 0)
