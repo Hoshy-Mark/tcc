@@ -44,7 +44,7 @@ func open(inventory: Array, party: Array):
 
 		# Botão para usar item
 		var btn = Button.new()
-		btn.text = item.name
+		btn.text = "%s (x%d)" % [item.name, item.get("count", 1)]
 		btn.disabled = true
 		row.add_child(btn)
 

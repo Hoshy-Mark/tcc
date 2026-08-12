@@ -2,6 +2,9 @@ extends Sprite2D
 
 var enemy_data
 
+func _ready():
+	texture_filter = TEXTURE_FILTER_NEAREST
+
 func set_sprite(path: String) -> void:
 	var tex = load(path)
 	if tex:

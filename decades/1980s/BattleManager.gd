@@ -21,12 +21,24 @@ var enemies = [] # <-- Esta lista agora guarda VIVOS E MORTOS (escondidos)
 var turn_order = []
 var turn_index = 0
 var hud
-const TEMPO_ESPERA_APOS_ACAO = 0.5
 var inventario = {
 	"Poção de Vida": 3,
 	"Poção de MP": 2,
 	"Pena da Fênix": 2
 }
+
+# Preços da loja que abre entre uma batalha e outra.
+const SHOP_PRICES = {
+	"Poção de Vida": 15,
+	"Poção de MP": 15,
+	"Pena da Fênix": 40
+}
+const EQUIPMENT_CATALOG = [
+	{"nome": "Espada de Ferro", "slot": "weapon", "strength_bonus": 5, "price": 30},
+	{"nome": "Espada Longa", "slot": "weapon", "strength_bonus": 10, "price": 60},
+	{"nome": "Armadura de Couro", "slot": "armor", "defense_bonus": 3, "price": 25},
+	{"nome": "Cota de Malha", "slot": "armor", "defense_bonus": 6, "price": 50},
+]
 
 var ai_logic = EnemyAi1980.new() # <-- Cérebro da IA
 
@@ -38,6 +50,9 @@ func _ready():
 	hud.action_selected.connect(_on_player_action_selected)
 	randomize()
 
+	if not GameManager.saved_inventario.is_empty():
+		inventario = GameManager.saved_inventario.duplicate()
+
 	_load_party()
 
 	await _load_enemies()
@@ -47,6 +62,14 @@ func _ready():
 	
 func set_background_node(node: TextureRect):
 	background_node = node
+
+# Garante que apenas UM handler fique escutando target_selected por vez.
+# Sem isso, alternar entre menus (Atacar -> Voltar -> Magia, etc.) deixava
+# handlers antigos conectados, disparando várias ações para um único alvo.
+func _connect_target_selected(handler: Callable) -> void:
+	for connection in hud.target_selected.get_connections():
+		hud.target_selected.disconnect(connection["callable"])
+	hud.target_selected.connect(handler)
 
 # ... (Todo o código de _load_party e ações do jogador permanece O MESMO) ...
 # ... (Omitido por tamanho) ...
@@ -149,17 +172,24 @@ func _load_party():
 func _on_member_leveled_up(new_level, member):
 	hud.add_log_entry("%s subiu para o nível %d!" % [member.nome, new_level])
 func _on_player_action_selected(action_name: String):
+	# Fora de uma batalha em andamento (ex: loja entre batalhas, aberta a
+	# partir de _abrir_loja) o menu principal não deve responder — evita
+	# agir sobre 'jogador_atual' desatualizado se o jogador cancelar a
+	# seleção de alvo do equipamento e os botões principais reaparecerem.
+	if state == BattleState.FIM_COMBATE:
+		return
 	hud.set_enabled(false)
 	match action_name:
 		"attack":
 			var alvos_validos = enemies.filter(func(e): return e.is_alive())
-			hud.target_selected.connect(_on_alvo_ataque_selecionado)
+			_connect_target_selected(_on_alvo_ataque_selecionado)
 			hud.show_target_selection(alvos_validos, "attack")
 		"magic": _executar_acao_magia(jogador_atual)
 		"defend": _executar_defesa(jogador_atual)
 		"flee": _tentar_fugir(jogador_atual)
 		"item":
-			hud.item_selected.connect(_on_item_escolhido)
+			if not hud.item_selected.is_connected(_on_item_escolhido):
+				hud.item_selected.connect(_on_item_escolhido)
 			hud.show_item_menu(inventario)
 func _on_alvo_ataque_selecionado(alvo):
 	if hud.target_selected.is_connected(_on_alvo_ataque_selecionado):
@@ -173,7 +203,7 @@ func _on_item_escolhido(item_name: String):
 		"Poção de Vida", "Poção de MP": alvos_validos = party_members.filter(func(p): return p.is_alive())
 		"Pena da Fênix": alvos_validos = party_members.filter(func(p): return not p.is_alive())
 	if alvos_validos.size() > 0:
-		hud.target_selected.connect(_on_item_alvo_escolhido.bind(item_name))
+		_connect_target_selected(_on_item_alvo_escolhido.bind(item_name))
 		hud.show_target_selection(alvos_validos, "item")
 	else:
 		hud.add_log_entry("Nenhum alvo válido para %s." % item_name)
@@ -197,7 +227,7 @@ func _on_item_alvo_escolhido(alvo, item_name: String):
 	if inventario.has(item_name):
 		inventario[item_name] -= 1
 	hud.update_party_info(party_members)
-	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+	await hud.wait_for_continue()
 	_finalizar_turno()
 func _executar_acao_magia(actor):
 	state = BattleState.EXECUTANDO_ACAO
@@ -212,13 +242,13 @@ func _executar_acao_magia(actor):
 				magias_desbloqueadas[nome_magia] = dados_magia
 		if magias_desbloqueadas.is_empty():
 			hud.add_log_entry("%s ainda não possui magias desbloqueadas." % actor.nome)
-			await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+			await hud.wait_for_continue()
 			_esperar_comando_do_jogador(actor)
 			return
 		hud.show_magic_menu(actor, magias_desbloqueadas)
 	else:
 		hud.add_log_entry("%s não tem magia para usar." % actor.nome)
-		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+		await hud.wait_for_continue()
 		_finalizar_turno()
 func _on_magia_escolhida(spell_name: String):
 	if hud.magic_selected.is_connected(_on_magia_escolhida):
@@ -227,7 +257,7 @@ func _on_magia_escolhida(spell_name: String):
 	var spell_data = jogador_atual.spells.get(spell_name, null)
 	if not spell_data:
 		hud.add_log_entry("Erro: magia não encontrada.")
-		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+		await hud.wait_for_continue()
 		_finalizar_turno()
 		return
 	var tipo_magia = spell_data.type
@@ -239,7 +269,7 @@ func _on_magia_escolhida(spell_name: String):
 		_: alvos_validos = enemies.filter(func(e): return e.is_alive())
 	if alvos_validos.is_empty():
 		hud.add_log_entry("Nenhum alvo válido para %s." % spell_name)
-		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+		await hud.wait_for_continue()
 		_finalizar_turno()
 		return
 	hud.set_meta("spell_name", spell_name)
@@ -250,9 +280,7 @@ func _on_magia_escolhida(spell_name: String):
 	if spell_data.get("area", false):
 		await _executar_magia_area(jogador_atual, spell_name, alvos_validos)
 	else:
-		if hud.target_selected.is_connected(_on_magia_alvo_escolhido):
-			hud.target_selected.disconnect(_on_magia_alvo_escolhido)
-		hud.target_selected.connect(_on_magia_alvo_escolhido)
+		_connect_target_selected(_on_magia_alvo_escolhido)
 		hud.show_target_selection(alvos_validos, tipo_magia)
 func _on_magia_alvo_escolhido(alvo):
 	if hud.target_selected.is_connected(_on_magia_alvo_escolhido):
@@ -278,6 +306,7 @@ func _on_magia_alvo_escolhido(alvo):
 				hud.add_log_entry("%s tentou lançar %s em %s, mas errou!" % [caster.nome, spell_name, alvo.nome])
 			elif efeito > 0:
 				hud.update_enemy_status(enemies)
+				_flash_enemy_hit(alvo)
 				hud.add_log_entry("%s lançou %s em %s causando %d de dano!" % [caster.nome, spell_name, alvo.nome, efeito])
 				if alvo is Enemy and not alvo.is_alive():
 					hud.add_log_entry("%s foi derrotado!" % alvo.nome)
@@ -299,7 +328,7 @@ func _on_magia_alvo_escolhido(alvo):
 			var dur = spell_data.get("duration", 3)
 			var acao = "aumentou" if tipo == "buff" else "reduziu"
 			hud.add_log_entry("%s lançou %s em %s e %s %s %d por %d turnos." % [caster.nome, spell_name, alvo.nome, acao, attr, abs(amt), dur])
-	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+	await hud.wait_for_continue()
 	_finalizar_turno()
 func _executar_magia_area(caster, spell_name, alvos):
 	var spell_data = caster.spells[spell_name]
@@ -312,6 +341,7 @@ func _executar_magia_area(caster, spell_name, alvos):
 		if tipo == "damage":
 			hud.update_enemy_status(enemies)
 			if efeito > 0:
+				_flash_enemy_hit(alvo)
 				hud.add_log_entry("%s lançou %s em %s causando %d de dano!" % [caster.nome, spell_name, alvo.nome, efeito])
 				if alvo is Enemy and not alvo.is_alive():
 					hud.add_log_entry("%s foi derrotado!" % alvo.nome)
@@ -343,7 +373,7 @@ func _executar_magia_area(caster, spell_name, alvos):
 				se_effect.type = StatusEffect.Type.DEBUFF
 				alvo.apply_status_effect(se_effect)
 				hud.add_log_entry("%s sofreu %s em %s!" % [alvo.nome, secondary.get("attribute", "um debuff"), alvo.nome])
-	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+	await hud.wait_for_continue()
 	_finalizar_turno()
 func _escolher_aliado_para_curar():
 	var vivos = party_members.filter(func(p): return p.is_alive() and p.hp < p.max_hp)
@@ -357,9 +387,10 @@ func _executar_acao_ataque(actor, alvo):
 		var resultado = actor.attack(alvo)
 		if resultado.has("miss") and resultado["miss"]:
 			hud.add_log_entry("%s tentou atacar %s, mas errou!" % [actor.nome, alvo.nome])
-		else:	
+		else:
 			var dano = resultado["damage"]
 			var is_crit = resultado["crit"]
+			_flash_enemy_hit(alvo)
 			if is_crit:
 				hud.add_log_entry("%s acertou um **CRÍTICO** em %s causando %d de dano!" % [actor.nome, alvo.nome, dano])
 			else:
@@ -372,14 +403,14 @@ func _executar_acao_ataque(actor, alvo):
 					sprite.desaparecer()
 		hud.update_party_info(party_members)
 		hud.update_enemy_status(enemies)
-	await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+	await hud.wait_for_continue()
 	_finalizar_turno()
 func _executar_defesa(actor):
 	if actor is PlayerPartyMember:
 		state = BattleState.EXECUTANDO_ACAO
 		actor.defend()
 		hud.add_log_entry("%s está defendendo." % actor.nome)
-		await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
+		await hud.wait_for_continue()
 		_finalizar_turno()
 	else:
 		_finalizar_turno()
@@ -426,7 +457,7 @@ func _load_enemies():
 		background_texture = preload("res://assets/Sala do Boss.png")
 	else:
 		possible_enemies = ["Morcego", "Morto-Vivo", "Necromante"] # <-- Renomeado e Adicionado
-		num_to_generate = randf_range(1, 4)
+		num_to_generate = randi_range(1, 4)
 		background_texture = preload("res://assets/Corredores.png")
 
 	if background_node:
@@ -453,7 +484,7 @@ func _create_enemy_by_type(nome: String) -> Enemy:
 	var enemy = Enemy.new()
 	var rng = RandomNumberGenerator.new()
 	rng.randomize()
-	enemy.id = "%s_%06d" % [name.to_lower().replace(" ", "_"), rng.randi_range(0, 999999)]
+	enemy.id = "%s_%06d" % [nome.to_lower().replace(" ", "_"), rng.randi_range(0, 999999)]
 	enemy.nome = nome
 	
 	match nome:
@@ -467,6 +498,7 @@ func _create_enemy_by_type(nome: String) -> Enemy:
 			enemy.luck = 3
 			enemy.speed = 10
 			enemy.xp_value = 15
+			enemy.gold_value = 8
 			enemy.ai_behavior = "retaliate_attack"
 		
 		"Morto-Vivo": # <-- Renomeado
@@ -479,6 +511,7 @@ func _create_enemy_by_type(nome: String) -> Enemy:
 			enemy.luck = 5
 			enemy.speed = 5
 			enemy.xp_value = 30
+			enemy.gold_value = 15
 			enemy.ai_behavior = "simple_attack"
 
 		"Rei Morto-Vivo": # <-- Renomeado
@@ -491,6 +524,7 @@ func _create_enemy_by_type(nome: String) -> Enemy:
 			enemy.luck = 10
 			enemy.speed = 7
 			enemy.xp_value = 500
+			enemy.gold_value = 300
 			enemy.ai_behavior = "boss_ai"
 		
 		"Necromante":
@@ -503,6 +537,7 @@ func _create_enemy_by_type(nome: String) -> Enemy:
 			enemy.luck = 10
 			enemy.speed = 3 # Lento
 			enemy.xp_value = 100
+			enemy.gold_value = 40
 			enemy.ai_behavior = "summon_ai" # <-- IA de Invocar
 
 	enemy.current_hp = enemy.max_hp
@@ -567,6 +602,13 @@ func _get_sprite_for_enemy(enemy_data: Enemy):
 			return child
 	return null
 
+# Feedback visual de dano: recuo + flash vermelho no sprite do inimigo.
+func _flash_enemy_hit(alvo) -> void:
+	if alvo is Enemy:
+		var sprite = _get_sprite_for_enemy(alvo)
+		if sprite:
+			sprite.play_hit_feedback()
+
 func _executar_acao_inimiga(enemy):
 	enemy.process_status_effects()
 	state = BattleState.EXECUTANDO_ACAO
@@ -613,11 +655,9 @@ func _sort_turn_order():
 	# --- MODIFICADO: Só adiciona VIVOS na ordem de turno ---
 	for member in party_members:
 		if member.is_alive():
-			member.update_status_effects()
 			all_characters.append(member)
 	for enemy in enemies:
 		if enemy.is_alive():
-			enemy.update_status_effects()
 			all_characters.append(enemy)
 	# --- FIM DA MODIFICAÇÃO ---
 
@@ -632,9 +672,6 @@ func _sort_turn_order():
 				break
 		if not inserted:
 			turn_order.append(character)
-func _speed_sort(a, b):
-	return b.speed - a.speed
-	
 func _start_turn():
 	# --- MODIFICADO: Recalcula a ordem de turno no início de CADA round ---
 	if turn_index >= turn_order.size():
@@ -697,12 +734,16 @@ func _encerrar_combate(resultado: String):
 
 	if resultado == "vitoria":
 		var xp_total = 0
-		# Dá XP por TODOS os inimigos da lista (mesmo os que foram mortos e revividos?)
-		# Vamos dar XP apenas pelos inimigos que *terminaram* mortos.
+		var gold_total = 0
+		# Dá XP/ouro por TODOS os inimigos da lista (mesmo os que foram mortos e revividos?)
+		# Vamos dar XP/ouro apenas pelos inimigos que *terminaram* mortos.
 		for enemy in enemies.filter(func(e): return not e.is_alive()):
 			xp_total += enemy.xp_value if "xp_value" in enemy else 50
-		
+			gold_total += enemy.gold_value if "gold_value" in enemy else 5
+
 		_dar_xp_para_party(xp_total)
+		GameManager.saved_gold += gold_total
+		hud.add_log_entry("O grupo encontrou %d de ouro!" % gold_total)
 		hud.update_party_info(party_members)
 		_save_party_status()
 	
@@ -715,26 +756,63 @@ func _encerrar_combate(resultado: String):
 			else:
 				_carregar_proxima_batalha()
 		"derrota", "fuga":
-			# Limpa os inimigos mortos para a próxima batalha
-			for e in enemies:
-				e.queue_free()
 			get_tree().change_scene_to_file("res://decades/1980s/battle/DefeatScreen.tscn")
-			
+
 func _carregar_proxima_batalha():
 	await get_tree().create_timer(1.0).timeout
-	
-	# --- MODIFICADO: Limpa os inimigos da batalha anterior ---
-	# (Eles não foram 'queue_free' na vitória, só escondidos)
-	for e in enemies:
-		e.queue_free()
-	# --- FIM DA MODIFICAÇÃO ---
 
-	_load_party() 
-	await _load_enemies() 
+	# _load_party() primeiro: a loja precisa mexer nos PlayerPartyMember
+	# que de fato vão para a próxima batalha (equipar/comprar item já
+	# nesses objetos), não nos que estão prestes a ser descartados.
+	_load_party()
+	await _abrir_loja()
+
+	# Os inimigos da batalha anterior (Enemy é RefCounted) são liberados
+	# automaticamente quando _load_enemies() limpa a lista 'enemies' abaixo.
+	await _load_enemies()
 	_sort_turn_order()
 	turn_index = 0
 	state = BattleState.TURNO
 	_start_turn()
+
+# --- LOJA (entre batalhas) ---
+func _abrir_loja() -> void:
+	hud.set_enabled(false)
+	if not hud.shop_buy_requested.is_connected(_on_shop_buy_requested):
+		hud.shop_buy_requested.connect(_on_shop_buy_requested)
+	if not hud.shop_equip_requested.is_connected(_on_shop_equip_requested):
+		hud.shop_equip_requested.connect(_on_shop_equip_requested)
+
+	hud.show_shop(GameManager.saved_gold, inventario, SHOP_PRICES, EQUIPMENT_CATALOG)
+	await hud.shop_closed
+
+	hud.shop_buy_requested.disconnect(_on_shop_buy_requested)
+	hud.shop_equip_requested.disconnect(_on_shop_equip_requested)
+
+func _on_shop_buy_requested(item_name: String) -> void:
+	var price = SHOP_PRICES.get(item_name, 0)
+	if GameManager.saved_gold < price:
+		return
+	GameManager.saved_gold -= price
+	inventario[item_name] = inventario.get(item_name, 0) + 1
+	hud.show_shop(GameManager.saved_gold, inventario, SHOP_PRICES, EQUIPMENT_CATALOG)
+
+func _on_shop_equip_requested(item: Dictionary) -> void:
+	if GameManager.saved_gold < item.get("price", 0):
+		return
+	_connect_target_selected(_on_shop_equip_target_selecionado.bind(item))
+	hud.show_target_selection(party_members, "equip")
+
+func _on_shop_equip_target_selecionado(alvo, item: Dictionary) -> void:
+	if hud.target_selected.is_connected(_on_shop_equip_target_selecionado):
+		hud.target_selected.disconnect(_on_shop_equip_target_selecionado)
+	GameManager.saved_gold -= item.get("price", 0)
+	if item.get("slot") == "weapon":
+		alvo.equip_weapon(item)
+	else:
+		alvo.equip_armor(item)
+	hud.add_log_entry("%s equipou %s!" % [alvo.nome, item.get("nome", "item")])
+	hud.show_shop(GameManager.saved_gold, inventario, SHOP_PRICES, EQUIPMENT_CATALOG)
 	
 func _save_party_status():
 	var saved_data = []
@@ -745,11 +823,16 @@ func _save_party_status():
 			"magic_defense": member.magic_defense, "luck": member.luck, "speed": member.speed, "hp": member.hp, "max_hp": member.max_hp,
 			"mp": member.mp,
 			"max_mp": member.max_mp, "level": member.level, "xp": member.xp, "xp_to_next_level": member.xp_to_next_level,
-			"spells": member.spells, "spell_slots": {"current": member.spell_slots, "max": member.max_spell_slots}
+			"spells": member.spells, "spell_slots": {"current": member.spell_slots, "max": member.max_spell_slots},
+				"equipped_weapon": member.equipped_weapon, "equipped_armor": member.equipped_armor
 		}
 		saved_data.append(member_data)
 	GameManager.saved_party_data = saved_data
+	GameManager.saved_inventario = inventario.duplicate()
 	
+# Cada membro VIVO recebe o XP total (não dividido entre a party) —
+# intencional: é a "penalidade" de ter caído em combate, e recompensa
+# quem sobreviveu até o fim da batalha.
 func _dar_xp_para_party(xp_por_membro: int):
 	for member in party_members:
 		if member.is_alive():

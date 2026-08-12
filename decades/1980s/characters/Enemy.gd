@@ -1,4 +1,4 @@
-extends Node
+extends RefCounted
 class_name Enemy
 
 var nome: String = "Enemy"
@@ -10,9 +10,9 @@ var strength: int = 6
 var defense: int = 2
 var speed: int = 10
 var xp_value = 50
+var gold_value = 5
 var id: String = ""
-var status_effects: Array = []
-var active_status_effects: Array = []
+var status_effects := StatusEffectComponent.new()
 var accuracy: int = 0
 var evasion: int = 0
 var intelligence: int = 0
@@ -63,12 +63,15 @@ func strong_attack(target):
 	return {"damage": damage, "crit": is_crit, "is_strong": true}
 # --- FIM DA NOVA FUNÇÃO ---
 
-func take_damage(amount, attacker: Node = null):
+func take_damage(amount, attacker = null):
 	current_hp -= int(amount)
 	current_hp = max(current_hp, 0)
 
 	if attacker and attacker is PlayerPartyMember:
 		self.last_attacker = attacker
+
+func heal(amount: int) -> void:
+	current_hp = min(current_hp + amount, max_hp)
 
 func is_alive():
 	return current_hp > 0
@@ -81,32 +84,13 @@ func reset():
 	is_charging = false # <-- ADICIONADO: Resetar o charge
 
 func apply_status_effect(effect: StatusEffect) -> void:
-	for e in status_effects:
-		if e.attribute == effect.attribute and e.type == effect.type:
-			e.duration = effect.duration 
-			return
-	status_effects.append(effect)
-	active_status_effects.append(effect)
+	status_effects.apply_effect(effect)
 
 func process_status_effects() -> void:
-	for effect in status_effects.duplicate():
-		effect.apply(self)
-		effect.duration -= 1
-		if effect.duration <= 0:
-			status_effects.erase(effect)
+	status_effects.tick(self)
 
 func clear_status_effects() -> void:
 	status_effects.clear()
 
 func get_modified_stat(base_value: int, stat_name: String) -> int:
-	var modified = base_value
-	for effect in active_status_effects:
-		if effect.attribute == stat_name:
-			modified += effect.amount
-	return max(modified, 0)
-	
-func update_status_effects() -> void:
-	active_status_effects.clear()
-	for effect in status_effects:
-		if effect.duration > 0:
-			active_status_effects.append(effect)
+	return max(base_value + status_effects.get_modifier(stat_name), 0)

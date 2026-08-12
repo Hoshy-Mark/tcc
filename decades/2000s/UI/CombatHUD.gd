@@ -8,10 +8,9 @@ signal action_selected(action_name)
 @onready var item_btn := $ActionPanel/ItemButton
 @onready var gambit_btn := $ActionPanel/GambitButton
 @onready var attrubutes_btn := $ActionPanel/AttributesButton
-@onready var target_selector = $TargetSelector
 var GambitEditorScene: PackedScene = preload("res://decades/2000s/UI/GambitEditor.tscn")
 var gambit_editor: Node = null
-@onready var tween := create_tween()
+var tween: Tween
 var AttributeEditorScene: PackedScene = preload("res://decades/2000s/UI/AttributeEditor.tscn")
 var attribute_editor: Node = null
 var InventoryMenuScene: PackedScene = preload("res://decades/2000s/UI/InventoryMenu.tscn")
@@ -63,7 +62,8 @@ func _update_buttons_opacity(percent: float) -> void:
 	var alpha = clamp(percent, 0.3, 1.0)
 
 	# Interpolação suave com Tween
-	tween.kill()  # Cancela tweens anteriores
+	if tween:
+		tween.kill()  # Cancela tweens anteriores
 
 	tween = create_tween()
 	tween.tween_property(attack_btn, "modulate:a", alpha, 0.3)
@@ -95,9 +95,18 @@ func _on_ItemButton_pressed():
 	if not battle_manager:
 		return
 
-	var inventory = [
-		{ "name": "Poção de Cura", "heal": 20, "type": "healing" }
-	]
+	# Monta a lista a partir do inventário real (com contagem) do
+	# BattleManager, em vez de recriar um item fixo do zero a cada clique.
+	var inventory = []
+	for item_name in battle_manager.inventory.keys():
+		if battle_manager.inventory[item_name] > 0:
+			var data = battle_manager.ITEM_DATABASE.get(item_name, {})
+			inventory.append({
+				"name": item_name,
+				"heal": data.get("heal", 0),
+				"type": data.get("type", "healing"),
+				"count": battle_manager.inventory[item_name]
+			})
 	var alive_targets = battle_manager.party_members.filter(func(m): return m.is_alive())
 
 	# Instancia se ainda não existe
@@ -160,14 +169,3 @@ func _on_AttributesButton_pressed():
 
 func _on_attribute_editor_closed():
 	attrubutes_btn.disabled = false
-
-func show_target_selector(targets: Array, callback: Callable):
-	target_selector.clear()
-	for t in targets:
-		target_selector.add_item(t.name)
-	target_selector.show()
-
-	target_selector.item_selected.connect(func(index):
-		target_selector.hide()
-		callback.call(targets[index])
-	, CONNECT_ONE_SHOT)

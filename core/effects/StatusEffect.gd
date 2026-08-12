@@ -26,12 +26,13 @@ const STATUS_EFFECTS = [
 func is_valid_status(status_name: String) -> bool:
 	return status_name in STATUS_EFFECTS
 
+# Efeito colateral aplicado a cada "tick" (uma vez por turno do alvo).
+# Registro/remoção do efeito na lista do alvo é responsabilidade de quem
+# gerencia essa lista (ver StatusEffectComponent), não deste método —
+# chamá-lo várias vezes não deve duplicar o efeito.
 func apply(target):
-	if type == Type.BUFF or type == Type.DEBUFF:
-		target.active_status_effects.append(self)
-
-	if attribute == "blink":
-		blink_charges = amount
-
-	if status_type != "" and is_valid_status(status_type):
-		target.apply_status(status_type, duration)
+	match attribute:
+		"regen":
+			target.heal(5)
+		"blink":
+			blink_charges = amount

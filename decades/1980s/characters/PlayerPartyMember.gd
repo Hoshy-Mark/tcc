@@ -1,4 +1,4 @@
-extends Node
+extends RefCounted
 class_name PlayerPartyMember
 
 signal leveled_up(new_level, who)
@@ -25,9 +25,16 @@ var luck: int = 0
 var spell_slots := {}
 var max_spell_slots := {}
 
-var active_status_effects: Array[StatusEffect] = []
+var status_effects := StatusEffectComponent.new()
 
 var spells := {}
+
+# Equipamento comprado na loja entre batalhas. O bônus já fica somado
+# diretamente em strength/defense (equip_weapon/equip_armor) — os dicts
+# abaixo só guardam QUAL item está equipado, para exibir na loja e
+# permitir trocar sem perder o bônus antigo.
+var equipped_weapon: Dictionary = {}
+var equipped_armor: Dictionary = {}
 
 var is_defending: bool = false
 
@@ -66,6 +73,22 @@ func setup(data: Dictionary) -> void:
 	max_hp = vitality * 10
 	hp = data.get("hp", max_hp)
 
+	# O bônus de equipamento já está somado em strength/defense (vindos de
+	# 'data' acima), então aqui só restauramos QUAL item está equipado,
+	# sem aplicar o bônus de novo.
+	equipped_weapon = data.get("equipped_weapon", {})
+	equipped_armor = data.get("equipped_armor", {})
+
+func equip_weapon(item: Dictionary) -> void:
+	strength -= equipped_weapon.get("strength_bonus", 0)
+	equipped_weapon = item
+	strength += item.get("strength_bonus", 0)
+
+func equip_armor(item: Dictionary) -> void:
+	defense -= equipped_armor.get("defense_bonus", 0)
+	equipped_armor = item
+	defense += item.get("defense_bonus", 0)
+
 func attack(target):
 	var accuracy_atacante = accuracy + int(randf() * 10) * 1.2
 	var evasion_alvo = target.evasion + int(randf() * 10)
@@ -86,31 +109,13 @@ func attack(target):
 	return {"damage": damage, "crit": is_crit}
 
 func apply_status_effect(effect: StatusEffect):
-	for i in range(active_status_effects.size()):
-		if active_status_effects[i].attribute == effect.attribute:
-			active_status_effects[i] = effect
-			return
-	active_status_effects.append(effect)
+	status_effects.apply_effect(effect)
 
 func process_status_effects():
-	for effect in active_status_effects:
-		match effect.attribute:
-			"regen":
-				heal(5)  # Pode modificar para algo baseado em level
-	
-	var remaining: Array[StatusEffect] = []
-	for effect in active_status_effects:
-		effect.duration -= 1
-		if effect.duration > 0:
-			remaining.append(effect)
-	active_status_effects = remaining
+	status_effects.tick(self)
 
 func get_modified_stat(base: int, attribute: String) -> int:
-	var result = base
-	for effect in active_status_effects:
-		if effect.attribute == attribute:
-			result += effect.amount
-	return result
+	return base + status_effects.get_modifier(attribute)
 
 func cast_spell(targets, spell_name := "fogo"):
 	if not spells.has(spell_name):
@@ -190,7 +195,7 @@ func defend():
 	is_defending = true
 
 # v-- MODIFICAÇÃO 3: Aceita o 'attacker' (e o ignora, o que não tem problema)
-func take_damage(amount, attacker: Node = null):
+func take_damage(amount, attacker = null):
 	var damage_taken = amount
 	if is_defending:
 		damage_taken = int(amount * 0.8)  # Reduz 20%
@@ -256,7 +261,7 @@ func level_up():
 			# Restaura os slots para o novo máximo
 			for key in max_spell_slots.keys():
 				spell_slots[key] = max_spell_slots[key]
-		"Ladrao": # <-- Erro de digitação original, mantido
+		"Ladrão":
 			speed += 2
 			evasion += 2
 			accuracy += 1
@@ -273,9 +278,3 @@ func level_up():
 	max_hp = vitality * 10
 	hp = max_hp
 	mp = max_mp
-
-func update_status_effects() -> void:
-	active_status_effects.clear()
-	for effect in active_status_effects:
-		if effect.duration > 0:
-			active_status_effects.append(effect)

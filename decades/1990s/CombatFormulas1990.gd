@@ -43,7 +43,7 @@ func atualizar_obstrucao_party(party: Array) -> void:
 		var player = party[i]
 		if player.position_line == "back":
 			var front_index = i - 2
-			if front_index >= 0 and party[i].is_alive():
+			if front_index >= 0 and party[front_index].is_alive():
 				player.obstruido = true
 			else:
 				player.obstruido = false

@@ -52,10 +52,17 @@ func _on_ability_pressed(index: int):
 
 func _get_ability_name(index: int) -> String:
 	if current_character:
-		if current_character.name == "Mago":
-			match index:
-				0: return "Bola de Fogo"
-				1: return "Habilidade 2"
-				2: return "Habilidade 3"
-				3: return "Habilidade 4"
+		match current_character.name:
+			"Mago":
+				match index:
+					0: return "Bola de Fogo"
+			"Barbaro":
+				match index:
+					0: return "Investida Brutal"
+			"Ladrão":
+				match index:
+					0: return "Golpe Envenenado"
+			"Cavaleiro":
+				match index:
+					0: return "Provocar"
 	return "Habilidade %d" % (index + 1)

@@ -1,4 +1,4 @@
-extends Node
+extends RefCounted
 class_name PlayerPartyMember1990
 
 signal died
@@ -51,6 +51,25 @@ var spell_ap := {}
 var skill_ap := {}
 var spell_upgrades := {}
 var skill_upgrades := {}
+
+# Equipamento comprado na loja entre batalhas. O bônus entra direto em
+# STR (arma) ou CON (armadura) — os únicos atributos que persistem no
+# save/load — porque calculate_stats() SEMPRE recalcula defense/max_hp/etc.
+# a partir dos atributos base, então um bônus aplicado direto em "defense"
+# seria perdido no próximo carregamento.
+var equipped_weapon: Dictionary = {}
+var equipped_armor: Dictionary = {}
+
+func equip_weapon(item: Dictionary) -> void:
+	STR -= equipped_weapon.get("strength_bonus", 0)
+	equipped_weapon = item
+	STR += item.get("strength_bonus", 0)
+
+func equip_armor(item: Dictionary) -> void:
+	CON -= equipped_armor.get("con_bonus", 0)
+	equipped_armor = item
+	CON += item.get("con_bonus", 0)
+
 var is_defending: bool = false
 var can_act: bool = true
 var can_target: bool = true
@@ -98,7 +117,7 @@ func is_alive():
 	return current_hp > 0
 
 # --- MODIFICAÇÃO 1 (Aceita 'attacker') ---
-func take_damage(amount: int, attacker: Node = null):
+func take_damage(amount: int, attacker = null):
 	var damage = amount
 	var final_hit_chance_mod := 1.0
 
@@ -278,6 +297,12 @@ func process_status_effects():
 	if not has_status("doom"):
 		doom_counter = -1
 
+	# Veneno/sangramento/doom podem zerar o HP aqui dentro. Sem isso, o
+	# personagem ficava com 0 HP mas nunca era marcado como "morto" de
+	# verdade (sinal died nunca disparava, Reraise nunca era checado).
+	if current_hp <= 0:
+		check_if_dead()
+
 func has_blink_active():
 	# ... (função igual) ...
 	for effect in active_status_effects:
@@ -329,6 +354,12 @@ func check_if_dead():
 			emit_signal("died")
 			can_act = false
 			can_target = false
+			if not has_status("knockout"):
+				var knockout_effect = StatusEffect.new()
+				knockout_effect.attribute = "knockout"
+				knockout_effect.type = StatusEffect.Type.DEBUFF
+				knockout_effect.duration = 999
+				active_status_effects.append(knockout_effect)
 
 func has_status(attr: String) -> bool:
 	# ... (função igual) ...
@@ -442,52 +473,3 @@ func remove_status_effect(attribute: String) -> void:
 		if active_status_effects[i].attribute == attribute:
 			active_status_effects.remove_at(i)
 			return
-
-# --- MODIFICAÇÃO 3 (Adicionada função 'attack' que estava faltando) ---
-# Você não tinha uma função 'attack' no Player, só 'cast_spell'.
-# Adicionei uma baseada na 'perform_attack' do BattleManager
-func attack(target):
-	# Verifica se pode atacar (regra de posição/alcance)
-	var is_ataque_fisico = true
-	# Precisamos pegar o battle_manager de algum lugar...
-	# Por enquanto, vamos assumir que pode atacar
-	
-	# Obter stats modificados
-	var attacker_accuracy = get_modified_derived_stat("accuracy")
-	var target_evasion = target.get_modified_derived_stat("evasion")
-	var attacker_str = get_modified_stat(STR, "STR")
-	var attacker_dex = get_modified_stat(DEX, "DEX")
-	var target_def = target.get_modified_derived_stat("defense")
-	var attacker_lck = get_modified_stat(LCK, "LCK")
-	
-	# Calcular chance de acerto
-	var hit_chance = attacker_accuracy / float(attacker_accuracy + target_evasion)
-	var roll = randf()
-	if roll > hit_chance:
-		return {"miss": true} # Retorna um dicionário como no Enemy.gd
-
-	# Calcular chance de crítico
-	var crit_chance = attacker_lck * 0.01
-	var is_crit = randf() < crit_chance
-	
-	var attack_type = self.attack_type # Pega o tipo de ataque da classe
-
-	# Modificador de defesa baseado no tipo de ataque
-	var defense_modifier = 1.0
-	if attack_type in target.attack_type_resistances:
-		defense_modifier = target.attack_type_resistances[attack_type]
-
-	# Calcular dano base
-	var damage = attacker_str + int(attacker_dex / 2) - int(target_def * defense_modifier)
-	damage = max(damage, 1)
-	
-	# (NOTA: A lógica de posição está no BattleManager,
-	# então o dano será ajustado lá)
-
-	if is_crit:
-		damage *= 2
-
-	# Envia 'self' como o atacante
-	target.take_damage(damage, self)
-	
-	return {"damage": damage, "crit": is_crit, "miss": false}

@@ -14,30 +14,87 @@ func _ready():
 # Função chamada pelo BattleManager logo após spawnar
 func setup_enemy(role_to_set: String):
 	enemy_role = role_to_set
-	
-	# Configura stats baseado no papel
+
+	# BUG: até aqui só max_hp/attack_range/move_speed eram definidos por papel.
+	# attack_power, defense, dodge_chance, block_chance, crit_chance e
+	# resistências nunca eram recalculados pra inimigos (_recalculate_stats()
+	# só era chamado pelas classes da party), então TODO inimigo defendia
+	# exatamente igual (mesma esquiva, mesmo bloqueio, mesma defesa),
+	# independente de ser um Mago ou um Cavaleiro.
+	#
+	# Agora usamos o mesmo sistema de atributos (Força/Destreza/Constituição/
+	# Inteligência/Sabedoria) que Barbarian3D/Mage3D/Rogue3D/Knight3D já usam,
+	# com um "arquétipo" de atributos por papel, e deixamos _recalculate_stats()
+	# derivar tudo — assim o Cavaleiro realmente tanka mais e o Ladino
+	# realmente esquiva mais, e não é só o HP/alcance que muda.
+	match enemy_role:
+		"Archer":
+			strength = 8
+			dexterity = 17
+			constitution = 8
+			intelligence = 6
+			wisdom = 11
+		"Mage":
+			strength = 6
+			dexterity = 9
+			constitution = 7
+			intelligence = 18
+			wisdom = 14
+		"Knight":
+			strength = 12
+			dexterity = 8
+			constitution = 16
+			intelligence = 6
+			wisdom = 8
+			has_shield = true # Cavaleiro carrega escudo -> mais chance de bloqueio
+		"Barbarian":
+			strength = 18
+			dexterity = 10
+			constitution = 13
+			intelligence = 5
+			wisdom = 6
+		"Rogue":
+			strength = 10
+			dexterity = 18
+			constitution = 8
+			intelligence = 8
+			wisdom = 8
+
+	_recalculate_stats()
+
+	# _recalculate_stats() também deriva move_speed e max_hp a partir dos
+	# atributos — mas o alcance/velocidade/HP por papel aqui já eram
+	# calibrados à mão (curva de dificuldade testada), então reaplicamos esses
+	# valores DEPOIS de recalcular, só para não perder essa calibração
+	# existente enquanto ainda ganhamos defense/dodge_chance/block_chance/
+	# crit_chance diferenciados por papel (que é o que realmente faltava).
 	match enemy_role:
 		"Archer":
 			max_hp = 80
-			attack_range = 10.0 
+			attack_range = 10.0
 			move_speed = 4.0
+			gold_value = 12
 		"Mage":
 			max_hp = 70
 			attack_range = 12.0
 			move_speed = 3.5
+			gold_value = 15
 		"Knight":
 			max_hp = 150
 			attack_range = 2.2 # Um pouco maior que 2.0 para evitar travar na colisão
 			move_speed = 3.0
+			gold_value = 18
 		"Barbarian":
 			max_hp = 120
 			attack_range = 2.5 # Alcance maior (Machado/Espada Grande)
 			move_speed = 4.5
+			gold_value = 15
 		"Rogue":
 			max_hp = 90
 			attack_range = 2.2
 			move_speed = 5.0
-	
+			gold_value = 12
+
 	hp = max_hp
 	# Garante nome único
 	name = enemy_role + "_" + str(get_instance_id())

@@ -15,6 +15,7 @@ var attack_range := 2.0
 var vision_range := 15.0
 var hp := 100
 var max_hp := 100
+var gold_value: int = 10
 var camera: Camera3D = null
 
 # Gravidade
@@ -298,6 +299,15 @@ func _handle_movement(delta):
 	# 1. GRAVIDADE (Mantemos isso, senão eles voam)
 	if not is_on_floor():
 		velocity.y -= gravity * delta
+	else:
+		# BUG: sem isso, velocity.y ficava "guardando" a velocidade de queda
+		# acumulada mesmo depois de pousar no chão (nunca era zerada ao
+		# aterrissar). Bastava o personagem descer uma rampa ou uma borda
+		# pequena para herdar uma velocidade vertical residual grande demais,
+		# causando pequenos "solavancos"/travadas na detecção de chão do
+		# CharacterBody3D. Um pequeno valor negativo constante mantém o
+		# personagem "colado" ao chão de forma estável entre um frame e outro.
+		velocity.y = -0.1
 
 	# 2. SE ESTIVER OCUPADO (Atacando/Skill)
 	if is_performing_action:
@@ -338,7 +348,17 @@ func _handle_movement(delta):
 	else:
 		if is_moving:
 			var next_pos = nav_agent.get_next_path_position()
-			var direction = (next_pos - global_position).normalized()
+			# BUG DE FÍSICA: a direção estava sendo normalizada incluindo o eixo Y
+			# (diferença de altura entre next_pos e global_position), antes de
+			# descartar esse eixo. Como o NavMesh raramente fica exatamente na
+			# mesma altura Y da origem do personagem (rampas, imprecisão do bake,
+			# etc.), isso encolhia o vetor resultante no plano XZ e fazia o
+			# personagem andar mais devagar que move_speed sempre que houvesse
+			# qualquer variação de altura no caminho — sem nunca dar erro, só
+			# "arrastando" o personagem de forma inconsistente.
+			var direction = (next_pos - global_position)
+			direction.y = 0
+			direction = direction.normalized()
 			
 			# APLICAÇÃO DIRETA (Sem NavAgent.set_velocity)
 			velocity.x = direction.x * move_speed
@@ -427,9 +447,19 @@ func _die() -> void:
 		if self in manager.enemies:
 			manager.enemies.erase(self)
 			manager.add_group_xp(manager.xp_per_enemy)
+			manager.add_group_gold(gold_value)
 			manager._check_enemies_defeated()
 		elif self in manager.party_members:
+			var was_player_character = (self == manager.player_character)
 			manager.party_members.erase(self)
+
+			# BUG: antes daqui, se o personagem controlado pelo jogador morresse,
+			# ninguém assumia o controle no lugar dele — o input do jogador
+			# ficava "no vazio" e não existia checagem de derrota nenhuma.
+			if manager.party_members.is_empty():
+				manager._check_party_defeated()
+			elif was_player_character:
+				manager._set_new_player_character(manager.party_members[0])
 
 	if manager and self == manager.player_character:
 		manager.player_auto_attacking = false

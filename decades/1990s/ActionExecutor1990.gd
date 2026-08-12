@@ -1,6 +1,6 @@
 # ActionExecutor1990.gd
 class_name ActionExecutor1990
-extends Node
+extends RefCounted
 
 # Referência ao "Juiz" da batalha (o BattleManager)
 var battle_manager: Node
@@ -279,8 +279,8 @@ func _execute_skill_area(user, skill, alvos):
 		return
 	user.current_sp -= skill.cost
 	user.spell_slots[skill.level] -= 1
-	var is_fisico = skill.effect_type == "damage" and skill.effect_type != "magic"
-	
+	var is_fisico = skill.effect_type == "damage" and skill.attack_type != "magic"
+
 	# --- ANIMAÇÃO (PULINHO) ---
 	var can_animate = user.has_method("get_global_position") and user.sprite_ref != null # <-- CORRIGIDO
 	if can_animate:
@@ -621,12 +621,25 @@ func _execute_spell_single(caster, spell_name, alvo):
 	elif tipo == "cure_status":
 		# ... (código de cura de status) ...
 		var cured = []
+		var revived = false
 		for entry in spell.status_effects:
 			var attribute = entry["attribute"]
-			if alvo.has_status(attribute):
+			if attribute == "knockout" and not alvo.is_alive():
+				# Reviver: sem isso, "curar" o status knockout não fazia
+				# nada, porque morrer nunca de fato aplicava esse status
+				# e ninguém caído podia nem ser selecionado como alvo.
+				alvo.current_hp = int(alvo.max_hp * 0.5)
+				alvo.can_act = true
+				alvo.can_target = true
+				alvo.remove_status_effect("knockout")
+				revived = true
+				battle_manager.hud.show_floating_number(alvo.current_hp, alvo, "hp")
+			elif alvo.has_status(attribute):
 				alvo.remove_status_effect(attribute)
 				cured.append(attribute)
-		if cured.size() > 0:
+		if revived:
+			battle_manager.hud.show_top_message("%s foi revivido com %d de HP!" % [alvo.nome, alvo.current_hp])
+		elif cured.size() > 0:
 			battle_manager.hud.show_top_message("%s foi curado de: %s!" % [alvo.nome, ", ".join(cured)])
 		else:
 			battle_manager.hud.show_top_message("%s não tinha status removíveis com %s." % [alvo.nome, spell.name])
@@ -793,9 +806,9 @@ func usar_item_em_alvo(usuario, item_name: String, item_data: Dictionary, target
 		"restore_sp":
 			# ... (código) ...
 			alvo.current_sp += item_data.power
-			alvo.current_sp = min(alvo.current_mp, alvo.max_sp)
+			alvo.current_sp = min(alvo.current_sp, alvo.max_sp)
 			battle_manager.hud.show_floating_number(item_data.power, alvo, "sp")
-			battle_manager.hud.show_top_message("%s recuperou MP com %s!" % [alvo.nome, item_name])
+			battle_manager.hud.show_top_message("%s recuperou SP com %s!" % [alvo.nome, item_name])
 		"full_restore":
 			# ... (código) ...
 			alvo.current_hp = alvo.max_hp
@@ -809,7 +822,7 @@ func usar_item_em_alvo(usuario, item_name: String, item_data: Dictionary, target
 			battle_manager.hud.show_top_message("%s foi totalmente restaurado com %s!" % [alvo.nome, item_name])
 		"cure_status":
 			# ... (código) ...
-			alvo.remove_status(item_data.status)
+			alvo.remove_status_effect(item_data.status)
 			battle_manager.hud.show_top_message("%s foi curado de %s!" % [alvo.nome, item_data.status])
 
 	if battle_manager.inventory.has(item_name):
@@ -1001,27 +1014,15 @@ func aplicar_dano(alvo, atacante, dano: int) -> void:
 	battle_manager.atualizar_obstrucao_inimigos()
 	battle_manager.atualizar_obstrucao_party()
 
+# Fórmulas de posicionamento centralizadas em CombatFormulas1990 (ver
+# comentário equivalente em BattleManager.gd). Mantidas aqui como wrappers
+# finos para não precisar tocar em cada um dos vários pontos que chamam
+# ajustar_dano_por_posicao()/pode_atacar() neste arquivo.
 func ajustar_dano_por_posicao(dano: int, atacante, alvo, is_ataque_fisico: bool) -> int:
-
-	if not is_ataque_fisico:
-		return dano
-	if atacante.position_line == "back":
-		dano *= 0.7
-	if alvo.position_line == "back":
-		dano *= 0.5
-	return int(dano)
+	return CombatFormulas1990.ajustar_dano_por_posicao(dano, atacante, alvo, is_ataque_fisico)
 
 func pode_atacar(alvo, atacante, is_ataque_fisico: bool) -> bool:
-
-	if not is_ataque_fisico:
-		return true
-	if not alvo.obstruido:
-		return true
-	if alvo.obstruido and not atacante.alcance_estendido:
-		return false
-	if alvo.position_line == "front":
-		return true
-	return atacante.alcance_estendido
+	return CombatFormulas1990.pode_atacar(alvo, atacante, is_ataque_fisico)
 
 func attempt_steal(user, alvo):
 

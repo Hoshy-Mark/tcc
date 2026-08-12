@@ -12,6 +12,35 @@ func _ready():
 	wisdom = 4
 	_recalculate_stats()
 
+# Habilidade 0: Golpe Envenenado — ataque rápido que aplica veneno no alvo,
+# espelhando o "poison_stab" que os Ladinos inimigos já usam.
+func _cast_ability_0():
+	_cast_poison_strike(self)
+
+func _cast_poison_strike(caster: CombatCharacter2000):
+	if not caster.current_target or not caster.current_target.is_alive():
+		return
+
+	caster.is_performing_action = true
+	if caster.anim and caster.anim.has_animation("Dualwield_Melee_Attack_Stab"):
+		caster.anim.play("Dualwield_Melee_Attack_Stab")
+	elif caster.anim:
+		caster.anim.play("1H_Melee_Attack_Stab")
+
+	await get_tree().create_timer(0.4).timeout
+
+	var target = caster.current_target
+	if target and is_instance_valid(target) and target.is_alive():
+		var dmg = int(caster.attack_power * 1.1) # rápido, não tão forte quanto o do Bárbaro
+		target.apply_damage(dmg, caster)
+		target.apply_status("poison", 10.0, caster)
+		if target.has_method("add_threat"):
+			target.add_threat(caster, dmg)
+
+	caster.turn_charge = 0
+	caster.is_turn_ready = false
+	caster.is_performing_action = false
+
 func update_ai(delta):
 	if is_performing_action:
 		return
@@ -63,6 +92,10 @@ func update_ai(delta):
 				await gambit.execute_action(self)
 				acted = true
 				break
+
+		if not acted and can_use_ability(0):
+			use_ability(0)
+			acted = true
 
 		if not acted:
 			await _attack_target(current_target)

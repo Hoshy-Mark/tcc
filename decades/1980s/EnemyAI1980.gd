@@ -1,9 +1,15 @@
-extends Node
+extends RefCounted
 class_name EnemyAi1980
+
+# Faz o sprite do atacante avançar e voltar, simulando o golpe.
+func _play_attacker_lunge(ator: Enemy, battle_manager) -> void:
+	var sprite = battle_manager._get_sprite_for_enemy(ator)
+	if sprite:
+		sprite.play_attack_lunge()
 
 # --- IA do Morto-Vivo (Ataque Aleatório) ---
 func execute_simple_attack(ator: Enemy, party: Array, battle_manager):
-	_perform_random_attack(ator, party, battle_manager.hud)
+	_perform_random_attack(ator, party, battle_manager.hud, battle_manager)
 	battle_manager._finalizar_turno()
 
 # --- IA do Morcego (Retaliar) ---
@@ -22,7 +28,8 @@ func execute_retaliate_attack(ator: Enemy, party: Array, battle_manager):
 	if target == null:
 		battle_manager._finalizar_turno()
 		return
-	
+
+	_play_attacker_lunge(ator, battle_manager)
 	var resultado = ator.attack(target)
 	if resultado.has("miss") and resultado["miss"]:
 		hud.add_log_entry("%s tentou atacar %s, mas errou!" % [ator.nome, target.nome])
@@ -33,7 +40,7 @@ func execute_retaliate_attack(ator: Enemy, party: Array, battle_manager):
 			hud.add_log_entry("%s acertou um **CRÍTICO** em %s causando %d de dano!" % [ator.nome, target.nome, dano])
 		else:
 			hud.add_log_entry("%s atacou %s e causou %d de dano." % [ator.nome, target.nome, dano])
-	
+
 	battle_manager._finalizar_turno()
 
 # --- IA do Boss (Carregar Ataque Forte) ---
@@ -45,6 +52,7 @@ func execute_boss_ai(ator: Enemy, party: Array, battle_manager):
 		var vivos = party.filter(func(p): return p.is_alive())
 		if vivos.size() > 0:
 			var target = vivos[randi() % vivos.size()]
+			_play_attacker_lunge(ator, battle_manager)
 			var resultado = ator.strong_attack(target)
 			var dano = resultado["damage"]
 			var is_crit = resultado["crit"]
@@ -59,7 +67,7 @@ func execute_boss_ai(ator: Enemy, party: Array, battle_manager):
 			ator.is_charging = true
 			hud.add_log_entry("%s está acumulando poder..." % ator.nome)
 		else: # 60% chance de ataque normal
-			_perform_random_attack(ator, party, hud)
+			_perform_random_attack(ator, party, hud, battle_manager)
 
 	battle_manager._finalizar_turno()
 
@@ -103,18 +111,20 @@ func execute_summon_ai(ator: Enemy, party: Array, battle_manager):
 		else:
 			# --- ATACA (se não puder reviver NEM invocar) ---
 			hud.add_log_entry("%s está cercado e ataca!" % ator.nome)
-			_perform_random_attack(ator, party, hud)
+			_perform_random_attack(ator, party, hud, battle_manager)
 	
 	# 3. Finaliza o turno
 	battle_manager._finalizar_turno()
 
 
 # --- FUNÇÃO AJUDANTE (ATAQUE ALEATÓRIO) ---
-func _perform_random_attack(ator: Enemy, party: Array, hud):
+func _perform_random_attack(ator: Enemy, party: Array, hud, battle_manager = null):
 	var vivos = party.filter(func(p): return p.is_alive())
 	if vivos.size() == 0:
-		return 
+		return
 	var target = vivos[randi() % vivos.size()]
+	if battle_manager:
+		_play_attacker_lunge(ator, battle_manager)
 	var resultado = ator.attack(target)
 	if resultado.has("miss") and resultado["miss"]:
 		hud.add_log_entry("%s tentou atacar %s, mas errou!" % [ator.nome, target.nome])

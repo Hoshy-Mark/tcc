@@ -3,14 +3,9 @@ extends Control
 func _ready():
 	$VBoxContainer/ButtonAgain.pressed.connect(_on_button_again_pressed)
 	$VBoxContainer/ButtonMainMenu.pressed.connect(_on_button_main_menu_pressed)
-	$VBoxContainer/ButtonNext.pressed.connect(_on_button_next_pressed)
-
-func _on_button_next_pressed():
-	DecadeManager.select_decade(1990)
-	DecadeManager.load_selected_decade_scene()
 
 func _on_button_again_pressed():
-	get_tree().change_scene_to_file("res://decades/1980s/Game1980.tscn")
+	get_tree().change_scene_to_file("res://decades/2000s/Game2000.tscn")
 
 func _on_button_main_menu_pressed():
 	get_tree().change_scene_to_file("res://core/UI/MainMenu.tscn")

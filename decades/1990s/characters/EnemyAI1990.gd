@@ -1,5 +1,5 @@
 class_name EnemyAi1990
-extends Node
+extends RefCounted
 
 
 # ---------------------------------------------------------------------

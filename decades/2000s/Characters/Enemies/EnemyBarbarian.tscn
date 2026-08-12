@@ -69971,7 +69971,7 @@ script = ExtResource("1_bch0t")
 metadata/_custom_type_script = "uid://bxi2boc7n01ti"
 
 [node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
-avoidance_enabled = true
+avoidance_enabled = false
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.16888, 0)

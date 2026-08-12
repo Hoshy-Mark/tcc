@@ -77,6 +77,15 @@ func update_ai(_delta: float) -> void:
 	if is_turn_ready and not is_performing_action:
 		is_performing_action = true
 
+		# BUG: current_target nunca era sincronizado aqui (só target_enemy
+		# existia nesta classe base). Isso fazia a rotação de "olhar pro
+		# alvo" logo abaixo nunca disparar para quem usa esta IA base
+		# (o Bárbaro), e também impedia qualquer habilidade que dependa de
+		# current_target (como as novas habilidades de classe) de disparar
+		# de forma autônoma via IA — só funcionavam quando o jogador estava
+		# controlando o personagem manualmente.
+		current_target = target_enemy
+
 		# Gambits ganham chance de substituir o ataque
 		var acted := false
 		for gambit in gambits:
@@ -85,7 +94,13 @@ func update_ai(_delta: float) -> void:
 				acted = true
 				break
 
-		# Se nenhum gambit agiu, faz ataque padrão
+		# Se nenhum gambit agiu, tenta usar a habilidade 0 (se disponível),
+		# igual ao padrão já usado pelo Mago/Ladino/Cavaleiro
+		if not acted and can_use_ability(0):
+			use_ability(0)
+			acted = true
+
+		# Se nada mais agiu, faz ataque padrão
 		if not acted:
 			if current_target != null:
 				var target_pos = current_target.global_position
@@ -101,32 +116,27 @@ func update_ai(_delta: float) -> void:
 		is_turn_ready = false
 		is_performing_action = false
 
-func _move_towards(position: Vector3) -> void:
-	# posição já foi ajustada por _avoid_allies antes de entrar aqui
-	var direction = (position - global_position)
-	direction.y = 0  # Garantir que movimento fique no plano XZ
-	if direction.length() == 0:
-		_stop_moving()
-		return
-
-	direction = direction.normalized()
-	velocity = direction * move_speed
-	is_moving = true
-
-	var target_yaw = atan2(direction.x, direction.z)
-	rotation.y = lerp_angle(rotation.y, target_yaw, 0.2)
-
-	move_and_slide()
-
-	if anim and not anim.is_playing():
-		anim.play("Walking_A")
-
-func _stop_moving() -> void:
-	velocity = Vector3.ZERO
-	is_moving = false
-	move_and_slide()
-	if anim and anim.current_animation != "Idle":
-		anim.play("Idle")
+# _move_towards() e _stop_moving() foram removidos daqui de propósito.
+#
+# BUG DE FÍSICA: esta classe tinha sua própria versão de _move_towards()/
+# _stop_moving() que calculava velocity diretamente e chamava move_and_slide()
+# "na mão", dentro de update_ai() — que é chamado a partir do _process() do
+# BattleManager (framerate variável).
+#
+# Só que CombatCharacter2000._physics_process() (rodando a taxa fixa do motor
+# de física) TAMBÉM roda sempre, para todo personagem, e recalculava a
+# velocity a cada tick com base em nav_agent.get_next_path_position() e
+# chamava move_and_slide() de novo — ou seja, move_and_slide() era chamado
+# duas vezes por frame de física, com dois cálculos de velocity diferentes
+# competindo entre si. Isso causava tremedeira, movimento "engasgado" e
+# resposta de colisão inconsistente, principalmente perceptível no Bárbaro
+# (que usa essa IA base sem sobrescrever update_ai()).
+#
+# A correção é deixar SÓ a classe base mover o personagem, sempre dentro de
+# _physics_process(). _move_towards() da classe base já faz exatamente o que
+# é preciso aqui: define nav_agent.target_position e is_moving = true; quem
+# de fato aplica velocity + move_and_slide() é sempre _handle_movement(),
+# uma única vez por tick físico.
 
 func _enemy_moved() -> bool:
 	if target_enemy == null:

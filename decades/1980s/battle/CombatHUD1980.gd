@@ -4,27 +4,45 @@ signal action_selected(action_name: String)
 signal magic_selected(spell_name: String)
 signal target_selected(alvo)
 signal item_selected(item_name: String)
+signal shop_buy_requested(item_name: String)
+signal shop_equip_requested(item: Dictionary)
+signal shop_closed
+signal _continue_confirmed
 
 var party_panels := {}
+
+# --- Pacing "aperte para continuar" ---
+# Em vez de resolver ações num timer fixo, o combate pausa em cada
+# mensagem até o jogador confirmar (clique ou ENTER/espaço), como nos
+# RPGs de 1980 (Dragon Quest, Wizardry, Ultima).
+var _waiting_for_continue := false
 
 @onready var magic_menu = $MagicMenu
 @onready var party_info = $Panel/PartyInfo
 @onready var log_text_edit = $LogPanel/LogTextEdit
+@onready var continue_prompt = $LogPanel/ContinuePrompt
 @onready var target_window = $WindowTargetSelection
 @onready var target_container = $WindowTargetSelection/ScrollContainer/VBoxContainer
 @onready var item_window = $ItemWindow
 @onready var enemy_info = $EnemyInfo
 @onready var item_vbox = $ItemWindow/ScrollContainer/VBoxContainer
+@onready var shop_window = $ShopWindow
+@onready var shop_vbox = $ShopWindow/ScrollContainer/VBoxContainer
 
 func _ready():
-	$VBoxContainer/Button.text = "Atacar"
-	$VBoxContainer/Button2.text = "Magia"
-	$VBoxContainer/Button3.text = "Defender"
-	$VBoxContainer/Button4.text = "Fugir"
-	$VBoxContainer/Button5.text = "Item"
+	# Caixa alta nos textos fixos da UI: convenção comum em RPGs de 1980
+	# (Dragon Quest, Ultima, Wizardry), que rodavam com fontes bitmap sem
+	# minúsculas ou com minúsculas pouco legíveis em telas de baixa resolução.
+	$VBoxContainer/Button.text = "ATACAR"
+	$VBoxContainer/Button2.text = "MAGIA"
+	$VBoxContainer/Button3.text = "DEFENDER"
+	$VBoxContainer/Button4.text = "FUGIR"
+	$VBoxContainer/Button5.text = "ITEM"
 	target_window.hide()
 	item_window.hide()
 	get_viewport().gui_embed_subwindows = true
+
+	log_text_edit.add_theme_font_size_override("normal_font_size", 10)
 
 	magic_menu.mode = Window.MODE_WINDOWED
 	magic_menu.borderless = true
@@ -40,6 +58,12 @@ func _ready():
 	target_window.borderless = true
 	target_window.unresizable = true
 	target_window.position = Vector2(1070, 150)
+
+	shop_window.mode = Window.MODE_WINDOWED
+	shop_window.borderless = true
+	shop_window.unresizable = true
+	shop_window.position = Vector2(1200, 470)
+	shop_window.hide()
 
 	$VBoxContainer/Button5.pressed.connect(func(): emit_signal("action_selected", "item"))
 	$VBoxContainer/Button.pressed.connect(func(): emit_signal("action_selected", "attack"))
@@ -68,7 +92,7 @@ func show_target_selection(alvos: Array, _spell_type: String) -> void:
 
 	# Botão Voltar
 	var voltar_btn = Button.new()
-	voltar_btn.text = "Voltar"
+	voltar_btn.text = "VOLTAR"
 	voltar_btn.custom_minimum_size = Vector2(200, 60)
 	voltar_btn.add_theme_font_size_override("font_size", 24)
 	voltar_btn.pressed.connect(_on_voltar_target_btn_pressed)
@@ -110,7 +134,7 @@ func show_item_menu(inventario: Dictionary) -> void:
 
 	# Botão Voltar
 	var voltar_btn = Button.new()
-	voltar_btn.text = "Voltar"
+	voltar_btn.text = "VOLTAR"
 	voltar_btn.custom_minimum_size = Vector2(200, 60)
 	voltar_btn.add_theme_font_size_override("font_size", 24)
 	voltar_btn.pressed.connect(func(): 
@@ -134,10 +158,23 @@ func set_enabled(enabled: bool):
 	$VBoxContainer/Button5.disabled = not enabled
 
 func add_log_entry(text: String) -> void:
-
-	log_text_edit.add_theme_font_size_override("font_size", 10)
 	log_text_edit.text += text + "\n"
-	log_text_edit.scroll_vertical = log_text_edit.get_line_count()
+
+# Pausa o fluxo até o jogador confirmar a mensagem (clique do mouse ou
+# ENTER/espaço). Chamado pelo BattleManager no lugar do antigo timer fixo.
+func wait_for_continue() -> void:
+	_waiting_for_continue = true
+	continue_prompt.show()
+	await _continue_confirmed
+	continue_prompt.hide()
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not _waiting_for_continue:
+		return
+	if event.is_action_pressed("ui_accept") or (event is InputEventMouseButton and event.pressed):
+		_waiting_for_continue = false
+		get_viewport().set_input_as_handled()
+		_continue_confirmed.emit()
 
 func _on_voltar_target_btn_pressed():
 	target_window.hide()
@@ -147,22 +184,83 @@ func _on_item_button_pressed(item_name: String):
 	item_window.hide()
 	emit_signal("item_selected", item_name)
 
+# --- Loja (entre batalhas) ---
+func show_shop(gold: int, inventario: Dictionary, consumable_prices: Dictionary, equipment_catalog: Array) -> void:
+	clear(shop_window)
+
+	var gold_label = Label.new()
+	gold_label.text = "OURO: %d" % gold
+	gold_label.add_theme_font_size_override("font_size", 22)
+	shop_vbox.add_child(gold_label)
+
+	var consumables_label = Label.new()
+	consumables_label.text = "-- CONSUMÍVEIS --"
+	shop_vbox.add_child(consumables_label)
+
+	for item_name in consumable_prices.keys():
+		var price = consumable_prices[item_name]
+		var quantidade = inventario.get(item_name, 0)
+		var botao = Button.new()
+		botao.text = "%s (x%d) - %dg" % [item_name, quantidade, price]
+		botao.disabled = gold < price
+		botao.custom_minimum_size = Vector2(260, 50)
+		botao.add_theme_font_size_override("font_size", 18)
+		botao.pressed.connect(_on_shop_buy_pressed.bind(item_name))
+		shop_vbox.add_child(botao)
+
+	var equip_label = Label.new()
+	equip_label.text = "-- EQUIPAMENTOS --"
+	shop_vbox.add_child(equip_label)
+
+	for item in equipment_catalog:
+		var price = item.get("price", 0)
+		var bonus_text = ""
+		if item.has("strength_bonus"):
+			bonus_text = "+%d ATQ" % item["strength_bonus"]
+		elif item.has("defense_bonus"):
+			bonus_text = "+%d DEF" % item["defense_bonus"]
+		var botao = Button.new()
+		botao.text = "%s (%s) - %dg" % [item.get("nome", "?"), bonus_text, price]
+		botao.disabled = gold < price
+		botao.custom_minimum_size = Vector2(260, 50)
+		botao.add_theme_font_size_override("font_size", 18)
+		botao.pressed.connect(_on_shop_equip_pressed.bind(item))
+		shop_vbox.add_child(botao)
+
+	var continuar_btn = Button.new()
+	continuar_btn.text = "CONTINUAR"
+	continuar_btn.custom_minimum_size = Vector2(260, 50)
+	continuar_btn.add_theme_font_size_override("font_size", 20)
+	continuar_btn.pressed.connect(_on_shop_continue_pressed)
+	shop_vbox.add_child(continuar_btn)
+
+	shop_window.set_size(Vector2(300, 420))
+	shop_window.get_node("ScrollContainer").custom_minimum_size = Vector2(300, 420)
+	shop_window.popup()
+
+func _on_shop_buy_pressed(item_name: String) -> void:
+	emit_signal("shop_buy_requested", item_name)
+
+func _on_shop_equip_pressed(item: Dictionary) -> void:
+	emit_signal("shop_equip_requested", item)
+
+func _on_shop_continue_pressed() -> void:
+	shop_window.hide()
+	emit_signal("shop_closed")
+
 func update_enemy_status(enemies: Array) -> void:
 	clear_container($EnemyInfo)
 
 	for enemy in enemies:
 		var panel = Panel.new()
 		var style = StyleBoxFlat.new()
-		style.bg_color = Color(0.15, 0, 0)
+		style.bg_color = Color(0, 0, 0)
 		style.border_width_left = 2
 		style.border_width_top = 2
 		style.border_width_right = 2
 		style.border_width_bottom = 2
-		style.border_color = Color(1, 0.3, 0.3)
-		style.corner_radius_top_left = 4
-		style.corner_radius_top_right = 4
-		style.corner_radius_bottom_left = 4
-		style.corner_radius_bottom_right = 4
+		style.border_color = Color(1, 0, 0)
+		style.anti_aliasing = false
 		panel.add_theme_stylebox_override("panel", style)
 		panel.custom_minimum_size = Vector2(180, 100)
 
@@ -244,7 +342,7 @@ func show_magic_menu(player: PlayerPartyMember, magias := {}) -> void:
 
 	# Botão Voltar
 	var voltar_btn = Button.new()
-	voltar_btn.text = "Voltar"
+	voltar_btn.text = "VOLTAR"
 	voltar_btn.custom_minimum_size = Vector2(200, 60)
 	voltar_btn.add_theme_font_size_override("font_size", 24)
 	voltar_btn.pressed.connect(_on_voltar_btn_pressed)
@@ -301,7 +399,7 @@ func update_party_info(party_members: Array) -> void:
 		row1.add_child(spacer1)
 
 		var level_label = Label.new()
-		level_label.text = "  Lv: %d" % member.level
+		level_label.text = "  LV: %d" % member.level
 		row1.add_child(level_label)
 
 		vbox.add_child(row1)
@@ -332,16 +430,13 @@ func update_party_info(party_members: Array) -> void:
 
 func _create_default_panel_style() -> StyleBoxFlat:
 	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.1, 0.1, 0.1)
+	style.bg_color = Color(0, 0, 0)
 	style.border_width_left = 2
 	style.border_width_top = 2
 	style.border_width_right = 2
 	style.border_width_bottom = 2
 	style.border_color = Color(1, 1, 1)
-	style.corner_radius_top_left = 4
-	style.corner_radius_top_right = 4
-	style.corner_radius_bottom_left = 4
-	style.corner_radius_bottom_right = 4
+	style.anti_aliasing = false
 	return style
 
 func highlight_current_player(current_player):
@@ -350,7 +445,7 @@ func highlight_current_player(current_player):
 		var style = _create_default_panel_style()
 
 		if member == current_player:
-			style.border_color = Color(0.2, 0.6, 1.0)  # Azul
+			style.border_color = Color(0, 1, 1)  # Ciano saturado (paleta alto-contraste)
 			style.border_width_left = 2
 			style.border_width_top = 2
 			style.border_width_right = 2

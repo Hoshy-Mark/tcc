@@ -1,10 +1,10 @@
-extends Node
+extends RefCounted
 
 class_name Enemy1990
 
 signal died
 
-@export var enemy_type: String = "Beast"  # Pode ser Undead, Beast, Ghost, Flying, Demon, Dragon
+var enemy_type: String = "Beast"  # Pode ser Undead, Beast, Ghost, Flying, Demon, Dragon
 
 # Atributos base
 var STR: int = 0
@@ -35,6 +35,7 @@ var atb_max := 100.0
 # Outros dados
 var nome: String = "Enemy"
 var xp_value: int = 20
+var gold_value: int = 10
 var id: String = ""
 var is_defending: bool = false
 var can_act: bool = true
@@ -225,7 +226,7 @@ func calculate_stats():
 func is_alive():
 	return current_hp > 0
 
-func take_damage(amount, attacker: Node = null):
+func take_damage(amount, attacker = null):
 	current_hp -= int(amount)
 	current_hp = max(current_hp, 0)
 
@@ -244,6 +245,12 @@ func check_if_dead():
 			emit_signal("died")
 			can_act = false
 			can_target = false
+			if not has_status("knockout"):
+				var knockout_effect = StatusEffect.new()
+				knockout_effect.attribute = "knockout"
+				knockout_effect.type = StatusEffect.Type.DEBUFF
+				knockout_effect.duration = 999
+				active_status_effects.append(knockout_effect)
 
 func get_global_position() -> Vector2:
 	if sprite_ref:
@@ -334,6 +341,12 @@ func process_status_effects():
 
 	if not has_status("doom"):
 		doom_counter = -1
+
+	# Veneno/sangramento/doom podem zerar o HP aqui dentro. Sem isso, o
+	# personagem ficava com 0 HP mas nunca era marcado como "morto" de
+	# verdade (sinal died nunca disparava, Reraise nunca era checado).
+	if current_hp <= 0:
+		check_if_dead()
 
 func get_modified_derived_stat(attribute: String) -> int:
 	var STR_mod = get_modified_stat(STR, "STR")

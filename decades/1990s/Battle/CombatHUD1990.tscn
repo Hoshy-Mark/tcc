@@ -72,6 +72,12 @@ layout_mode = 2
 [node name="VBoxItemList" type="VBoxContainer" parent="HUDPanel/ItemPanel"]
 layout_mode = 2
 
+[node name="ShopPanel" type="ScrollContainer" parent="HUDPanel"]
+layout_mode = 2
+
+[node name="VBoxShopList" type="VBoxContainer" parent="HUDPanel/ShopPanel"]
+layout_mode = 2
+
 [node name="PartyStatus" type="PanelContainer" parent="."]
 offset_left = 522.0
 offset_top = 762.0

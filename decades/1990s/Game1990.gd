@@ -5,6 +5,8 @@ extends Node2D
 var battle_manager: Node = null
 
 func _ready():
+	if background:
+		background.texture_filter = TEXTURE_FILTER_NEAREST
 	load_battle_manager()
 
 func load_battle_manager():

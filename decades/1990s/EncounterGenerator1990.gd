@@ -1,5 +1,5 @@
 class_name EncounterGenerator1990
-extends Node
+extends RefCounted
 
 
 # --- FUNÇÕES MOVIDAS DO BATTLEMANAGER ---
@@ -74,6 +74,7 @@ func _create_enemy_by_type(nome: String, index: int) -> Dictionary:
 		enemy_node.SPI = base["SPI"]
 		enemy_node.LCK = base["LCK"]
 		enemy_node.xp_value = base["xp_value"]
+		enemy_node.gold_value = base.get("gold_value", 10)
 		enemy_node.attack_type = base["attack_type"]
 		enemy_node.enemy_type = base["enemy_type"]
 

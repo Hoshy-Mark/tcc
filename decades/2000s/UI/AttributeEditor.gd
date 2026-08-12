@@ -116,6 +116,11 @@ func _on_confirm_pressed():
 		for attr in temp_allocations.keys():
 			current_character.set(attr, current_character.get(attr) + temp_allocations[attr])
 
+		# Sem isso, os atributos base mudavam mas attack_power/defense/max_hp/
+		# etc. (todos derivados, calculados só uma vez no _ready()) nunca
+		# refletiam os pontos gastos — a tela inteira era cosmética.
+		current_character._recalculate_stats()
+
 		current_character.set_meta("points_to_spend", points_left)
 		emit_signal("editor_closed")
 		hide()

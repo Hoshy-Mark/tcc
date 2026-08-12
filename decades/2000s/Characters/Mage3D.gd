@@ -169,6 +169,7 @@ func _cast_fireball(caster: CombatCharacter2000):
 	var projectile = projectile_scene.instantiate()
 	projectile.global_position = caster.global_position + Vector3(0, 1.5, 0)
 	projectile.target = caster.current_target
+	projectile.caster = caster
 
 	get_tree().current_scene.add_child(projectile)
 

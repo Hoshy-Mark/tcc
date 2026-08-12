@@ -8,6 +8,9 @@ signal skill_selected(skill_name: String)
 signal special_selected(special)
 signal line_target_selected(linha: String)
 signal back_pressed
+signal shop_buy_requested(item_name: String)
+signal shop_equip_requested(item: Dictionary)
+signal shop_closed
 
 @onready var action_panel = $HUDPanel/ActionPanel
 @onready var magic_panel = $MagicPanel
@@ -16,11 +19,12 @@ signal back_pressed
 @onready var hbox_main_content = $MagicPanel/VBoxMagicMain/HBoxMainContent
 @onready var spells_scroll_container = $MagicPanel/VBoxMagicMain/HBoxMainContent/VBoxSpellsWrapper/ScrollContainer
 @onready var vbox_spells_by_level = $MagicPanel/VBoxMagicMain/HBoxMainContent/VBoxSpellsWrapper/ScrollContainer/VBoxSpellsByLevel
-@onready var player_info_panel = $MagicPanel/VBoxMagicMain/HBoxMainContent/PlayerInfoPanel
 @onready var item_panel = $HUDPanel/ItemPanel
 @onready var target_panel = $HUDPanel/TargetPanel
 @onready var vbox_item_list = $HUDPanel/ItemPanel/VBoxItemList
 @onready var vbox_target_list = $HUDPanel/TargetPanel/VBoxTargetList
+@onready var shop_panel = $HUDPanel/ShopPanel
+@onready var vbox_shop_list = $HUDPanel/ShopPanel/VBoxShopList
 @onready var hud_panel = $HUDPanel
 @onready var top_message_panel = $TopMessageContainer/TopMessagePanel
 @onready var top_message_label = $TopMessageContainer/TopMessagePanel/TopMessageLabel
@@ -35,18 +39,20 @@ var atb_bars = {}
 var special_bars = {} 
 var special_buttons := []
 var buttons = {}
-var current_player_node: Node = null
+var current_player_node = null
 var original_hud_position := Vector2()
 var original_hud_size := Vector2()
 
 func _ready():
 	
-	# Cria o estilo da moldura
+	# Cria o estilo da moldura — bordas retas e sem anti-aliasing, mais
+	# perto do visual "quadriculado" de um RPG de 16-bit do que do flat
+	# design moderno (cantos arredondados, degradê).
 	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.1, 0.1, 0.3)
-	style.border_color = Color(0.5, 0.5, 1.0)
+	style.bg_color = Color(0.05, 0.05, 0.15)
+	style.border_color = Color(0.6, 0.6, 1.0)
 	style.set_border_width_all(2)
-	style.set_corner_radius_all(6)
+	style.anti_aliasing = false
 	
 	# Margens internas do conteúdo para espaçamento do texto à borda
 	style.content_margin_left = 10
@@ -133,7 +139,7 @@ func _create_action_buttons(player = null):
 
 
 
-func show_target_menu(targets: Array, current_actor = null):
+func show_target_menu(targets: Array, current_actor = null, allow_dead: bool = false):
 	_hide_all_panels()
 	clear(vbox_target_list)
 	target_panel.visible = true
@@ -161,12 +167,14 @@ func show_target_menu(targets: Array, current_actor = null):
 		var enemy_node = target["node_ref"]
 		var is_desabilitado = false
 
-		if not enemy_node.is_alive():
+		if not enemy_node.is_alive() and not allow_dead:
 			is_desabilitado = true
 		elif current_actor != null and enemy_node.obstruido and not current_actor.alcance_estendido:
 			is_desabilitado = true
 
 		button.text = target["nome"]
+		if not enemy_node.is_alive() and allow_dead:
+			button.text += " (K.O.)"
 		button.custom_minimum_size = Vector2(500, 40)
 		button.disabled = is_desabilitado
 
@@ -210,6 +218,65 @@ func show_item_menu(items: Dictionary):
 	back_button.custom_minimum_size = Vector2(500, 40)
 	back_button.pressed.connect(_on_back_button_pressed)
 	vbox_item_list.add_child(back_button)
+
+# --- Loja (entre batalhas) ---
+func show_shop(gold: int, inventory: Dictionary, consumable_prices: Dictionary, equipment_catalog: Array) -> void:
+	_hide_all_panels()
+	shop_panel.visible = true
+	clear(vbox_shop_list)
+
+	var gold_label = Label.new()
+	gold_label.text = "OURO: %d" % gold
+	gold_label.add_theme_font_size_override("font_size", 22)
+	vbox_shop_list.add_child(gold_label)
+
+	var consumables_label = Label.new()
+	consumables_label.text = "-- CONSUMÍVEIS --"
+	vbox_shop_list.add_child(consumables_label)
+
+	for item_name in consumable_prices.keys():
+		var price = consumable_prices[item_name]
+		var quantidade = inventory.get(item_name, 0)
+		var button = Button.new()
+		button.text = "%s (x%d) - %dg" % [item_name, quantidade, price]
+		button.disabled = gold < price
+		button.custom_minimum_size = Vector2(500, 40)
+		button.pressed.connect(_on_shop_buy_pressed.bind(item_name))
+		vbox_shop_list.add_child(button)
+
+	var equip_label = Label.new()
+	equip_label.text = "-- EQUIPAMENTOS --"
+	vbox_shop_list.add_child(equip_label)
+
+	for item in equipment_catalog:
+		var price = item.get("price", 0)
+		var bonus_text = ""
+		if item.has("strength_bonus"):
+			bonus_text = "+%d STR" % item["strength_bonus"]
+		elif item.has("con_bonus"):
+			bonus_text = "+%d CON" % item["con_bonus"]
+		var button = Button.new()
+		button.text = "%s (%s) - %dg" % [item.get("nome", "?"), bonus_text, price]
+		button.disabled = gold < price
+		button.custom_minimum_size = Vector2(500, 40)
+		button.pressed.connect(_on_shop_equip_pressed.bind(item))
+		vbox_shop_list.add_child(button)
+
+	var continue_button = Button.new()
+	continue_button.text = "Continuar"
+	continue_button.custom_minimum_size = Vector2(500, 40)
+	continue_button.pressed.connect(_on_shop_continue_pressed)
+	vbox_shop_list.add_child(continue_button)
+
+func _on_shop_buy_pressed(item_name: String) -> void:
+	emit_signal("shop_buy_requested", item_name)
+
+func _on_shop_equip_pressed(item: Dictionary) -> void:
+	emit_signal("shop_equip_requested", item)
+
+func _on_shop_continue_pressed() -> void:
+	shop_panel.visible = false
+	emit_signal("shop_closed")
 
 func show_ability_menu(abilities: Array, tipo: String,custo_disponivel: int, slots_por_nivel := {}, player_info := {}):
 
@@ -453,16 +520,13 @@ func update_enemy_info(enemies: Array) -> void:
 	for enemy in enemies:
 		var panel = Panel.new()
 		var style = StyleBoxFlat.new()
-		style.bg_color = Color(0.15, 0, 0)
+		style.bg_color = Color(0.1, 0, 0)
 		style.border_width_left = 2
 		style.border_width_top = 2
 		style.border_width_right = 2
 		style.border_width_bottom = 2
-		style.border_color = Color(1, 0.3, 0.3)
-		style.corner_radius_top_left = 4
-		style.corner_radius_top_right = 4
-		style.corner_radius_bottom_left = 4
-		style.corner_radius_bottom_right = 4
+		style.border_color = Color(1, 0.2, 0.2)
+		style.anti_aliasing = false
 		panel.add_theme_stylebox_override("panel", style)
 		panel.custom_minimum_size = Vector2(180, 100)
 
@@ -627,7 +691,7 @@ func update_atb_bars(atb_values):
 # EFEITOS VISUAIS
 
 
-func show_floating_number(value: int, node: Node, tipo_valor: String = "hp") -> void:
+func show_floating_number(value: int, node, tipo_valor: String = "hp") -> void:
 	var floating_number_scene = load("res://decades/1990s/Battle/FloatingNumber.tscn")
 	var instance = floating_number_scene.instantiate()
 	add_child(instance)
@@ -635,7 +699,7 @@ func show_floating_number(value: int, node: Node, tipo_valor: String = "hp") -> 
 	var position = node.get_global_position() + Vector2(0, -100)
 	instance.initialize(value, position, tipo_valor)
 
-func show_arrow_above_node(target_node: Node):
+func show_arrow_above_node(target_node):
 	if arrow_instance:
 		arrow_instance.queue_free()
 
@@ -668,6 +732,7 @@ func _hide_all_panels():
 	magic_panel.visible = false
 	item_panel.visible = false
 	target_panel.visible = false
+	shop_panel.visible = false
 	PartyStatus.visible = true
 
 func hide_special_menu() -> void:
@@ -690,7 +755,7 @@ func clear(container: Node) -> void:
 		container.remove_child(child)
 		child.queue_free()
 
-func indicate_current_player(player_node: Node):
+func indicate_current_player(player_node):
 	show_arrow_above_node(player_node)
 
 func set_hud_buttons_enabled(enabled: bool, player = null) -> void:

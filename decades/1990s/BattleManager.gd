@@ -26,6 +26,20 @@ var inventory := {
 	"Spirit Water": 2
 }
 
+# Preços da loja que abre entre uma batalha e outra.
+const SHOP_PRICES = {
+	"Potion": 15,
+	"Ether": 15,
+	"Spirit Water": 15,
+	"Elixir": 50
+}
+const EQUIPMENT_CATALOG = [
+	{"nome": "Espada Longa", "slot": "weapon", "strength_bonus": 8, "price": 40},
+	{"nome": "Machado de Guerra", "slot": "weapon", "strength_bonus": 15, "price": 80},
+	{"nome": "Cota de Malha", "slot": "armor", "con_bonus": 4, "price": 35},
+	{"nome": "Armadura de Placas", "slot": "armor", "con_bonus": 8, "price": 70},
+]
+
 const TEMPO_ESPERA_APOS_ACAO = 0.5
 const ATB_GLOBAL_MULTIPLIER = 3.0
 
@@ -70,33 +84,17 @@ func perform_enemy_action(enemy_actor: Enemy1990) -> void:
 		return
 	enemy_ai.execute_turn(enemy_actor, party, enemies, self)
 	
+## As fórmulas de posicionamento (obstrução, dano por posição, alcance)
+# moram no autoload CombatFormulas1990 — ver esse arquivo para a lógica.
+# Antes havia cópias locais aqui e no ActionExecutor1990 que divergiram:
+# essa cópia calculava o índice do "protetor" da frente errado (i - 3 em
+# vez de i + 3, que é como EncounterGenerator1990 realmente distribui as
+# posições), então a proteção da retaguarda nunca funcionava.
 func atualizar_obstrucao_inimigos() -> void:
-	for i in range(enemies.size()):
-		var enemy = enemies[i]
-		if enemies.size() <= 3:
-			enemy.obstruido = false
-			continue
-		
-		if enemy.position_line == "back":
-			var front_index = i - 3
-			if front_index < 0 and enemies[front_index].is_alive():
-				enemy.obstruido = true
-			else:
-				enemy.obstruido = false
-		else:
-			enemy.obstruido = false
+	CombatFormulas1990.atualizar_obstrucao_inimigos(enemies)
 
 func atualizar_obstrucao_party() -> void:
-	for i in range(party.size()):
-		var player = party[i]
-		if player.position_line == "back":
-			var front_index = i - 2
-			if front_index >= 0 and party[front_index].is_alive():
-				player.obstruido = true
-			else:
-				player.obstruido = false
-		else:
-			player.obstruido = false
+	CombatFormulas1990.atualizar_obstrucao_party(party)
 
 func is_player(actor) -> bool:
 	if actor is PlayerPartyMember1990:
@@ -165,6 +163,15 @@ func check_battle_state() -> bool:
 		
 	return false  # A batalha continua
 
+# O Dragão (nível 6) é o único encontro de "boss" gerado pelo
+# EncounterGenerator1990 — derrotá-lo fecha o loop, em vez de encadear
+# batalhas para sempre.
+func _boss_derrotado() -> bool:
+	for enemy in enemies:
+		if enemy.nome.begins_with("Dragão") and not enemy.is_alive():
+			return true
+	return false
+
 func end_battle(victory: bool) -> void:
 	battle_active = false  # Para a batalha aqui
 	hud.set_hud_buttons_enabled(false)
@@ -172,31 +179,90 @@ func end_battle(victory: bool) -> void:
 	if victory:
 		if in_summon_mode:
 			restore_saved_party()
-			print("Fim da batalha: Vitória")
-			var total_xp = 0
-			for enemy in enemies:
-				total_xp += enemy.xp_value
-			for member in party:
-				member.gain_xp(total_xp)
-				unlock_available_spells_and_skills(member)
+		print("Fim da batalha: Vitória")
+
+		var total_xp = 0
+		var total_gold = 0
+		for enemy in enemies:
+			total_xp += enemy.xp_value
+			total_gold += enemy.gold_value if "gold_value" in enemy else 5
+
+		# XP dividido entre os membros VIVOS (antes cada um ganhava o total
+		# inteiro, o que inflava a progressão).
+		var vivos = party.filter(func(p): return p.is_alive())
+		if vivos.size() > 0:
+			var xp_share = int(total_xp / float(vivos.size()))
+			for member in vivos:
+				member.gain_xp(xp_share)
+		for member in party:
+			unlock_available_spells_and_skills(member)
+
+		GameManager.saved_gold += total_gold
+		hud.show_top_message("O grupo encontrou %d de ouro!" % total_gold)
+
+		if _boss_derrotado():
 			_save_party_status()
-			await get_tree().create_timer(3.0).timeout
-			start_battle()
-		else:
-			print("Fim da batalha: Vitória")
-			var total_xp = 0
-			for enemy in enemies:
-				total_xp += enemy.xp_value
-			for member in party:
-				member.gain_xp(total_xp)
-				unlock_available_spells_and_skills(member)
-			_save_party_status()
-			await get_tree().create_timer(3.0).timeout
-			start_battle()
+			await get_tree().create_timer(2.0).timeout
+			get_tree().change_scene_to_file("res://decades/1990s/Battle/VictoryScreen.tscn")
+			return
+
+		await get_tree().create_timer(2.0).timeout
+		await _abrir_loja()
+		_save_party_status()
+		start_battle()
 	else:
 		print("Fim da batalha: Derrota")
 		await get_tree().create_timer(1.0).timeout
 		get_tree().change_scene_to_file("res://decades/1990s/battle/DefeatScreen.tscn")
+
+# --- LOJA (entre batalhas) ---
+func _abrir_loja() -> void:
+	hud.set_hud_buttons_enabled(false)
+	if not hud.shop_buy_requested.is_connected(_on_shop_buy_requested):
+		hud.shop_buy_requested.connect(_on_shop_buy_requested)
+	if not hud.shop_equip_requested.is_connected(_on_shop_equip_requested):
+		hud.shop_equip_requested.connect(_on_shop_equip_requested)
+
+	hud.show_shop(GameManager.saved_gold, inventory, SHOP_PRICES, EQUIPMENT_CATALOG)
+	await hud.shop_closed
+
+	hud.shop_buy_requested.disconnect(_on_shop_buy_requested)
+	hud.shop_equip_requested.disconnect(_on_shop_equip_requested)
+
+func _on_shop_buy_requested(item_name: String) -> void:
+	var price = SHOP_PRICES.get(item_name, 0)
+	if GameManager.saved_gold < price:
+		return
+	GameManager.saved_gold -= price
+	inventory[item_name] = inventory.get(item_name, 0) + 1
+	hud.show_shop(GameManager.saved_gold, inventory, SHOP_PRICES, EQUIPMENT_CATALOG)
+
+func _on_shop_equip_requested(item: Dictionary) -> void:
+	if GameManager.saved_gold < item.get("price", 0):
+		return
+	_connect_target_selected(_on_shop_equip_target_selecionado.bind(item))
+	var targets = []
+	for member in party:
+		targets.append({"id": member.id, "nome": member.nome, "node_ref": member})
+	# allow_dead=true: equipar um aliado caído deve funcionar (o bônus vale
+	# quando ele for revivido), a loja não é uma ação de combate.
+	hud.show_target_menu(targets, null, true)
+
+func _on_shop_equip_target_selecionado(target_id, item: Dictionary) -> void:
+	var alvo = null
+	for member in party:
+		if member.id == target_id:
+			alvo = member
+			break
+	if alvo == null:
+		return
+	GameManager.saved_gold -= item.get("price", 0)
+	if item.get("slot") == "weapon":
+		alvo.equip_weapon(item)
+	else:
+		alvo.equip_armor(item)
+	hud.show_top_message("%s equipou %s!" % [alvo.nome, item.get("nome", "item")])
+	hud.show_shop(GameManager.saved_gold, inventory, SHOP_PRICES, EQUIPMENT_CATALOG)
 
 func _save_party_status() -> void:
 	var saved_data = []
@@ -228,10 +294,13 @@ func _save_party_status() -> void:
 			"alcance_estendido": member.alcance_estendido,
 			"spell_upgrades": member.spell_upgrades,
 			"skill_upgrades": member.skill_upgrades,
+			"equipped_weapon": member.equipped_weapon,
+			"equipped_armor": member.equipped_armor,
 		}
 		saved_data.append(member_data)
 
 	GameManager.saved_party_data = saved_data
+	GameManager.saved_inventario = inventory.duplicate()
 	print("DEBUG: Dados salvos para 1990.")
 
 func _load_party() -> Array:
@@ -266,6 +335,13 @@ func _load_party() -> Array:
 		member.alcance_estendido = member_data.get("alcance_estendido", false)
 		member.spell_upgrades = member_data.get("spell_upgrades", {})
 		member.skill_upgrades = member_data.get("skill_upgrades", {})
+
+		# O bônus de equipamento já está embutido em STR/CON (salvos acima).
+		# calculate_stats() deriva defense/max_hp/etc. a partir deles, então
+		# só precisamos lembrar QUAL item está equipado (pra trocar depois
+		# sem duplicar o bônus) — não reaplicamos nada aqui.
+		member.equipped_weapon = member_data.get("equipped_weapon", {})
+		member.equipped_armor = member_data.get("equipped_armor", {})
 
 		member.calculate_stats()
 		loaded_party.append(member)
@@ -472,17 +548,35 @@ var ready_to_act := []  # fila de personagens com ATB cheio (100)
 var is_executing_turn := false  # controla se alguém está executando/decidindo ação
 
 func _ready():
-	
+
 	encounter_generator = EncounterGenerator1990.new()
 	enemy_ai = EnemyAi1990.new()
 	action_executor = ActionExecutor1990.new(self)
-	
+
+	if not GameManager.saved_inventario.is_empty():
+		inventory = GameManager.saved_inventario.duplicate()
+
 	var hud_scene = preload("res://decades/1990s/Battle/CombatHUD1990.tscn")
 	hud = hud_scene.instantiate()
 	add_child(hud)
 
 	hud.action_selected.connect(_on_player_action_selected)
 	hud.back_pressed.connect(_on_hud_back_pressed)
+
+# Garante que só um handler escute target_selected/line_target_selected
+# por vez. Sem isso, sair de um menu (Atacar, Item, Magia...) sem escolher
+# um alvo e abrir outro menu deixava o handler antigo conectado — cada
+# seleção de alvo então disparava várias ações de uma vez (ex: usar um
+# item repetidas vezes, ou atacar E lançar magia no mesmo clique).
+func _connect_target_selected(handler: Callable) -> void:
+	for connection in hud.target_selected.get_connections():
+		hud.target_selected.disconnect(connection["callable"])
+	hud.target_selected.connect(handler)
+
+func _connect_line_target_selected(handler: Callable) -> void:
+	for connection in hud.line_target_selected.get_connections():
+		hud.line_target_selected.disconnect(connection["callable"])
+	hud.line_target_selected.connect(handler)
 
 func start_battle(party_data: Array = []) -> void:
 	if party_data.is_empty() and GameManager.saved_party_data.size() > 0:
@@ -622,7 +716,7 @@ func next_turn():
 		next_turn()
 		return
 
-	if current_actor is PlayerPartyMember and current_actor.is_defending:
+	if current_actor is PlayerPartyMember1990 and current_actor.is_defending:
 		current_actor.is_defending = false
 
 	is_executing_turn = true
@@ -906,7 +1000,7 @@ func _on_player_action_selected(action_name: String) -> void:
 							"nome": enemy.nome,
 							"node_ref": enemy
 						})
-				hud.target_selected.connect(_on_alvo_ataque_selecionado)
+				_connect_target_selected(_on_alvo_ataque_selecionado)
 				hud.show_target_menu(targets, current_actor)
 
 		"Magia", "Skills":
@@ -925,7 +1019,8 @@ func _on_player_action_selected(action_name: String) -> void:
 					hud.show_top_message("%s não possui magias disponíveis." % current_actor.nome)
 					await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 					return
-				hud.magic_selected.connect(_on_magic_selected)
+				if not hud.magic_selected.is_connected(_on_magic_selected):
+					hud.magic_selected.connect(_on_magic_selected)
 				hud.show_ability_menu(
 					magias,
 					"MP",
@@ -943,7 +1038,8 @@ func _on_player_action_selected(action_name: String) -> void:
 					hud.show_top_message("%s não possui técnicas disponíveis." % current_actor.nome)
 					await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 					return
-				hud.skill_selected.connect(_on_skill_selected)
+				if not hud.skill_selected.is_connected(_on_skill_selected):
+					hud.skill_selected.connect(_on_skill_selected)
 				hud.show_ability_menu(
 					skills,
 					"SP",
@@ -962,7 +1058,8 @@ func _on_player_action_selected(action_name: String) -> void:
 				await get_tree().create_timer(TEMPO_ESPERA_APOS_ACAO).timeout
 				next_turn()
 				return
-			hud.item_selected.connect(_on_item_selected)
+			if not hud.item_selected.is_connected(_on_item_selected):
+				hud.item_selected.connect(_on_item_selected)
 			hud.show_item_menu(items)
 		"Defender":
 			current_actor.is_defending = true
@@ -998,7 +1095,8 @@ func _on_player_action_selected(action_name: String) -> void:
 					return # Para a execução aqui
 
 				# Se passou nas duas travas, o menu é mostrado com segurança
-				hud.special_selected.connect(_on_special_selected)
+				if not hud.special_selected.is_connected(_on_special_selected):
+					hud.special_selected.connect(_on_special_selected)
 				hud.show_ability_menu(
 					especiais,
 					"Especial",
@@ -1052,9 +1150,7 @@ func _on_skill_selected(skill_name: String):
 			alvos = enemies.filter(func(e): return e.current_hp > 0)
 		"line":
 			# Habilita seleção de linha (frente/trás)
-			if hud.line_target_selected.is_connected(_on_skill_line_target_selected):
-				hud.line_target_selected.disconnect(_on_skill_line_target_selected)
-			hud.line_target_selected.connect(_on_skill_line_target_selected)
+			_connect_line_target_selected(_on_skill_line_target_selected)
 			hud.set_meta("spell_name", skill.name)
 			hud.show_line_target_menu(["frente", "trás"])
 			return  # Aguarda seleção do jogador
@@ -1067,9 +1163,7 @@ func _on_skill_selected(skill_name: String):
 		await action_executor._execute_skill_area(user, skill, alvos)
 	else:
 		# Caso padrão: mostra seleção de alvos
-		if hud.target_selected.is_connected(_on_skill_target_selected):
-			hud.target_selected.disconnect(_on_skill_target_selected)
-		hud.target_selected.connect(_on_skill_target_selected)
+		_connect_target_selected(_on_skill_target_selected)
 
 		var formatted_targets = []
 		for target in alvos:
@@ -1106,13 +1200,20 @@ func _on_magic_selected(spell_name: String):
 	var tipo = spell_data.type
 	var alvos := []
 
-	match tipo:
-		"heal", "buff", "cure_status":
-			alvos = party.filter(func(p): return p.current_hp > 0)
-		"debuff", "damage":
-			alvos = enemies.filter(func(e): return e.current_hp > 0)
-		_:
-			alvos = enemies.filter(func(e): return e.current_hp > 0)
+	# Magias que curam "knockout" (ex: Revive) precisam poder mirar em
+	# aliados CAÍDOS — do contrário não existe forma de reviver ninguém.
+	var revives = spell_data.status_effects.any(func(e): return e.attribute == "knockout")
+
+	if tipo == "cure_status" and revives:
+		alvos = party.duplicate()
+	else:
+		match tipo:
+			"heal", "buff", "cure_status":
+				alvos = party.filter(func(p): return p.current_hp > 0)
+			"debuff", "damage":
+				alvos = enemies.filter(func(e): return e.current_hp > 0)
+			_:
+				alvos = enemies.filter(func(e): return e.current_hp > 0)
 
 	if alvos.is_empty():
 		hud.show_top_message("Nenhum alvo válido.")
@@ -1128,12 +1229,12 @@ func _on_magic_selected(spell_name: String):
 
 		"line":
 			# Jogador escolhe "frente" ou "trás"
-			hud.line_target_selected.connect(_on_magic_line_target_selected)
+			_connect_line_target_selected(_on_magic_line_target_selected)
 			hud.show_line_target_menu(["frente", "trás"])
 			hud.set_meta("spell_name", spell_name)
 
 		"single", _:
-			hud.target_selected.connect(_on_magic_target_selected)
+			_connect_target_selected(_on_magic_target_selected)
 			var formatted_targets = []
 			for target in alvos:
 				formatted_targets.append({
@@ -1141,7 +1242,7 @@ func _on_magic_selected(spell_name: String):
 					"nome": target.nome,
 					"node_ref": target
 				})
-			hud.show_target_menu(formatted_targets)
+			hud.show_target_menu(formatted_targets, null, revives)
 			hud.set_meta("spell_name", spell_name)
 
 func _on_magic_line_target_selected(linha: String):
@@ -1229,6 +1330,9 @@ func _on_skill_target_selected(target_id):
 		next_turn()
 
 func _on_item_selected(item_name: String) -> void:
+	if hud.item_selected.is_connected(_on_item_selected):
+		hud.item_selected.disconnect(_on_item_selected)
+
 	var item_data = Database1990.item_database.get(item_name, null)
 	if item_data == null:
 		hud.show_top_message("Item desconhecido!")
@@ -1243,11 +1347,15 @@ func _on_item_selected(item_name: String) -> void:
 				"node_ref": membro
 			})
 
-	# Seleção de alvo
-	hud.target_selected.connect(func(target):
-		action_executor.usar_item_em_alvo(current_actor, item_name, item_data, target)
-	)
+	# Seleção de alvo. Usa método nomeado (com bind) em vez de lambda
+	# anônima: uma lambda nova conectada a cada uso de item nunca era
+	# desconectada, então depois de alguns itens usados numa mesma
+	# batalha, escolher QUALQUER alvo disparava o uso do item várias vezes.
+	_connect_target_selected(_on_item_target_selected.bind(item_name, item_data))
 	hud.show_target_menu(target_list)
+
+func _on_item_target_selected(target_id, item_name: String, item_data: Dictionary) -> void:
+	action_executor.usar_item_em_alvo(current_actor, item_name, item_data, target_id)
 
 func _on_special_selected(especial):
 	
@@ -1278,7 +1386,7 @@ func _on_special_selected(especial):
 						"nome": enemy.nome,
 						"node_ref": enemy
 					})
-			hud.target_selected.connect(_on_special_target_selected.bind(especial))
+			_connect_target_selected(_on_special_target_selected.bind(especial))
 			hud.show_target_menu(alvos)
 
 		"ally":
@@ -1290,7 +1398,7 @@ func _on_special_selected(especial):
 						"nome": ally.nome,
 						"node_ref": ally
 					})
-			hud.target_selected.connect(_on_special_target_selected.bind(especial))
+			_connect_target_selected(_on_special_target_selected.bind(especial))
 			hud.show_target_menu(alvos)
 
 		_:

@@ -15,6 +15,32 @@ func _ready():
 	has_shield = true
 	_recalculate_stats()
 
+# Habilidade 0: Provocar — força o alvo (e só ele, via taunt_source) a atacar
+# o Cavaleiro. EnemyAi2000.get_target_and_action() já checa has_status("taunted")
+# antes de qualquer outra decisão, então essa habilidade já nasce funcional
+# com a IA inimiga existente, sem precisar mexer nela.
+func _cast_ability_0():
+	_cast_taunt(self)
+
+func _cast_taunt(caster: CombatCharacter2000):
+	if not caster.current_target or not caster.current_target.is_alive():
+		return
+
+	caster.is_performing_action = true
+	if caster.anim and caster.anim.has_animation("Block_Attack"):
+		caster.anim.play("Block_Attack")
+
+	await get_tree().create_timer(0.3).timeout
+
+	var target = caster.current_target
+	if target and is_instance_valid(target) and target.is_alive():
+		target.apply_status("taunted", 6.0, caster)
+		target.add_threat(caster, 50) # também dispara bastante ameaça no sistema de aggro normal
+
+	caster.turn_charge = 0
+	caster.is_turn_ready = false
+	caster.is_performing_action = false
+
 func update_ai(delta):
 	if is_performing_action:
 		return
@@ -79,6 +105,10 @@ func update_ai(delta):
 				await gambit.execute_action(self)
 				acted = true
 				break
+
+		if not acted and can_use_ability(0):
+			use_ability(0)
+			acted = true
 
 		if not acted:
 			if current_target != null:

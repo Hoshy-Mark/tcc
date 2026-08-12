@@ -26,26 +26,25 @@ var enemy_paths := [
 
 var fixed_positions = [
 	Vector3(6, base_height, 6),
-	#removi para teste, pode colocar se quiser
-	#Vector3(-6, base_height, 0),
-	#Vector3(6, base_height, -12),
-	#Vector3(0, base_height, -22),
-	#Vector3(-36, base_height, 6),
-	#Vector3(-22, base_height, -22),
-	#Vector3(-22, base_height, -6),
-	#Vector3(-22, base_height, -59),
-	#Vector3(-32, base_height, -71),
-	#Vector3(-22, base_height, -83),
-	#Vector3(-6, base_height, -79),
-	#Vector3(-40, base_height, -79),
-	#Vector3(24, base_height, -71),
-	#Vector3(12, base_height, -75),
-	#Vector3(16, base_height, -119),
-	#Vector3(24, base_height, -115),
-	#Vector3(6, base_height, -111),
-	#Vector3(24, base_height, -103),
-	#Vector3(6, base_height, -95),
-	#Vector3(20, base_height, -127),
+	Vector3(-6, base_height, 0),
+	Vector3(6, base_height, -12),
+	Vector3(0, base_height, -22),
+	Vector3(-36, base_height, 6),
+	Vector3(-22, base_height, -22),
+	Vector3(-22, base_height, -6),
+	Vector3(-22, base_height, -59),
+	Vector3(-32, base_height, -71),
+	Vector3(-22, base_height, -83),
+	Vector3(-6, base_height, -79),
+	Vector3(-40, base_height, -79),
+	Vector3(24, base_height, -71),
+	Vector3(12, base_height, -75),
+	Vector3(16, base_height, -119),
+	Vector3(24, base_height, -115),
+	Vector3(6, base_height, -111),
+	Vector3(24, base_height, -103),
+	Vector3(6, base_height, -95),
+	Vector3(20, base_height, -127),
 ]
 
 # --- Estado do combate ---
@@ -64,6 +63,7 @@ var group_xp: int = 0
 var xp_per_enemy: int = 20
 var hordes_defeated: int = 0
 var max_hordes: int = 2
+var battle_ended := false
 
 # mudei para teste pode mudar de volta se quiser
 var enemies_per_horde: int = 4
@@ -76,17 +76,32 @@ const SLOT_LEASE_MS := 1200  # tempo até expirar se não renovado
 # --- Constantes de jogo ---
 const ATTACK_RANGE := 2.2
 
+# --- Inventário / loja ---
+# Antes disso, o botão de item recriava um único "Poção de Cura" do zero a
+# cada clique (nunca gasta, sem custo). Agora é uma contagem de verdade,
+# que se esgota com o uso e só se repõe na loja entre hordas.
+var inventory := {
+	"Poção de Cura": 3
+}
+const ITEM_DATABASE := {
+	"Poção de Cura": {"heal": 20, "type": "healing"}
+}
+const SHOP_PRICES := {
+	"Poção de Cura": 15
+}
+var ShopMenuScene: PackedScene = preload("res://decades/2000s/UI/ShopMenu.tscn")
+var shop_menu: Node = null
+
 # --- Funções de inicialização e setup ---
 
 func _ready():
 	_spawn_new_horde()
 	_spawn_party()
-	_setup_camera_for_characters()
-
-func _setup_camera_for_characters():
-	var cam = get_node("Camera3D") # Ajuste o caminho conforme necessário
-	for char in party_members + enemies:
-		char.set_camera(cam)
+	# A câmera 3D ainda não existe neste ponto (é criada depois por
+	# Game2000._ready()), então tentar buscá-la aqui sempre falhava
+	# ("Node not found: Camera3D") e não fazia nada. Cada personagem já
+	# resolve sua própria câmera automaticamente em CombatCharacter2000._process()
+	# via get_viewport().get_camera_3d(), então essa chamada foi removida.
 
 func _setup_ui_with_hud(ui_node: CanvasLayer):
 	hud = ui_node
@@ -176,6 +191,9 @@ func set_camera(cam: ThirdPersonCamera3D):
 # --- Loop principal e controle do fluxo ---
 
 func _process(delta: float) -> void:
+	if battle_ended:
+		return
+
 	if _handle_pause_input():
 		return
 
@@ -333,29 +351,12 @@ func _apply_hit(attacker: CombatCharacter2000, target: CombatCharacter2000) -> i
 	return damage
 
 # --- Funções de morte, recompensas e evolução  ---
-
-func _on_character_death(character: CombatCharacter2000) -> void:
-	print(character.name, "morreu!")
-	if enemies.has(character):
-		enemies.erase(character)
-		group_xp += xp_per_enemy
-		hordes_defeated += 1
-		_check_level_up()
-		_spawn_new_horde_if_needed()
-	character.queue_free()
-
-func _check_level_up():
-	var xp_needed = 100 * group_level
-	if group_xp >= xp_needed:
-		group_level += 1
-		group_xp -= xp_needed
-		print("Grupo subiu para nível ", group_level)
-
-func _spawn_new_horde_if_needed():
-	if hordes_defeated >= max_hordes:
-		print("Todas as hordas derrotadas!")
-		return
-	_spawn_new_horde()
+# OBS: a morte real dos personagens é tratada em CombatCharacter2000._die(),
+# que chama _check_enemies_defeated() abaixo. As funções antigas
+# _on_character_death/_spawn_new_horde_if_needed foram removidas por serem
+# código morto (nunca eram chamadas) e por contarem "hordas derrotadas" a
+# cada inimigo morto em vez de a cada horda inteira eliminada, o que fazia
+# uma nova horda de 4 inimigos ser spawnada a cada kill individual.
 
 func add_group_xp(amount: int) -> void:
 	group_xp += amount
@@ -368,10 +369,19 @@ func add_group_xp(amount: int) -> void:
 		print("🎉 Grupo subiu para o nível %d!" % group_level)
 		
 		for member in party_members:
+			# BUG: "level += 1" estava dentro do "if not has_meta", que só é
+			# verdadeiro na PRIMEIRA vez (antes do meta existir) — então o
+			# grupo só subia de nível uma única vez, pra sempre, mesmo
+			# ganhando XP suficiente pra subir várias vezes depois. O "if"
+			# deveria só inicializar o contador de pontos, não travar o level up.
 			if not member.has_meta("points_to_spend"):
-				member.level += 1
 				member.set_meta("points_to_spend", 0)
+			member.level += 1
 			member.set_meta("points_to_spend", member.get_meta("points_to_spend") + 5)
+
+func add_group_gold(amount: int) -> void:
+	GameManager.saved_gold += amount
+	print("Grupo ganhou %d de ouro (Total: %d)" % [amount, GameManager.saved_gold])
 
 # --- Callbacks de UI e interação  ---
 
@@ -379,7 +389,7 @@ func _on_player_action_selected(action_name: String):
 	match action_name:
 		"attack":
 			player_auto_attacking = true
-		"Defend":
+		"defend":
 			# Implementar defesa
 			pass
 		_:
@@ -420,7 +430,12 @@ func execute_item_use(user: CombatCharacter2000, target: CombatCharacter2000, it
 
 	if item.type == "healing":
 		target.hp = clamp(target.hp + item.heal, 0, target.max_hp)
-	
+
+	if inventory.has(item.name):
+		inventory[item.name] -= 1
+		if inventory[item.name] <= 0:
+			inventory.erase(item.name)
+
 	user.turn_charge = 0
 	user.is_turn_ready = false
 	user.is_performing_action = false
@@ -434,55 +449,6 @@ func _handle_ai_turn(character: CombatCharacter2000) -> void:
 	else:
 		push_error("Character " + character.name + " não tem método update_ai()")
 
-
-func _handle_party_member_ai_turn(member: CombatCharacter2000) -> void:
-	# Filtra apenas inimigos vivos
-	var possible_targets = enemies.filter(func(e): return e.is_alive())
-	if possible_targets.is_empty():
-		return
-
-	# --- 1. BUSCA ALVO MAIS PRÓXIMO DENTRO DA VISÃO ---
-	var target = null
-	var min_dist = INF
-	
-	# Usa a visão do próprio membro (definida no CombatCharacter2000)
-	var my_vision = member.vision_range 
-	
-	for enemy in possible_targets:
-		var d = member.global_position.distance_to(enemy.global_position)
-		
-		# SÓ PEGA SE ESTIVER DENTRO DA VISÃO
-		if d <= my_vision and d < min_dist:
-			min_dist = d
-			target = enemy
-	
-	# --- 2. SE NÃO TIVER NINGUÉM PERTO ---
-	if target == null:
-		# Se quiser que ele siga o Player Líder quando não tiver inimigo:
-		if player_character and member != player_character:
-			var dist_to_player = member.global_position.distance_to(player_character.global_position)
-			if dist_to_player > 3.0:
-				member._move_towards(player_character.global_position)
-			else:
-				member._stop_moving()
-		else:
-			member._stop_moving()
-		return # Sai da função, não ataca ninguém longe
-	
-	# --- 3. SE ACHOU ALVO, ENTRA EM COMBATE ---
-	var dist = member.global_position.distance_to(target.global_position)
-	var my_range = member.attack_range
-
-	if dist <= my_range:
-		# Está no alcance: Para e Ataca
-		member._stop_moving()
-		member._face_target(target)
-		
-		# Usa a função de ataque do próprio BattleManager
-		await _execute_attack(member, target)
-	else:
-		# Fora de alcance: Persegue
-		member._move_towards(target.global_position)
 
 func _ensure_slots_for_target(target: CombatCharacter2000, slots_count: int = DEFAULT_SLOTS_PER_TARGET) -> void:
 	if target == null:
@@ -786,12 +752,81 @@ func _check_enemies_defeated():
 		print("Horda %d derrotada!" % hordes_defeated)
 
 		if hordes_defeated >= max_hordes:
-			print("🏆 Todas as hordas derrotadas! Vitória!")
+			_end_battle(true)
 			return
 
 		print("Preparando próxima horda...")
 		await get_tree().create_timer(2.0).timeout
+		await _open_shop()
 		_spawn_new_horde()
+
+# --- Loja (entre uma horda e outra) ---
+func _open_shop() -> void:
+	if shop_menu == null:
+		shop_menu = ShopMenuScene.instantiate()
+		get_tree().get_root().add_child(shop_menu)
+
+	# Congela todo mundo, igual à pausa tática, enquanto a loja está aberta
+	for char in party_members + enemies:
+		if is_instance_valid(char):
+			char.is_performing_action = true
+			char.velocity = Vector3.ZERO
+			if char.anim:
+				char.anim.pause()
+	if hud:
+		hud.hide()
+
+	shop_menu.open_shop(self)
+	await shop_menu.shop_closed
+
+	if hud:
+		hud.show()
+	for char in party_members:
+		if is_instance_valid(char):
+			char.is_performing_action = false
+			if char.anim:
+				char.anim.play("Idle")
+
+func _check_party_defeated():
+	if party_members.is_empty():
+		_end_battle(false)
+
+# --- Fim de batalha (vitória/derrota) ---
+# Antes disso a "vitória" era só um print no console e não existia nenhuma
+# checagem de derrota: se o grupo inteiro morresse, nada acontecia — a
+# batalha simplesmente ficava parada, sem feedback nenhum pro jogador.
+
+func _end_battle(victory: bool) -> void:
+	if battle_ended:
+		return
+	battle_ended = true
+
+	# Congela todo mundo que ainda estiver de pé (mesmo padrão usado na pausa tática)
+	for char in party_members + enemies:
+		if is_instance_valid(char):
+			char.is_performing_action = true
+			char.velocity = Vector3.ZERO
+			if char.anim:
+				char.anim.pause()
+
+	if hud:
+		hud.hide()
+	if ability_hud:
+		ability_hud.hide()
+
+	var ui_layer = get_tree().get_root().get_node_or_null("Game2000/UI")
+	var screen_scene = preload("res://decades/2000s/UI/VictoryScreen2000.tscn") if victory else preload("res://decades/2000s/UI/DefeatScreen2000.tscn")
+	var screen = screen_scene.instantiate()
+
+	if ui_layer:
+		ui_layer.add_child(screen)
+	else:
+		get_tree().get_root().add_child(screen)
+
+	if victory:
+		print("🏆 Todas as hordas derrotadas! Vitória!")
+	else:
+		print("💀 O grupo foi derrotado.")
 
 # --- HUD e interface de habilidades ---
 
